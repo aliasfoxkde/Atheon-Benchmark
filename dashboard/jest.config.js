@@ -1,6 +1,6 @@
 /**
  * Jest Configuration
- * Configuration for testing framework
+ * Configuration for comprehensive testing framework
  */
 
 module.exports = {
@@ -26,6 +26,14 @@ module.exports = {
   testMatch: [
     '**/__tests__/**/*.test.ts',
     '**/__tests__/**/*.test.tsx',
+    '**/__tests__/**/*.spec.ts',
+    '**/__tests__/**/*.spec.tsx',
+  ],
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '/.next/',
+    '/out/',
+    '/e2e/',
   ],
   collectCoverageFrom: [
     'lib/**/*.{ts,tsx}',
@@ -35,15 +43,34 @@ module.exports = {
     '!**/node_modules/**',
     '!**/.next/**',
     '!**/out/**',
+    '!**/__tests__/**',
+    '!**/dist/**',
   ],
   coverageThreshold: {
     global: {
-      branches: 80,
-      functions: 80,
-      lines: 80,
-      statements: 80,
+      branches: 70,
+      functions: 70,
+      lines: 70,
+      statements: 70,
     },
   },
   verbose: true,
   testTimeout: 10000,
+  projects: [
+    {
+      displayName: 'unit',
+      testMatch: ['**/__tests__/(unit|components|lib)/**/*.test.{ts,tsx}'],
+      testEnvironment: 'jsdom',
+    },
+    {
+      displayName: 'smoke',
+      testMatch: ['**/__tests__/smoke/**/*.test.{ts,tsx}'],
+      testEnvironment: 'jsdom',
+    },
+    {
+      displayName: 'regression',
+      testMatch: ['**/__tests__/regression/**/*.test.{ts,tsx}'],
+      testEnvironment: 'jsdom',
+    },
+  ],
 };

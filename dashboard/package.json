@@ -18,7 +18,16 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "test:ci": "jest --ci --coverage --maxWorkers=2"
+    "test:ci": "jest --ci --coverage --maxWorkers=2",
+    "test:unit": "jest --testPathPattern=__tests__/(unit|components|lib)/",
+    "test:smoke": "jest --testPathPattern=__tests__/smoke/",
+    "test:regression": "jest --testPathPattern=__tests__/regression/",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:all": "node scripts/test-runner.js all",
+    "test:full": "node scripts/test-runner.js all && npm run test:e2e",
+    "test:quick": "node scripts/test-runner.js unit && npm run test:smoke",
+    "test:watch": "jest --watch --testPathPattern=__tests__/(unit|smoke)/"
   },
   "dependencies": {
     "chart.js": "^4.5.1",
