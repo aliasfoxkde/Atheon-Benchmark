@@ -10,6 +10,13 @@ import {
   ATHEON_CATEGORIES,
 } from '../claude/atheon-integration';
 
+import {
+  AtheonBinaryScanner,
+  createAtheonScanner,
+  AtheonScanResult,
+  DEFAULT_ATHEON_CONFIG as DEFAULT_BINARY_CONFIG,
+} from './binary-scanner';
+
 export interface QualityGateConfig {
   enabled: boolean;
   strict: boolean;
@@ -66,6 +73,8 @@ export class AtheonQualityGates {
   private config: QualityGateConfig;
   private patterns: Map<string, AtheonValidationRule>;
   private scanHistory: Map<string, QualityGateResult> = new Map();
+  private binaryScanner: AtheonBinaryScanner;
+  private useBinary: boolean;
 
   constructor(config: Partial<QualityGateConfig> = {}) {
     this.config = {
@@ -78,6 +87,21 @@ export class AtheonQualityGates {
     };
 
     this.patterns = this.initializePatterns();
+
+    // Initialize binary scanner
+    try {
+      this.binaryScanner = createAtheonScanner({
+        binaryPath: DEFAULT_BINARY_CONFIG.binaryPath,
+        categories: this.config.categories,
+        severity: this.config.severity,
+        timeout: this.config.timeout_ms,
+      });
+      this.useBinary = true;
+    } catch (error) {
+      console.warn('Atheon binary not available, using pattern simulation:', error);
+      this.binaryScanner = createAtheonScanner(); // Fallback
+      this.useBinary = false;
+    }
   }
 
   /**
@@ -164,6 +188,41 @@ export class AtheonQualityGates {
    * Perform the actual scan
    */
   private async performScan(content: string, metadata?: Record<string, any>): Promise<AtheonFinding[]> {
+    // Use binary scanner if available
+    if (this.useBinary) {
+      try {
+        const scanResult: AtheonScanResult = await this.binaryScanner.scanContent(
+          content,
+          metadata?.filename || `benchmark-${metadata?.id || Date.now()}.txt`
+        );
+
+        // Convert binary scanner findings to Atheon findings format
+        return (scanResult.findings || []).map(finding => ({
+          pattern: finding.rule,
+          category: finding.category,
+          severity: finding.severity,
+          line: finding.line || 0,
+          column: finding.column || 0,
+          message: `Found ${finding.rule} pattern`,
+          matchedText: finding.content || '',
+          file: finding.file,
+        }));
+
+      } catch (error) {
+        console.warn('Binary scan failed, falling back to pattern simulation:', error);
+        // Fall back to pattern simulation
+        return this.performPatternScan(content, metadata);
+      }
+    }
+
+    // Use pattern simulation as fallback
+    return this.performPatternScan(content, metadata);
+  }
+
+  /**
+   * Perform pattern-based scan (fallback method)
+   */
+  private async performPatternScan(content: string, metadata?: Record<string, any>): Promise<AtheonFinding[]> {
     const findings: AtheonFinding[] = [];
     const lines = content.split('\n');
 

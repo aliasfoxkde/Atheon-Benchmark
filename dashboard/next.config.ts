@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
     optimizeCss: true,
   },
 
-  // Disable server-side features for Cloudflare Workers compatibility
+  // Use standalone mode for deployment
   output: 'standalone',
 
   // Configure image optimization for Cloudflare

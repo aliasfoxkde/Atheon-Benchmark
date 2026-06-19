@@ -1,13 +1,19 @@
 /**
  * Benchmark Execution API Endpoint
- * Working implementation for benchmark execution
+ * Working implementation for benchmark execution with database persistence and security
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { benchmarkRunner } from '@/lib/benchmark/runner';
+import { createDatabase } from '@/lib/storage/database';
+import { createSecurityManager, DEFAULT_SECURITY_CONFIG } from '@/lib/security/auth';
 
 export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
+
+// Initialize services
+const db = createDatabase();
+const security = createSecurityManager(DEFAULT_SECURITY_CONFIG);
 
 interface BenchmarkRequest {
   name: string;
@@ -20,12 +26,37 @@ interface BenchmarkRequest {
   };
 }
 
-// In-memory storage for benchmarks
-const benchmarks = new Map<string, any>();
-
 export async function POST(request: NextRequest) {
   try {
+    // Security checks
+    const origin = request.headers.get('origin');
+    if (!security.validateOrigin(origin)) {
+      return NextResponse.json({
+        success: false,
+        error: 'Origin not allowed',
+      }, { status: 403 });
+    }
+
+    // Rate limiting
+    const clientId = security.getClientIdentifier(request);
+    const rateLimit = security.checkRateLimit(clientId);
+    if (!rateLimit.allowed) {
+      return NextResponse.json({
+        success: false,
+        error: 'Rate limit exceeded',
+        resetTime: rateLimit.resetTime,
+      }, { status: 429 });
+    }
+
     const body: BenchmarkRequest = await request.json();
+
+    // Input validation
+    if (!security.validateInput(body.name) || !security.validateInput(body.scenario)) {
+      return NextResponse.json({
+        success: false,
+        error: 'Invalid input',
+      }, { status: 400 });
+    }
     const { name, scenario, config } = body;
 
     if (!name || !scenario) {
@@ -52,7 +83,8 @@ export async function POST(request: NextRequest) {
       errors: [],
     };
 
-    benchmarks.set(benchmarkId, benchmark);
+    // Save benchmark to database
+    await db.saveBenchmark(benchmark);
 
     // Start benchmark execution asynchronously
     executeBenchmark(benchmarkId, name, scenario, config);
@@ -62,6 +94,8 @@ export async function POST(request: NextRequest) {
       benchmark_id: benchmarkId,
       message: 'Benchmark started successfully',
       benchmark,
+    }, {
+      headers: security.createSecurityHeaders(),
     });
 
   } catch (error) {
@@ -73,11 +107,31 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
+  // Security checks
+  const origin = request.headers.get('origin');
+  if (!security.validateOrigin(origin)) {
+    return NextResponse.json({
+      success: false,
+      error: 'Origin not allowed',
+    }, { status: 403, headers: security.createSecurityHeaders() });
+  }
+
+  // Rate limiting
+  const clientId = security.getClientIdentifier(request);
+  const rateLimit = security.checkRateLimit(clientId);
+  if (!rateLimit.allowed) {
+    return NextResponse.json({
+      success: false,
+      error: 'Rate limit exceeded',
+      resetTime: rateLimit.resetTime,
+    }, { status: 429, headers: security.createSecurityHeaders() });
+  }
+
   const { searchParams } = new URL(request.url);
   const benchmarkId = searchParams.get('id');
 
   if (benchmarkId) {
-    const benchmark = benchmarks.get(benchmarkId);
+    const benchmark = await db.getBenchmark(benchmarkId);
     if (!benchmark) {
       return NextResponse.json({
         success: false,
@@ -88,14 +142,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       benchmark,
-    });
+    }, { headers: security.createSecurityHeaders() });
   }
 
   // Return all benchmarks
+  const benchmarks = await db.getAllBenchmarks(50);
   return NextResponse.json({
     success: true,
-    benchmarks: Array.from(benchmarks.values()),
-  });
+    benchmarks,
+  }, { headers: security.createSecurityHeaders() });
 }
 
 async function executeBenchmark(
@@ -105,7 +160,7 @@ async function executeBenchmark(
   config: any
 ): Promise<void> {
   try {
-    const benchmark = benchmarks.get(benchmarkId);
+    const benchmark = await db.getBenchmark(benchmarkId);
     if (!benchmark) return;
 
     // Run the benchmark
@@ -116,27 +171,46 @@ async function executeBenchmark(
     });
 
     // Update benchmark with results
-    benchmark.status = result.status;
-    benchmark.completed_at = new Date().toISOString();
-    benchmark.progress = 100;
-    benchmark.completed_tests = result.summary.total_tests;
-    benchmark.results = result.results;
-    benchmark.summary = result.summary;
+    const updatedBenchmark = {
+      ...benchmark,
+      status: result.status,
+      completed_at: new Date().toISOString(),
+      progress: 100,
+      completed_tests: result.summary.total_tests,
+      results: result.results,
+      summary: result.summary,
+      errors: result.errors || [],
+    };
 
-    if (result.errors.length > 0) {
-      benchmark.errors = result.errors;
+    // Save updated benchmark to database
+    await db.updateBenchmarkStatus(
+      benchmarkId,
+      result.status,
+      100,
+      result.summary.total_tests,
+      result.summary
+    );
+
+    // Save individual results to database
+    for (const resultItem of result.results) {
+      await db.saveResult({
+        id: resultItem.id,
+        benchmark_id: benchmarkId,
+        name: resultItem.name,
+        configuration: resultItem.configuration,
+        duration_ms: resultItem.duration_ms,
+        tokens_used: resultItem.tokens_used,
+        passed: resultItem.passed,
+        output: resultItem.output,
+        timestamp: resultItem.timestamp,
+        error: resultItem.passed ? undefined : 'Test failed',
+      });
     }
 
-    benchmarks.set(benchmarkId, benchmark);
-
   } catch (error) {
-    const benchmark = benchmarks.get(benchmarkId);
-    if (!benchmark) return;
+    console.error('Benchmark execution failed:', error);
 
-    benchmark.status = 'failed';
-    benchmark.completed_at = new Date().toISOString();
-    benchmark.errors.push(error instanceof Error ? error.message : 'Unknown error');
-
-    benchmarks.set(benchmarkId, benchmark);
+    // Update benchmark status to failed
+    await db.updateBenchmarkStatus(benchmarkId, 'failed');
   }
 }
