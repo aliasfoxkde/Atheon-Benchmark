@@ -1,0 +1,68 @@
+# Cloudflare Workers configuration for Atheon Benchmark Dashboard
+name = "atheon-benchmark-dashboard"
+compatibility_date = "2026-06-19"
+compatibility_flags = ["nodejs_compat"]
+
+# Main configuration
+main = "workers/index.ts"
+workers_dev = true
+
+# Routes configuration
+routes = [
+  { pattern = "https://your-domain.com/api/*", zone_name = "your-domain.com" }
+]
+
+# Build configuration
+[build]
+command = "npm run build:workers"
+
+# Environment variables
+[vars]
+ENVIRONMENT = "development"
+APP_NAME = "Atheon Benchmark Dashboard"
+APP_VERSION = "1.0.0"
+
+# Production environment
+[env.production]
+name = "atheon-benchmark-dashboard-production"
+routes = [
+  { pattern = "https://atheon-benchmark.com/api/*", zone_name = "atheon-benchmark.com" }
+]
+
+[env.production.vars]
+ENVIRONMENT = "production"
+
+# Staging environment
+[env.staging]
+name = "atheon-benchmark-dashboard-staging"
+routes = [
+  { pattern = "https://staging.atheon-benchmark.com/api/*", zone_name = "atheon-benchmark.com" }
+]
+
+[env.staging.vars]
+ENVIRONMENT = "staging"
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "atheon-benchmark-db"
+database_id = "your-d1-database-id"  # To be replaced with actual D1 database ID
+
+# R2 Storage binding
+[[r2_buckets]]
+binding = "STORAGE"
+bucket_name = "atheon-benchmark-storage"
+
+# KV Storage binding
+[[kv_namespaces]]
+binding = "CACHE"
+id = "your-kv-namespace-id"  # To be replaced with actual KV namespace ID
+preview_id = "your-kv-preview-id"  # To be replaced with actual KV preview ID
+
+# Analytics configuration
+[analytics]
+enabled = true
+
+# Limits configuration
+[limits]
+cpu_ms = 50  # CPU time limit in milliseconds
