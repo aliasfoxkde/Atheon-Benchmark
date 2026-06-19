@@ -224,7 +224,7 @@ export function initAnalytics(): void {
   // Collect initial metrics after page load
   if (document.readyState === 'complete') {
     analytics.collectMetrics();
-  } else {
+  } else if (typeof window.addEventListener === 'function') {
     window.addEventListener('load', () => {
       setTimeout(() => analytics.collectMetrics(), 100);
     });
@@ -236,7 +236,7 @@ export function initAnalytics(): void {
   }, 30000); // Every 30 seconds
 
   // Log analytics in development
-  if (process.env.NODE_ENV === 'development') {
+  if (process.env.NODE_ENV === 'development' && typeof window.addEventListener === 'function') {
     window.addEventListener('load', () => {
       setTimeout(() => {
         console.log('[Analytics]', analytics.exportData());

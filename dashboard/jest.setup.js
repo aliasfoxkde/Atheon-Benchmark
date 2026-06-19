@@ -32,12 +32,44 @@ Object.defineProperty(window, 'navigator', {
 });
 
 // Mock Performance API
+const mockNavigationTiming = {
+  fetchStart: 100,
+  domInteractive: 800,
+  domContentLoadedEventEnd: 1200,
+  loadEventEnd: 2000,
+  domComplete: 1800,
+  responseStart: 300,
+  requestStart: 200,
+  connectEnd: 150,
+  startTime: 0,
+  duration: 2000,
+  name: 'navigation',
+  entryType: 'navigation',
+};
+
+const mockPaintTiming = [
+  { name: 'first-contentful-paint', startTime: 800, entryType: 'paint' }
+];
+
+const mockLCP = [
+  { startTime: 1200, size: 5000, entryType: 'largest-contentful-paint', name: 'largest-contentful-paint' }
+];
+
+const performanceMock = {
+  getEntriesByType: jest.fn((type) => {
+    console.log(`[Performance Mock] getEntriesByType called with: ${type}`);
+    if (type === 'navigation') return [mockNavigationTiming];
+    if (type === 'paint') return mockPaintTiming;
+    if (type === 'largest-contentful-paint') return mockLCP;
+    return [];
+  }),
+  now: jest.fn(() => Date.now()),
+  timing: mockNavigationTiming,
+};
+
 Object.defineProperty(window, 'performance', {
   writable: true,
-  value: {
-    getEntriesByType: jest.fn(() => []),
-    now: jest.fn(() => Date.now()),
-  },
+  value: performanceMock,
 });
 
 // Mock IntersectionObserver
