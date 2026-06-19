@@ -43,12 +43,11 @@ describe('GitHubResultsFetcher', () => {
   });
 
   describe('fetchAllResults', () => {
-    it('should return empty array on GitHub API error', async () => {
+    it('should throw error on GitHub API error', async () => {
       // Mock fetch to simulate error
       global.fetch = jest.fn(() => Promise.reject(new Error('Network error')));
 
-      const results = await fetcher.fetchAllResults();
-      expect(results).toEqual([]);
+      await expect(fetcher.fetchAllResults()).rejects.toThrow('Network error');
     });
 
     it('should handle empty repository', async () => {
