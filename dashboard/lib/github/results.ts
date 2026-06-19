@@ -223,6 +223,11 @@ export interface ResultsFilter {
 }
 
 export function filterResults(results: BenchmarkReport[], filter: ResultsFilter): BenchmarkReport[] {
+  // Handle null/undefined inputs gracefully
+  if (!results || !Array.isArray(results)) {
+    return [];
+  }
+
   return results.filter(result => {
     if (filter.hostname && !result.system_info.hostname.includes(filter.hostname)) {
       return false;

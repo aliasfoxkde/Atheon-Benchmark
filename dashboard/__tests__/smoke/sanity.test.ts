@@ -4,6 +4,7 @@
  */
 
 import { describe, it, expect, beforeAll, beforeEach, jest } from '@jest/globals';
+import * as GithubResults from '../../lib/github/results';
 
 // Mock environment variables
 process.env.NODE_ENV = 'test';
@@ -27,24 +28,24 @@ describe('Sanity Tests - Basic Functionality', () => {
   });
 
   describe('Module Loading', () => {
-    it('should load main dashboard modules', async () => {
+    it('should load main dashboard modules', () => {
       // Test that main modules can be loaded
-      const { createGitHubResultsFetcher } = await import('../lib/github/results');
+      const { createGitHubResultsFetcher } = GithubResults;
       expect(typeof createGitHubResultsFetcher).toBe('function');
     });
 
     it('should load cached fetcher module', async () => {
-      const { createCachedGitHubResultsFetcher } = await import('../lib/github/cache');
+      const { createCachedGitHubResultsFetcher } = await import('../../lib/github/cache');
       expect(typeof createCachedGitHubResultsFetcher).toBe('function');
     });
 
     it('should load monitoring modules', async () => {
-      const { getAnalytics } = await import('../lib/monitoring/analytics');
+      const { getAnalytics } = await import('../../lib/monitoring/analytics');
       expect(typeof getAnalytics).toBe('function');
     });
 
-    it('should load utility functions', async () => {
-      const { filterResults, compareSystems } = await import('../lib/github/results');
+    it('should load utility functions', () => {
+      const { filterResults, compareSystems } = GithubResults;
       expect(typeof filterResults).toBe('function');
       expect(typeof compareSystems).toBe('function');
     });
@@ -186,24 +187,18 @@ describe('Sanity Tests - Basic Functionality', () => {
   });
 
   describe('Error Handling Sanity', () => {
-    it('should handle empty data gracefully', async () => {
-      const { filterResults } = await import('../lib/github/results');
-
-      const filtered = filterResults([], {});
+    it('should handle empty data gracefully', () => {
+      const filtered = GithubResults.filterResults([], {});
       expect(filtered).toEqual([]);
     });
 
-    it('should handle null inputs gracefully', async () => {
-      const { filterResults } = await import('../lib/github/results');
-
+    it('should handle null inputs gracefully', () => {
       expect(() => {
-        filterResults(null as any, {});
+        GithubResults.filterResults(null as any, {});
       }).not.toThrow();
     });
 
-    it('should handle invalid filter criteria', async () => {
-      const { filterResults } = await import('../lib/github/results');
-
+    it('should handle invalid filter criteria', () => {
       const mockData = [{
         system_id: 'test',
         system_info: {
@@ -226,7 +221,7 @@ describe('Sanity Tests - Basic Functionality', () => {
         submitted_at: '2026-06-19T12:00:00Z'
       }];
 
-      const filtered = filterResults(mockData, {
+      const filtered = GithubResults.filterResults(mockData, {
         hostname: 'non-existent'
       });
 
@@ -235,13 +230,13 @@ describe('Sanity Tests - Basic Functionality', () => {
   });
 
   describe('Configuration Validation', () => {
-    it('should have valid default GitHub configuration', async () => {
-      const { DEFAULT_GITHUB_CONFIG } = await import('../lib/github/results');
+    it('should have valid default GitHub configuration', () => {
+      const { DEFAULT_GITHUB_CONFIG } = GithubResults;
 
       expect(DEFAULT_GITHUB_CONFIG).toHaveProperty('owner');
       expect(DEFAULT_GITHUB_CONFIG).toHaveProperty('repo');
       expect(DEFAULT_GITHUB_CONFIG.owner).toBe('aliasfoxkde');
-      expect(DEFAULT_GITHUB_CONFIG.repo).toBe('atheon-benchmark-results');
+      expect(DEFAULT_GITHUB_CONFIG.repo).toBe('Atheon-Benchmark-Results');
     });
 
     it('should have valid cache configuration', () => {
@@ -255,10 +250,8 @@ describe('Sanity Tests - Basic Functionality', () => {
   });
 
   describe('Data Validation Tests', () => {
-    it('should validate benchmark report structure', async () => {
-      const { getResultsStatistics } = await import('../lib/github/results');
-
-      const emptyStats = getResultsStatistics([]);
+    it('should validate benchmark report structure', () => {
+      const emptyStats = GithubResults.getResultsStatistics([]);
 
       expect(emptyStats.total_systems).toBe(0);
       expect(emptyStats.total_benchmarks).toBe(0);
@@ -266,9 +259,7 @@ describe('Sanity Tests - Basic Functionality', () => {
       expect(emptyStats.success_rate).toBe(0);
     });
 
-    it('should validate statistics calculation', async () => {
-      const { getResultsStatistics } = await import('../lib/github/results');
-
+    it('should validate statistics calculation', () => {
       const mockResults = [{
         system_id: 'test-system',
         system_info: {
@@ -291,7 +282,7 @@ describe('Sanity Tests - Basic Functionality', () => {
         submitted_at: '2026-06-19T12:00:00Z'
       }];
 
-      const stats = getResultsStatistics(mockResults);
+      const stats = GithubResults.getResultsStatistics(mockResults);
 
       expect(stats.total_systems).toBe(1);
       expect(stats.total_benchmarks).toBe(100);
@@ -300,28 +291,29 @@ describe('Sanity Tests - Basic Functionality', () => {
   });
 
   describe('Type System Validation', () => {
-    it('should export correct types', async () => {
-      const types = await import('../lib/github/results');
-
-      expect(types).toHaveProperty('BenchmarkReport');
-      expect(types).toHaveProperty('SystemInfo');
-      expect(types).toHaveProperty('BenchmarkResult');
-      expect(types).toHaveProperty('ResultsFilter');
+    it('should export correct types', () => {
+      // Check for actual runtime exports (not TypeScript interfaces)
+      expect(GithubResults).toHaveProperty('GitHubResultsFetcher');
+      expect(GithubResults).toHaveProperty('createGitHubResultsFetcher');
+      expect(GithubResults).toHaveProperty('filterResults');
+      expect(GithubResults).toHaveProperty('compareSystems');
+      expect(GithubResults).toHaveProperty('getResultsStatistics');
+      expect(GithubResults).toHaveProperty('DEFAULT_GITHUB_CONFIG');
     });
 
-    it('should have consistent type interfaces', async () => {
+    it('should have consistent type interfaces', () => {
       const {
-        BenchmarkReport,
-        SystemInfo,
-        BenchmarkResult,
-        BenchmarkSummary
-      } = await import('../lib/github/results');
+        GitHubResultsFetcher,
+        createGitHubResultsFetcher,
+        filterResults,
+        compareSystems
+      } = GithubResults;
 
-      // These should be available as types/interfaces
-      expect(BenchmarkReport).toBeDefined();
-      expect(SystemInfo).toBeDefined();
-      expect(BenchmarkResult).toBeDefined();
-      expect(BenchmarkSummary).toBeDefined();
+      // These should be available as runtime exports
+      expect(GitHubResultsFetcher).toBeDefined();
+      expect(createGitHubResultsFetcher).toBeDefined();
+      expect(filterResults).toBeDefined();
+      expect(compareSystems).toBeDefined();
     });
   });
 
