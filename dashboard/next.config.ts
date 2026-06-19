@@ -9,8 +9,8 @@ const nextConfig: NextConfig = {
     optimizeCss: true,
   },
 
-  // Use standalone mode for deployment
-  output: 'standalone',
+  // Use static export for Cloudflare Pages
+  output: 'export',
 
   // Configure image optimization for Cloudflare
   images: {

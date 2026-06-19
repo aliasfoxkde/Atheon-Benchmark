@@ -1,255 +1,603 @@
 /**
  * Results Page
- * Display and analyze benchmark results
+ * Display and analyze benchmark results from GitHub with enhanced UI/UX
  */
 
+'use client';
+
+import { useEffect, useState } from 'react';
+import {
+  createGitHubResultsFetcher,
+  DEFAULT_GITHUB_CONFIG,
+  filterResults,
+  compareSystems,
+  getResultsStatistics,
+  type BenchmarkReport,
+  type ResultsFilter,
+} from '@/lib/github/results';
+import { Search, TrendingUp, Clock, Server, Cpu, HardDrive, Filter, Download, RefreshCw, Calendar, BarChart3, LineChart, Activity } from 'lucide-react';
+import { SpiderChart } from '@/components/charts/spider-chart';
+import { PerformanceBarChart } from '@/components/charts/performance-bar-chart';
+import { TrendLineChart } from '@/components/charts/trend-line-chart';
+
 export default function ResultsPage() {
+  const [results, setResults] = useState<BenchmarkReport[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<ResultsFilter>({});
+  const [showFilters, setShowFilters] = useState(false);
+  const [selectedSystems, setSelectedSystems] = useState<Set<string>>(new Set());
+  const [focusedIndex, setFocusedIndex] = useState(-1);
+
+  useEffect(() => {
+    loadResults();
+  }, []);
+
+  const filteredResults = filter ? filterResults(results, filter) : results;
+  const statistics = getResultsStatistics(filteredResults);
+  const systemComparisons = compareSystems(filteredResults);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (focusedIndex === -1) return;
+
+      const systems = filteredResults;
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        setFocusedIndex((prev) => Math.min(prev + 1, systems.length - 1));
+      } else if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        setFocusedIndex((prev) => Math.max(prev - 1, 0));
+      } else if (event.key === 'Enter' && focusedIndex >= 0 && focusedIndex < systems.length) {
+        event.preventDefault();
+        const system = systems[focusedIndex];
+        toggleSystemSelection(system.system_id);
+      } else if (event.key === 'Escape') {
+        event.preventDefault();
+        setFocusedIndex(-1);
+        clearSelection();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [focusedIndex, filteredResults]);
+
+  const loadResults = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const fetcher = createGitHubResultsFetcher(DEFAULT_GITHUB_CONFIG);
+      const data = await fetcher.fetchAllResults();
+
+      setResults(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load results');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleSystemSelection = (systemId: string) => {
+    const newSelection = new Set(selectedSystems);
+    if (newSelection.has(systemId)) {
+      newSelection.delete(systemId);
+    } else {
+      newSelection.add(systemId);
+    }
+    setSelectedSystems(newSelection);
+  };
+
+  const clearSelection = () => {
+    setSelectedSystems(new Set());
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <div className="relative">
+          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          <div className="absolute inset-0 w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full animate-spin delay-75"></div>
+        </div>
+        <p className="mt-6 text-lg text-zinc-600 dark:text-zinc-400 font-medium">Loading benchmark results...</p>
+        <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-500">Fetching from GitHub repository</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 px-4">
+        <div className="max-w-md text-center">
+          <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-6 mx-auto">
+            <svg className="w-8 h-8 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 3.162-3.21l.816-3.636M8 12h.01M15 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-4">Error loading results</h2>
+          <p className="text-zinc-600 dark:text-zinc-400 mb-6">{error}</p>
+          <div className="flex gap-4 justify-center">
+            <button
+              onClick={loadResults}
+              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors shadow-lg"
+            >
+              Try Again
+            </button>
+            <a
+              href="https://github.com/aliasfoxkde/Atheon-Benchmark-Results"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-6 py-3 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-900 text-zinc-700 dark:text-zinc-300 font-semibold rounded-xl transition-colors"
+            >
+              View GitHub Repository
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col min-h-screen bg-white dark:bg-black">
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-black dark:text-zinc-50 mb-2">
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
+      {/* Header */}
+      <div className="mb-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
               Benchmark Results
             </h1>
             <p className="text-lg text-zinc-600 dark:text-zinc-400">
-              View and analyze comprehensive benchmark results
+              Community benchmark results from <span className="font-semibold text-zinc-900 dark:text-zinc-50">{statistics.total_systems}</span> systems
             </p>
           </div>
+          <div className="flex gap-3">
+            <button
+              onClick={loadResults}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors flex items-center gap-2 shadow-lg"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Refresh
+            </button>
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="px-4 py-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 font-medium rounded-lg transition-colors flex items-center gap-2"
+            >
+              <Filter className="w-4 h-4" />
+              Filters
+            </button>
+          </div>
+        </div>
+      </div>
 
-          {/* Filters and Search */}
-          <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-6 mb-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                  Search
-                </label>
-                <input
-                  type="text"
-                  placeholder="Search benchmarks..."
-                  className="w-full px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-black dark:text-zinc-50"
-                />
-              </div>
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8" role="region" aria-label="Benchmark statistics">
+        <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-2xl border border-blue-200 dark:border-blue-800 p-6 shadow-lg">
+          <div className="flex items-center gap-3 mb-2">
+            <Server className="w-6 h-6 text-blue-600 dark:text-blue-400" aria-hidden="true" />
+            <p className="text-sm text-zinc-600 dark:text-zinc-400 font-medium">Total Systems</p>
+          </div>
+          <p className="text-3xl font-bold text-zinc-900 dark:text-zinc-50" aria-live="polite">{statistics.total_systems}</p>
+        </div>
 
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                  Status
-                </label>
-                <select className="w-full px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-black dark:text-zinc-50">
-                  <option value="all">All Status</option>
-                  <option value="completed">Completed</option>
-                  <option value="running">Running</option>
-                  <option value="failed">Failed</option>
-                </select>
-              </div>
+        <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-2xl border border-green-200 dark:border-green-800 p-6 shadow-lg">
+          <div className="flex items-center gap-3 mb-2">
+            <TrendingUp className="w-6 h-6 text-green-600 dark:text-green-400" />
+            <p className="text-sm text-zinc-600 dark:text-zinc-400 font-medium">Success Rate</p>
+          </div>
+          <p className="text-3xl font-bold text-green-600 dark:text-green-400">
+            {statistics.success_rate.toFixed(1)}%
+          </p>
+        </div>
 
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                  Configuration
-                </label>
-                <select className="w-full px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-black dark:text-zinc-50">
-                  <option value="all">All Configurations</option>
-                  <option value="vanilla">Vanilla</option>
-                  <option value="mcp">MCP</option>
-                  <option value="atheon">Atheon</option>
-                </select>
-              </div>
+        <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-2xl border border-purple-200 dark:border-purple-800 p-6 shadow-lg">
+          <div className="flex items-center gap-3 mb-2">
+            <Clock className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+            <p className="text-sm text-zinc-600 dark:text-zinc-400 font-medium">Avg Duration</p>
+          </div>
+          <p className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">
+            {Math.round(statistics.avg_duration_ms)}ms
+          </p>
+        </div>
 
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                  Date Range
-                </label>
-                <select className="w-full px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-black dark:text-zinc-50">
-                  <option value="7d">Last 7 days</option>
-                  <option value="30d">Last 30 days</option>
-                  <option value="90d">Last 90 days</option>
-                  <option value="all">All time</option>
-                </select>
-              </div>
+        <div className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 rounded-2xl border border-orange-200 dark:border-orange-800 p-6 shadow-lg">
+          <div className="flex items-center gap-3 mb-2">
+            <Cpu className="w-6 h-6 text-orange-600 dark:text-orange-400" />
+            <p className="text-sm text-zinc-600 dark:text-zinc-400 font-medium">Total Benchmarks</p>
+          </div>
+          <p className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">{statistics.total_benchmarks}</p>
+        </div>
+      </div>
+
+      {/* Interactive Charts Section */}
+      {filteredResults.length > 0 && (
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+              <BarChart3 className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Performance Analytics</h2>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">Interactive visualizations of benchmark data</p>
             </div>
           </div>
 
-          {/* Results Table */}
-          <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-zinc-50 dark:bg-zinc-800">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                      Benchmark ID
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                      Name
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                      Configuration
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                      Duration
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                      Success Rate
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                      Created
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white dark:bg-zinc-900 divide-y divide-zinc-200 dark:divide-zinc-800">
-                  {/* Sample data rows */}
-                  <tr className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-black dark:text-zinc-50">
-                      benchmark-001
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-700 dark:text-zinc-300">
-                      Comprehensive Comparison Test
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-700 dark:text-zinc-300">
-                      <span className="px-2 py-1 text-xs rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
-                        Atheon
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <span className="px-2 py-1 text-xs rounded-full bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300">
-                        Completed
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-700 dark:text-zinc-300">
-                      3m 24s
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-700 dark:text-zinc-300">
-                      95.2%
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">
-                      2 hours ago
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <button className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 mr-3">
-                        View
-                      </button>
-                      <button className="text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-300">
-                        Export
-                      </button>
-                    </td>
-                  </tr>
+          {/* Spider Charts for System Comparison */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <SpiderChart
+              title="System Performance Comparison"
+              systems={
+                systemComparisons
+                  .slice(0, 5)
+                  .map((system, index) => ({
+                    name: system.system_info.hostname,
+                    data: [
+                      system.success_rate || 0,
+                      100 - (system.avg_duration_ms / 1000) * 10, // Normalize duration
+                      (system.total_tests / 10) * 10, // Normalize test count
+                      system.system_info.cpu.includes('M') ? 90 : 70, // CPU power indicator
+                      parseFloat(system.system_info.ram) || 8, // RAM indicator
+                    ],
+                    color: [`#3b82f6`, '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][index],
+                  }))
+              }
+              labels={['Success Rate', 'Speed Score', 'Test Coverage', 'CPU Power', 'RAM Capacity']}
+            />
 
-                  <tr className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-black dark:text-zinc-50">
-                      benchmark-002
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-700 dark:text-zinc-300">
-                      Vanilla Baseline Test
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-700 dark:text-zinc-300">
-                      <span className="px-2 py-1 text-xs rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300">
-                        Vanilla
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300">
-                        Running
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-700 dark:text-zinc-300">
-                      1m 45s
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-700 dark:text-zinc-300">
-                      --%
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">
-                      45 min ago
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <button className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 mr-3">
-                        View
-                      </button>
-                      <button className="text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-300">
-                        Cancel
-                      </button>
-                    </td>
-                  </tr>
-
-                  <tr className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-black dark:text-zinc-50">
-                      benchmark-003
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-700 dark:text-zinc-300">
-                      Security Scan Benchmark
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-700 dark:text-zinc-300">
-                      <span className="px-2 py-1 text-xs rounded-full bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300">
-                        MCP
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <span className="px-2 py-1 text-xs rounded-full bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300">
-                        Failed
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-700 dark:text-zinc-300">
-                      5m 12s
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-700 dark:text-zinc-300">
-                      78.5%
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">
-                      1 day ago
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <button className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 mr-3">
-                        View
-                      </button>
-                      <button className="text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-300">
-                        Retry
-                      </button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination */}
-            <div className="bg-zinc-50 dark:bg-zinc-800 px-6 py-4 border-t border-zinc-200 dark:border-zinc-700">
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-zinc-700 dark:text-zinc-300">
-                  Showing <span className="font-medium">1</span> to <span className="font-medium">3</span> of <span className="font-medium">25</span> results
-                </div>
-                <div className="flex gap-2">
-                  <button className="px-4 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700">
-                    Previous
-                  </button>
-                  <button className="px-4 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700">
-                    Next
-                  </button>
-                </div>
-              </div>
-            </div>
+            <PerformanceBarChart
+              title="Top Performing Systems"
+              systems={
+                systemComparisons
+                  .sort((a, b) => b.success_rate - a.success_rate)
+                  .slice(0, 8)
+                  .map((system, index) => ({
+                    name: system.system_info.hostname,
+                    performance: system.success_rate,
+                    color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'][index],
+                  }))
+              }
+            />
           </div>
 
-          {/* Summary Statistics */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
-            <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-6">
-              <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-1">Total Benchmarks</p>
-              <p className="text-3xl font-bold text-black dark:text-zinc-50">25</p>
+          {/* Trend Charts */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <TrendLineChart
+              title="Success Rate Trends"
+              data={[
+                {
+                  label: 'Top Systems',
+                  values: systemComparisons.slice(0, 5).map((s) => s.success_rate),
+                  color: '#3b82f6',
+                },
+                {
+                  label: 'Average',
+                  values: [statistics.success_rate, statistics.success_rate, statistics.success_rate, statistics.success_rate, statistics.success_rate],
+                  color: '#f59e0b',
+                },
+              ]}
+              labels={systemComparisons.slice(0, 5).map((s) => s.system_info.hostname)}
+            />
+
+            <TrendLineChart
+              title="Performance Duration Trends"
+              data={[
+                {
+                  label: 'Duration (ms)',
+                  values: systemComparisons.slice(0, 5).map((s) => s.avg_duration_ms),
+                  color: '#10b981',
+                },
+              ]}
+              labels={systemComparisons.slice(0, 5).map((s) => s.system_info.hostname)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Filters Panel */}
+      {showFilters && (
+        <div className="mb-8 p-6 bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-lg">
+          <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 mb-4 flex items-center gap-2">
+            <Filter className="w-5 h-5" />
+            Filter Results
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                Search System
+              </label>
+              <input
+                type="text"
+                placeholder="Search by hostname..."
+                value={filter.hostname || ''}
+                onChange={(e) => setFilter({ ...filter, hostname: e.target.value })}
+                className="w-full px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
             </div>
-            <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-6">
-              <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-1">Success Rate</p>
-              <p className="text-3xl font-bold text-green-600 dark:text-green-400">92.4%</p>
+
+            <div>
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                Operating System
+              </label>
+              <select
+                value={filter.os || 'all'}
+                onChange={(e) => setFilter({ ...filter, os: e.target.value === 'all' ? undefined : e.target.value })}
+                className="w-full px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="all">All Systems</option>
+                <option value="linux">Linux</option>
+                <option value="windows">Windows</option>
+                <option value="darwin">macOS</option>
+              </select>
             </div>
-            <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-6">
-              <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-1">Avg Duration</p>
-              <p className="text-3xl font-bold text-black dark:text-zinc-50">4m 32s</p>
+
+            <div>
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                Architecture
+              </label>
+              <select
+                value={filter.arch || 'all'}
+                onChange={(e) => setFilter({ ...filter, arch: e.target.value === 'all' ? undefined : e.target.value })}
+                className="w-full px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="all">All Architectures</option>
+                <option value="amd64">amd64</option>
+                <option value="arm64">arm64</option>
+              </select>
             </div>
-            <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-6">
-              <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-1">Total Cost</p>
-              <p className="text-3xl font-bold text-black dark:text-zinc-50">$2.45</p>
+
+            <div>
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                Date Range
+              </label>
+              <select
+                onChange={(e) => {
+                  const days = parseInt(e.target.value);
+                  if (days === 0) {
+                    setFilter({ ...filter, dateFrom: undefined, dateTo: undefined });
+                  } else {
+                    const date = new Date();
+                    date.setDate(date.getDate() - days);
+                    setFilter({ ...filter, dateFrom: date.toISOString(), dateTo: undefined });
+                  }
+                }}
+                className="w-full px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="0">All time</option>
+                <option value="7">Last 7 days</option>
+                <option value="30">Last 30 days</option>
+                <option value="90">Last 90 days</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Selection Actions */}
+      {selectedSystems.size > 0 && (
+        <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
+              {selectedSystems.size} system{selectedSystems.size !== 1 ? 's' : ''} selected
+            </span>
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={clearSelection}
+              className="px-3 py-1 text-sm bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg transition-colors border border-zinc-300 dark:border-zinc-700"
+            >
+              Clear Selection
+            </button>
+            <button
+              onClick={() => {
+                // Export functionality can be added here
+                alert('Export functionality coming soon!')
+              }}
+              className="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-1"
+            >
+              <Download className="w-3 h-3" />
+              Export Selected
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Results Table */}
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-xl">
+        <div className="overflow-x-auto">
+          <table className="w-full" role="table" aria-label="Benchmark results table">
+            <thead className="bg-gradient-to-r from-zinc-50 to-zinc-100 dark:from-zinc-800 dark:to-zinc-900">
+              <tr>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider" scope="col">
+                  <div className="flex items-center gap-2">
+                    <Server className="w-4 h-4" aria-hidden="true" />
+                    System
+                  </div>
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider" scope="col">
+                  <div className="flex items-center gap-2">
+                    <Cpu className="w-4 h-4" aria-hidden="true" />
+                    Hardware
+                  </div>
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider" scope="col">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4" aria-hidden="true" />
+                    Avg Duration
+                  </div>
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider" scope="col">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4" aria-hidden="true" />
+                    Success Rate
+                  </div>
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider" scope="col">
+                  <div className="flex items-center gap-2">
+                    <Server className="w-4 h-4" aria-hidden="true" />
+                    Total Tests
+                  </div>
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider" scope="col">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4" aria-hidden="true" />
+                    Submitted
+                  </div>
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider" scope="col">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+              {filteredResults.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="px-6 py-16 text-center">
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center">
+                        <Server className="w-8 h-8 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 mb-2">
+                          No benchmark results found
+                        </h3>
+                        <p className="text-zinc-600 dark:text-zinc-400 mb-4">
+                          Be the first to submit benchmark results! Download the runner and contribute to the community.
+                        </p>
+                        <div className="flex gap-4 justify-center">
+                          <a
+                            href="https://github.com/aliasfoxkde/Atheon-Benchmark/tree/main/runner"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors shadow-lg"
+                          >
+                            Download Runner
+                          </a>
+                          <a
+                            href="https://github.com/aliasfoxkde/Atheon-Benchmark-Results"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-4 py-2 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-900 text-zinc-700 dark:text-zinc-300 font-medium rounded-xl transition-colors"
+                          >
+                            View Repository
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                systemComparisons.map((system, index) => (
+                  <tr
+                    key={system.system_id}
+                    className={`hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors ${
+                      selectedSystems.has(system.system_id) ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                    } ${focusedIndex === index ? 'ring-2 ring-blue-500 ring-inset' : ''}`}
+                    tabIndex={0}
+                    onFocus={() => setFocusedIndex(index)}
+                    onClick={() => toggleSystemSelection(system.system_id)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        toggleSystemSelection(system.system_id);
+                      }
+                    }}
+                    aria-selected={selectedSystems.has(system.system_id)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <td className="px-6 py-4" scope="row">
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedSystems.has(system.system_id)}
+                          onChange={() => toggleSystemSelection(system.system_id)}
+                          className="w-4 h-4 text-blue-600 dark:text-blue-400 rounded border-zinc-300 dark:border-zinc-600 focus:ring-2 focus:ring-blue-500"
+                          aria-label={`Select ${system.system_info.hostname}`}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        <div>
+                          <div className="font-medium text-zinc-900 dark:text-zinc-50">
+                            {system.system_info.hostname}
+                          </div>
+                          <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                            {system.system_info.os}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm">
+                        <div className="text-zinc-700 dark:text-zinc-300 font-medium">
+                          {system.system_info.cpu}
+                        </div>
+                        <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                          {system.system_info.ram}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-zinc-700 dark:text-zinc-300 font-medium">
+                      {Math.round(system.avg_duration_ms)}ms
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className={`w-full h-2 rounded-full ${
+                            system.success_rate >= 90
+                              ? 'bg-green-500'
+                              : system.success_rate >= 70
+                              ? 'bg-yellow-500'
+                              : 'bg-red-500'
+                          }`}
+                        >
+                          <div
+                            className="h-full rounded-full transition-all duration-300"
+                            style={{ width: `${system.success_rate}%` }}
+                          />
+                        </div>
+                        <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                          {system.success_rate.toFixed(1)}%
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-zinc-700 dark:text-zinc-300 font-medium">
+                      {system.total_tests}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-zinc-500 dark:text-zinc-400">
+                      {new Date(system.submitted_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => window.open(`https://github.com/aliasfoxkde/Atheon-Benchmark-Results/blob/main/results/2026/06/19/${system.system_id}.json`, '_blank')}
+                          className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                          title="View on GitHub"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path d="M9 19c-5 1-7-7-7s2 7 7 7 7-7 7-7-7-2 7-7 7-7zm0-2v6M3 13h6" />
+                          </svg>
+                        </button>
+                        <button
+                          className="p-2 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-lg transition-colors"
+                          title="Download results"
+                        >
+                          <Download className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination Info */}
+        <div className="bg-zinc-50 dark:bg-zinc-800 px-6 py-4 border-t border-zinc-200 dark:border-zinc-700">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-zinc-700 dark:text-zinc-300">
+              Showing <span className="font-semibold">{filteredResults.length}</span> systems
+            </div>
+            <div className="text-xs text-zinc-500 dark:text-zinc-400">
+              Data from GitHub repository
             </div>
           </div>
         </div>

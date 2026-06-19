@@ -1,10 +1,17 @@
-# Atheon Benchmark Dashboard
+# Atheon Benchmark
 
-Comprehensive AI benchmark system for comparing Claude performance with and without Atheon MCP integration.
+Community-driven AI benchmark platform for comparing Claude performance with and without Atheon MCP integration across different hardware configurations.
 
 ## 🚀 Overview
 
-Atheon Benchmark Dashboard is a production-ready system for running deterministic, reproducible benchmarks that test Claude AI performance across different configurations:
+Atheon Benchmark is a comprehensive benchmarking system that allows you to:
+
+- **Run benchmarks locally** on your system using our CLI tool
+- **Upload results to GitHub** for community sharing
+- **Compare performance** across different hardware configurations
+- **View analytics** through our web dashboard
+
+The system tests Claude AI performance across different configurations:
 
 - **Vanilla Claude**: Direct API calls (baseline)
 - **MCP Integration**: Claude with generic MCP tool support
@@ -12,14 +19,20 @@ Atheon Benchmark Dashboard is a production-ready system for running deterministi
 
 ## ✨ Features
 
-- **🔄 Deterministic Benchmarks**: Reproducible test cases with seeded random generation
-- **📊 Statistical Analysis**: Comprehensive metrics with percentile measurements and confidence intervals
-- **🛡️ Quality Gates**: Atheon integration for security scanning and validation
-- **🎯 Real-time Progress**: Server-Sent Events streaming for live updates
-- **📈 Modern Dashboard**: Beautiful web interface with Chart.js visualizations
-- **☁️ Cloudflare Deployment**: Edge computing with D1 database, R2 storage, and KV cache
-- **🔧 PWA Support**: Installable web app with offline capabilities
-- **🌐 Open Source**: Community-driven with comprehensive documentation
+### Local Benchmark Runner
+- **🖥️ Multi-Platform**: Runs on Windows, Linux, and macOS
+- **🔍 System Detection**: Automatic CPU, RAM, and OS detection
+- **📊 Multiple Scenarios**: Tests vanilla Claude, Atheon MCP, and pattern matching
+- **📤 GitHub Integration**: Seamless result upload to GitHub
+- **💾 JSON Format**: Structured output for analysis
+
+### Web Dashboard
+- **🌐 Real-time Updates**: Fetches results from GitHub repository
+- **🔍 System Comparison**: Side-by-side performance comparison
+- **🎯 Advanced Filtering**: Filter by hardware, OS, date range
+- **📈 Statistics**: Comprehensive performance analytics
+- **📱 PWA Support**: Offline viewing capabilities
+- **🌍 Community Data**: View and compare results from other users
 
 ## 🏗️ Architecture
 
@@ -65,109 +78,151 @@ Atheon Benchmark Dashboard is a production-ready system for running deterministi
 
 ### Prerequisites
 
-- Node.js 18+
-- npm or yarn
-- Cloudflare account (for deployment)
-- Anthropic API key
+- **For Local Runner**: Go 1.21+ (or download pre-built binary)
+- **For Web Dashboard**: Node.js 18+ and npm
+- **GitHub Account**: For storing and viewing benchmark results
+- **Claude API Key** (optional): For AI benchmarking features
 
-### Installation
+### Quick Start
 
-1. **Clone the repository:**
+#### 1. Run Local Benchmarks
+
 ```bash
-git clone https://github.com/your-username/Atheon-Benchmark.git
-cd Atheon-Benchmark
+# Download the runner
+wget https://github.com/your-org/Atheon-Benchmark/releases/latest/download/attheon-benchmark-linux-amd64
+chmod +x attheon-benchmark-linux-amd64
+
+# Set up GitHub credentials
+export GITHUB_TOKEN="your_github_token"
+export GITHUB_REPO="your-org/attheon-benchmark-results"
+
+# Run benchmarks
+./attheon-benchmark-linux-amd64 run
 ```
 
-2. **Install dependencies:**
+#### 2. View Results Online
+
+Visit the web dashboard: https://atheon-benchmark.com/results
+
+Or run locally:
 ```bash
-cd dashboard
+# Clone and setup dashboard
+git clone https://github.com/your-org/Atheon-Benchmark.git
+cd Atheon-Benchmark/dashboard
 npm install
-```
-
-3. **Set up environment variables:**
-```bash
-cp .env.example .env
-# Edit .env with your API keys
-```
-
-4. **Run the development server:**
-```bash
 npm run dev
+# Visit http://localhost:3000/results
 ```
 
-5. **Open your browser:**
-Navigate to `http://localhost:3000`
+## 📦 Installation
+
+### Local Benchmark Runner
+
+#### From Binary
+
+```bash
+# Download for your platform
+wget https://github.com/your-org/Atheon-Benchmark/releases/latest/download/attheon-benchmark-linux-amd64
+
+# Make executable
+chmod +x attheon-benchmark-linux-amd64
+
+# Run system info
+./attheon-benchmark-linux-amd64 system-info
+```
+
+#### From Source
+
+```bash
+# Clone repository
+git clone https://github.com/your-org/Atheon-Benchmark.git
+cd Atheon-Benchmark/runner
+
+# Build
+go build -o attheon-benchmark main.go
+
+# Run
+./attheon-benchmark system-info
+```
+
+### Web Dashboard
+
+```bash
+# Clone repository
+git clone https://github.com/your-org/Atheon-Benchmark.git
+cd Atheon-Benchmark/dashboard
+
+# Install dependencies
+npm install
+
+# Run locally
+npm run dev
+
+# Build for production
+npm run build
+```
 
 ## 📖 Usage
 
-### Running Benchmarks
+### 1. Set Up GitHub Repository
 
-1. **Configure your benchmark:**
-   - Select benchmark scenario (vanilla, MCP, or Atheon)
-   - Choose test categories and difficulty levels
-   - Configure quality gates and validation rules
+Create a GitHub repository to store benchmark results:
 
-2. **Start the benchmark:**
-   - Click "Start Benchmark" button
-   - Monitor real-time progress
-   - View results as they complete
+```bash
+# Using GitHub CLI
+gh repo create attheon-benchmark-results --public --description "Atheon Benchmark Results Storage"
 
-3. **Analyze results:**
-   - Compare performance across configurations
-   - View statistical analysis and trends
-   - Export data for further analysis
-
-### API Usage
-
-```typescript
-import { executeBenchmark, BENCHMARK_SCENARIOS } from './lib';
-
-// Run a predefined benchmark scenario
-const execution = await executeBenchmark('atheon-integrated', {
-  onProgress: (progress) => {
-    console.log(`Progress: ${progress.type}`, progress.data);
-  }
-});
-
-console.log('Results:', execution.results);
-console.log('Statistics:', execution.statistics);
+# Or create manually at https://github.com/new
 ```
 
-### Configuration Examples
+### 2. Configure GitHub Token
 
-```typescript
-import { createBenchmarkConfig, createAtheonClaudeClient } from './lib';
+Generate a GitHub personal access token:
+1. Go to GitHub Settings → Developer settings → Personal access tokens → Tokens (classic)
+2. Generate new token with `repo` scope
+3. Copy the token
 
-// Custom benchmark configuration
-const config = createBenchmarkConfig('my-benchmark', 'My Custom Benchmark', 'Description', {
-  claude_config: {
-    model: 'claude-3-5-sonnet-20241022',
-    timeout: 60000,
-    max_retries: 3,
-  },
-  atheon_config: {
-    enabled: true,
-    categories: ['secrets', 'code-quality'],
-    severity: ['critical', 'high'],
-  },
-  quality_gates: {
-    enabled: true,
-    strict: false,
-    allowed_findings: 5,
-  },
-});
-
-// Create Atheon client
-const client = createAtheonClaudeClient({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-  model: 'claude-3-5-sonnet-20241022',
-  atheon: {
-    enabled: true,
-    categories: ['secrets', 'code-quality'],
-    severity: ['critical', 'high'],
-  },
-});
+```bash
+# Set environment variables
+export GITHUB_TOKEN="your_token_here"
+export GITHUB_REPO="your-username/attheon-benchmark-results"
 ```
+
+### 3. Run Benchmarks
+
+```bash
+# Display system information
+./attheon-benchmark system-info
+
+# Run benchmarks and upload to GitHub
+./attheon-benchmark run
+
+# Run without upload
+./attheon-benchmark run --upload=false --output my-results.json
+
+# Run with custom test cases
+./attheon-benchmark run --test-cases 20
+
+# Run with Claude API key
+./attheon-benchmark run --claude-api-key $ANTHROPIC_API_KEY
+```
+
+### 4. Upload Existing Results
+
+```bash
+# Upload previously generated results
+./attheon-benchmark upload \
+  --file my-results.json \
+  --github-token $GITHUB_TOKEN \
+  --github-repo your-org/attheon-benchmark-results
+```
+
+### 5. View Results Online
+
+Visit the web dashboard to view and compare results:
+- **Live Dashboard**: https://atheon-benchmark.com
+- **Results Page**: https://atheon-benchmark.com/results
+- **GitHub Repository**: https://github.com/your-org/attheon-benchmark-results
 
 ## 🏗️ Development
 
@@ -175,80 +230,113 @@ const client = createAtheonClaudeClient({
 
 ```
 atheon-benchmark/
-├── dashboard/                      # Next.js web dashboard
+├── runner/                         # Local benchmark runner (Go)
+│   ├── main.go                     # Main CLI application
+│   ├── go.mod                      # Go module dependencies
+│   └── README.md                   # Runner documentation
+├── dashboard/                      # Web dashboard (Next.js)
 │   ├── app/                        # App router pages
 │   ├── components/                 # React components
 │   ├── lib/                        # Core library
+│   │   ├── github/                 # GitHub results fetcher
 │   │   ├── claude/                 # Claude API integration
 │   │   ├── benchmark/              # Benchmark engine
-│   │   ├── atheon/                 # Atheon integration
-│   │   └── storage/                # Storage clients
+│   │   └── atheon/                # Atheon integration
 │   └── public/                     # Static assets
 ├── benchmarks/                     # Go-based benchmarks
-├── server/                         # Cloudflare Workers
-│   └── src/                        # Workers API
-├── schemas/                        # Database schemas
-│   ├── database.sql                # D1 schema
-│   └── api/                        # API schemas
-└── docs/                           # Documentation
+├── docs/                           # Documentation
+│   ├── ARCHITECTURE.md             # System architecture
+│   ├── API.md                      # API documentation
+│   └── DEPLOYMENT.md               # Deployment guide
+└── README.md                       # Main documentation
 ```
 
 ### Building for Production
 
 ```bash
-# Build the dashboard
-npm run build
+# Build runner
+cd runner
+go build -o attheon-benchmark main.go
 
-# Build workers
-cd server
-npm run build:workers
+# Build dashboard
+cd ../dashboard
+npm run build
 ```
 
 ### Running Tests
 
 ```bash
-# Unit tests
+# Test runner
+cd runner
+go test
+
+# Test dashboard
+cd dashboard
 npm test
-
-# Integration tests
-npm run test:integration
-
-# E2E tests
-npm run test:e2e
 ```
 
 ## 🚀 Deployment
 
-### Cloudflare Pages Deployment
+### Local Benchmark Runner
 
-1. **Connect your GitHub repository** to Cloudflare Pages
-
-2. **Configure build settings:**
-   - Build command: `npm run build`
-   - Build output directory: `dashboard/.next`
-   - Environment variables: Set `ANTHROPIC_API_KEY`
-
-3. **Deploy:**
-```bash
-npm run deploy:production
-```
-
-### Cloudflare Workers Deployment
+The runner is distributed as pre-built binaries:
 
 ```bash
-cd server
-npm run deploy:production
+# Build for different platforms
+cd runner
+GOOS=linux GOARCH=amd64 go build -o attheon-benchmark-linux-amd64 main.go
+GOOS=windows GOARCH=amd64 go build -o attheon-benchmark-windows-amd64.exe main.go
+GOOS=darwin GOARCH=amd64 go build -o attheon-benchmark-darwin-amd64 main.go
+
+# Create GitHub release with binaries
+gh release create v1.0.0 ./atheon-benchmark-*
 ```
 
-### Database Setup
+### Web Dashboard
+
+#### Cloudflare Pages (Recommended)
 
 ```bash
-# Create D1 database
-wrangler d1 create atheon-benchmark-db
+cd dashboard
 
-# Run migrations
-npm run db:migrate
+# Deploy to production
+npm run deploy
+
+# Deploy to staging
+npm run deploy:staging
+
+# Deploy without rebuilding
+npm run deploy:skip-build
 ```
+
+#### Traditional Hosting
+
+```bash
+cd dashboard
+
+# Build
+npm run build
+
+# Serve standalone server
+PORT=3001 node .next/standalone/server.js
+```
+
+### GitHub Repository Setup
+
+1. **Create Results Repository**
+   ```bash
+   gh repo create attheon-benchmark-results --public
+   ```
+
+2. **Configure Dashboard**
+   ```typescript
+   // dashboard/lib/github/results.ts
+   export const DEFAULT_GITHUB_CONFIG: GitHubResultsConfig = {
+     owner: 'your-username',
+     repo: 'atheon-benchmark-results',
+     branch: 'main',
+   };
+   ```
 
 ## 📚 Documentation
 

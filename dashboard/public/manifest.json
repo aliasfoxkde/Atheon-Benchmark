@@ -4,49 +4,20 @@
   "description": "Comprehensive AI benchmark system comparing Claude performance with and without Atheon MCP integration",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#000000",
+  "background_color": "#0a0a0a",
+  "theme_color": "#667eea",
   "orientation": "portrait-primary",
+  "scope": "/",
   "icons": [
     {
-      "src": "/icons/icon-72x72.png",
-      "sizes": "72x72",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icons/icon-96x96.png",
-      "sizes": "96x96",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icons/icon-128x128.png",
-      "sizes": "128x128",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icons/icon-144x144.png",
-      "sizes": "144x144",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icons/icon-152x152.png",
-      "sizes": "152x152",
-      "type": "image/png",
-      "purpose": "any"
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
     },
     {
       "src": "/icons/icon-192x192.png",
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icons/icon-384x384.png",
-      "sizes": "384x384",
       "type": "image/png",
       "purpose": "any"
     },
@@ -57,19 +28,116 @@
       "purpose": "any"
     }
   ],
-  "categories": ["productivity", "utilities", "developer"],
+  "categories": ["productivity", "developer", "utilities"],
   "screenshots": [
     {
-      "src": "/screenshots/desktop-main.png",
+      "src": "/screenshots/home.png",
       "sizes": "1280x720",
       "type": "image/png",
-      "form_factor": "wide"
+      "form_factor": "wide",
+      "label": "Atheon Benchmark Home"
     },
     {
-      "src": "/screenshots/mobile-main.png",
-      "sizes": "750x1334",
+      "src": "/screenshots/benchmark.png",
+      "sizes": "1280x720",
       "type": "image/png",
-      "form_factor": "narrow"
+      "form_factor": "wide",
+      "label": "Benchmark Execution"
+    },
+    {
+      "src": "/screenshots/results.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Results Dashboard"
     }
-  ]
+  ],
+  "shortcuts": [
+    {
+      "name": "Run Benchmark",
+      "short_name": "Benchmark",
+      "description": "Start a new benchmark test",
+      "url": "/benchmark",
+      "icons": [
+        {
+          "src": "/icons/icon.svg",
+          "sizes": "any",
+          "type": "image/svg+xml",
+          "purpose": "any"
+        }
+      ]
+    },
+    {
+      "name": "View Results",
+      "short_name": "Results",
+      "description": "View benchmark results",
+      "url": "/results",
+      "icons": [
+        {
+          "src": "/icons/icon.svg",
+          "sizes": "any",
+          "type": "image/svg+xml",
+          "purpose": "any"
+        }
+      ]
+    },
+    {
+      "name": "Documentation",
+      "short_name": "Docs",
+      "description": "View system documentation",
+      "url": "/docs",
+      "icons": [
+        {
+          "src": "/icons/icon.svg",
+          "sizes": "any",
+          "type": "image/svg+xml",
+          "purpose": "any"
+        }
+      ]
+    }
+  ],
+  "features": [
+    "fullscreen",
+    "standalone",
+    "minimal-ui"
+  ],
+  "prefer_related_applications": false,
+  "display_override": {
+    "standalone": {
+      "display": "standalone",
+      "orientation": "portrait"
+    },
+    "minimal-ui": {
+      "display": "minimal-ui",
+      "orientation": "portrait"
+    }
+  },
+  "protocol_handlers": [
+    {
+      "protocol": "atheon",
+      "label": "Atheon Benchmark",
+      "url": "/benchmark"
+    }
+  ],
+  "edge_side_panel": {
+    "prefer_related_applications": false
+  },
+  "launch_handler": {
+    "client_mode": ["navigate-existing", "auto"]
+  },
+  "share_target": [
+    {
+      "action": "share",
+      "url": "/benchmark",
+      "text": "Run Atheon Benchmark",
+      "title": "Atheon Benchmark"
+    },
+    {
+      "action": "share",
+      "url": "/results",
+      "text": "View Benchmark Results",
+      "title": "Benchmark Results"
+    }
+  ],
+  "description": "AI Benchmark System"
 }

@@ -1,0 +1,10 @@
+name = "atheon-benchmark"
+compatibility_date = "2024-01-01"
+pages_build_output_dir = ".next"
+
+[env.production]
+ANTHROPIC_BASE_URL = "https://api.anthropic.com"
+
+[[pages_build_output]]
+command = "npm run build"
+cwd = "."

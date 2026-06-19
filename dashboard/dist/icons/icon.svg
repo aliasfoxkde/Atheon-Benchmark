@@ -1,0 +1,21 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" rx="100" fill="url(#gradient)"/>
+  <g transform="translate(100, 100)">
+    <!-- Abstract A symbol representing Atheon -->
+    <path d="M 150 50 L 50 300 L 100 300 L 120 250 L 180 250 L 200 300 L 250 300 L 150 50 Z M 135 200 L 150 160 L 165 200 Z"
+          fill="white" stroke="white" stroke-width="4"/>
+    <!-- Tech circuit lines -->
+    <path d="M 20 320 L 280 320" stroke="white" stroke-width="4" stroke-linecap="round"/>
+    <path d="M 20 320 L 20 340" stroke="white" stroke-width="4" stroke-linecap="round"/>
+    <path d="M 280 320 L 280 340" stroke="white" stroke-width="4" stroke-linecap="round"/>
+    <path d="M 50 340 L 50 350" stroke="white" stroke-width="4" stroke-linecap="round"/>
+    <path d="M 250 340 L 250 350" stroke="white" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="150" cy="180" r="10" fill="#667eea"/>
+  </g>
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#667eea"/>
+      <stop offset="100%" stop-color="#764ba2"/>
+    </linearGradient>
+  </defs>
+</svg>

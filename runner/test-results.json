@@ -1,0 +1,49 @@
+{
+  "system_id": "SWARMONE-2026-06-19",
+  "system_info": {
+    "hostname": "SWARMONE",
+    "cpu": "amd64 CPU",
+    "ram": "      32231392 kB",
+    "os": "linux/amd64",
+    "arch": "amd64",
+    "go_version": "go1.24.4",
+    "timestamp": "2026-06-19T10:14:41-05:00"
+  },
+  "benchmarks": [
+    {
+      "id": "bench-1781882081011826024",
+      "name": "vanilla",
+      "duration_ms": 2868,
+      "tokens_used": 1500,
+      "passed": true,
+      "output": "Completed 10 test cases for vanilla scenario",
+      "timestamp": "2026-06-19T10:14:43-05:00"
+    },
+    {
+      "id": "bench-1781882083879888719",
+      "name": "atheon-mcp",
+      "duration_ms": 1451,
+      "tokens_used": 1500,
+      "passed": true,
+      "output": "Completed 10 test cases for atheon-mcp scenario",
+      "timestamp": "2026-06-19T10:14:45-05:00"
+    },
+    {
+      "id": "bench-1781882085331109751",
+      "name": "pattern-matching",
+      "duration_ms": 2747,
+      "tokens_used": 1500,
+      "passed": true,
+      "output": "Completed 10 test cases for pattern-matching scenario",
+      "timestamp": "2026-06-19T10:14:48-05:00"
+    }
+  ],
+  "summary": {
+    "total_tests": 3,
+    "passed": 3,
+    "failed": 0,
+    "avg_duration_ms": 2355.3333333333335,
+    "total_tokens": 4500
+  },
+  "submitted_at": "2026-06-19T10:14:48-05:00"
+}
