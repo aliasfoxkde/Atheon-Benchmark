@@ -7,14 +7,14 @@
 
 import { useEffect, useState } from 'react';
 import {
-  createGitHubResultsFetcher,
+  createCachedGitHubResultsFetcher,
   DEFAULT_GITHUB_CONFIG,
   filterResults,
   compareSystems,
   getResultsStatistics,
   type BenchmarkReport,
   type ResultsFilter,
-} from '@/lib/github/results';
+} from '@/lib/github/cache';
 import { Search, TrendingUp, Clock, Server, Cpu, HardDrive, Filter, Download, RefreshCw, Calendar, BarChart3, LineChart, Activity } from 'lucide-react';
 import { SpiderChart } from '@/components/charts/spider-chart';
 import { PerformanceBarChart } from '@/components/charts/performance-bar-chart';
@@ -28,6 +28,7 @@ export default function ResultsPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedSystems, setSelectedSystems] = useState<Set<string>>(new Set());
   const [focusedIndex, setFocusedIndex] = useState(-1);
+  const [cacheStats, setCacheStats] = useState<{total_systems: number, is_cached: boolean, last_updated: number | null}>({total_systems: 0, is_cached: false, last_updated: null});
 
   useEffect(() => {
     loadResults();
@@ -68,12 +69,36 @@ export default function ResultsPage() {
       setLoading(true);
       setError(null);
 
-      const fetcher = createGitHubResultsFetcher(DEFAULT_GITHUB_CONFIG);
+      // Try to load from static file first (for deployed sites)
+      try {
+        const response = await fetch('/benchmark-results.json');
+        if (response.ok) {
+          const data = await response.json();
+          setResults(data);
+          setCacheStats({
+            total_systems: data.length,
+            is_cached: true,
+            last_updated: Date.now()
+          });
+          console.log('[Results] Loaded from static file');
+          return;
+        }
+      } catch (staticError) {
+        console.log('[Results] Static file not available, trying GitHub API...');
+      }
+
+      // Fallback to GitHub API for local development
+      const fetcher = createCachedGitHubResultsFetcher(DEFAULT_GITHUB_CONFIG);
       const data = await fetcher.fetchAllResults();
+
+      // Update cache statistics
+      const stats = fetcher.getCachedStatistics();
+      setCacheStats(stats);
 
       setResults(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load results');
+      console.error('[Results] Failed to load results:', err);
     } finally {
       setLoading(false);
     }
@@ -101,7 +126,14 @@ export default function ResultsPage() {
           <div className="absolute inset-0 w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full animate-spin delay-75"></div>
         </div>
         <p className="mt-6 text-lg text-zinc-600 dark:text-zinc-400 font-medium">Loading benchmark results...</p>
-        <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-500">Fetching from GitHub repository</p>
+        <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-500">
+          {cacheStats.is_cached ? '💫 Using cached data (fast)' : '🔄 Fetching from GitHub repository...'}
+        </p>
+        {cacheStats.total_systems > 0 && (
+          <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
+            {cacheStats.total_systems} systems cached
+          </p>
+        )}
       </div>
     );
   }
@@ -150,6 +182,19 @@ export default function ResultsPage() {
             <p className="text-lg text-zinc-600 dark:text-zinc-400">
               Community benchmark results from <span className="font-semibold text-zinc-900 dark:text-zinc-50">{statistics.total_systems}</span> systems
             </p>
+            <div className="flex items-center gap-2 text-sm">
+              {cacheStats.is_cached && (
+                <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-md text-xs font-medium">
+                  💫 Cached ({new Date(cacheStats.last_updated || 0).toLocaleTimeString()})
+                </span>
+              )}
+              <button
+                onClick={loadResults}
+                className="text-blue-600 dark:text-blue-400 hover:underline text-xs"
+              >
+                {cacheStats.is_cached ? 'Refresh data' : 'Reload'}
+              </button>
+            </div>
           </div>
           <div className="flex gap-3">
             <button

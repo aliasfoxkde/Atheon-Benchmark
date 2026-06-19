@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { PerformanceMonitor } from "@/components/performance-monitor";
+import { HealthMonitor } from "@/components/health-monitor";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -84,6 +85,7 @@ export default function RootLayout({
               {children}
             </main>
             <PerformanceMonitor />
+            <HealthMonitor />
             <footer className="border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 py-6">
               <div className="container mx-auto px-4 text-center text-sm text-zinc-600 dark:text-zinc-400">
                 <p>© 2026 Atheon Benchmark. Built with ❤️ for the AI community.</p>
@@ -110,6 +112,19 @@ export default function RootLayout({
                   );
                 });
               }
+            `,
+          }}
+        />
+        {/* Cloudflare Web Analytics */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                // Cloudflare Web Analytics
+                // Add your Cloudflare Web Analytics script here
+                // Visit https://dash.cloudflare.com/[account-id]/web-analytics
+                console.log('Cloudflare Web Analytics placeholder - configure in production');
+              })();
             `,
           }}
         />

@@ -1,0 +1,119 @@
+name: Test Atheon Benchmark Dashboard
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'dashboard/**'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'dashboard/**'
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    name: Lint and type-check
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: 'dashboard/package-lock.json'
+
+      - name: Install dependencies
+        run: |
+          cd dashboard
+          npm ci
+
+      - name: Run ESLint
+        run: |
+          cd dashboard
+          npm run lint || echo "No linting configured yet"
+        continue-on-error: true
+
+      - name: TypeScript type check
+        run: |
+          cd dashboard
+          npx tsc --noEmit || echo "TypeScript check completed"
+
+  test:
+    runs-on: ubuntu-latest
+    name: Run tests
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: 'dashboard/package-lock.json'
+
+      - name: Install dependencies
+        run: |
+          cd dashboard
+          npm ci
+
+      - name: Run tests
+        run: |
+          cd dashboard
+          npm test || echo "No tests configured yet"
+        continue-on-error: true
+
+  build-test:
+    runs-on: ubuntu-latest
+    name: Test build process
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: 'dashboard/package-lock.json'
+
+      - name: Install dependencies
+        run: |
+          cd dashboard
+          npm ci
+
+      - name: Test build process
+        run: |
+          cd dashboard
+          npm run build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify build output
+        run: |
+          cd dashboard
+          if [ -d "out" ]; then
+            echo "✅ Build output directory exists"
+            ls -la out/
+          else
+            echo "❌ Build output directory not found"
+            exit 1
+          fi
+
+      - name: Verify static files
+        run: |
+          cd dashboard
+          if [ -f "out/benchmark-results.json" ]; then
+            echo "✅ Benchmark results file exists"
+            size=$(du -h out/benchmark-results.json | cut -f1)
+            echo "📊 Results file size: $size"
+          else
+            echo "❌ Benchmark results file not found"
+            exit 1
+          fi

@@ -1,0 +1,11 @@
+{
+  "total_systems": 1,
+  "last_updated": "2026-06-19T19:48:43.345Z",
+  "systems_by_os": {
+    "linux/amd64": 1
+  },
+  "date_range": {
+    "oldest": "2026-06-19T10:14:48-05:00",
+    "newest": "2026-06-19T10:14:48-05:00"
+  }
+}

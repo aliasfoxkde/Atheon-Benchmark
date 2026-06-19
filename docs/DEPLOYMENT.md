@@ -1,28 +1,47 @@
 # Atheon Benchmark Deployment Guide
 
-This guide provides step-by-step instructions for deploying the Atheon Benchmark Dashboard to production.
+Complete guide for deploying the Atheon Benchmark Dashboard to production.
+
+**🌐 Live Dashboard**: https://atheon-benchmark-dashboard.pages.dev/
+
+## 🎯 Deployment Overview
+
+The Atheon Benchmark Dashboard is deployed as a **static Next.js application** to Cloudflare Pages with:
+
+- **Static HTML/CSS/JS**: Pre-rendered pages for instant loading
+- **Build-time Data Fetching**: GitHub results fetched during build
+- **Client-side Caching**: Browser localStorage for API results
+- **PWA Support**: Service worker for offline capabilities
 
 ## Prerequisites
 
-- Cloudflare account with Workers and Pages enabled
-- Domain name (optional)
-- Anthropic API key
-- GitHub account (for CI/CD)
+- Cloudflare account with Pages enabled
+- GitHub account with GitHub CLI (optional)
 - Node.js 18+ and npm
+- GitHub personal access token (optional, for higher API rate limits)
 
-## Initial Setup
+## 🚀 Quick Deploy
 
-### 1. Repository Setup
+### Automated Deployment
 
 ```bash
-# Clone the repository
-git clone https://github.com/your-username/Atheon-Benchmark.git
-cd Atheon-Benchmark
+# Clone repository
+git clone https://github.com/aliasfoxkde/Atheon-Benchmark.git
+cd Atheon-Benchmark/dashboard
 
 # Install dependencies
-cd dashboard
 npm install
+
+# Deploy to production
+npm run deploy
 ```
+
+This will:
+1. **Fetch real benchmark data** from GitHub repository
+2. **Build static files** with Next.js
+3. **Deploy to Cloudflare Pages** at `https://atheon-benchmark-dashboard.pages.dev`
+
+## 📁 Project Structure
 
 ### 2. Environment Configuration
 
@@ -108,44 +127,77 @@ cd dashboard
 npm run db:migrate
 ```
 
-## Deployment Methods
+## 🏗️ Build Process
 
-### Method 1: Cloudflare Pages (Recommended)
-
-#### 1. Connect GitHub Repository
-
-1. Go to [Cloudflare Dashboard](https://dash.cloudflare.com/)
-2. Navigate to Workers & Pages
-3. Click "Create application" → "Connect to Git"
-4. Select your GitHub repository
-
-#### 2. Configure Build Settings
-
-```
-Build command: npm run build
-Build output directory: .next
-Root directory: dashboard
-```
-
-#### 3. Set Environment Variables
-
-Add these environment variables in Cloudflare Pages settings:
-
-```
-ANTHROPIC_API_KEY: your_api_key
-NODE_ENV: production
-```
-
-#### 4. Deploy
+### Development Build
 
 ```bash
-# Trigger deployment from your repository
-git push origin main
+cd dashboard
+npm run dev
+```
 
-# Or manually deploy
+The development server:
+- Runs on http://localhost:3000
+- Supports hot reloading
+- Uses GitHub API in real-time
+- Falls back to cached data when API fails
+
+### Production Build
+
+```bash
 cd dashboard
 npm run build
-npx wrangler pages deploy .next
+```
+
+The production build:
+1. **Fetches Results**: Downloads latest benchmark data from GitHub
+2. **Generates Static Files**: Creates optimized HTML/CSS/JS
+3. **Creates PWA Assets**: Generates service worker and manifest
+4. **Optimizes Assets**: Minifies and compresses files
+
+Build output:
+- `out/` - Static files for deployment
+- `public/benchmark-results.json` - Benchmark data
+- `public/benchmark-metadata.json` - Metadata and stats
+
+## 🌐 Cloudflare Pages Deployment
+
+### Manual Deployment
+
+```bash
+cd dashboard
+
+# Build and deploy
+npm run deploy
+
+# Deploy to staging
+npm run deploy:staging
+
+# Deploy without rebuilding
+npm run deploy:skip-build
+```
+
+### Automated Deployment Script
+
+The deployment script (`scripts/deploy-cloudflare.sh`) handles:
+
+1. **Dependencies**: Installs npm packages
+2. **Build**: Runs Next.js production build
+3. **Data Fetching**: Fetches latest benchmark results from GitHub
+4. **Upload**: Uploads to Cloudflare Pages
+5. **Cache Clearing**: Clears Cloudflare cache automatically
+
+### Wrangler CLI
+
+```bash
+# Install Wrangler CLI
+npm install -g wrangler
+
+# Login to Cloudflare
+wrangler login
+
+# Deploy manually
+wrangler pages deploy out --project-name=atheon-benchmark-dashboard
 ```
 
 ### Method 2: Cloudflare Workers
@@ -522,14 +574,219 @@ npm run build
 npm run deploy:production
 ```
 
-## Support
+## 🔧 Configuration
 
-For deployment issues:
+### GitHub Results Repository
 
-- **Documentation**: [Full docs](https://docs.atheon-benchmark.com)
-- **GitHub Issues**: [Report issues](https://github.com/your-username/Atheon-Benchmark/issues)
-- **Discord**: [Community support](https://discord.gg/atheon-benchmark)
+The dashboard fetches benchmark results from a GitHub repository. Configure this in `dashboard/lib/github/results.ts`:
+
+```typescript
+export const DEFAULT_GITHUB_CONFIG: GitHubResultsConfig = {
+  owner: 'aliasfoxkde',           // GitHub username
+  repo: 'atheon-benchmark-results', // Results repository
+  branch: 'main',                  // Default branch
+  token: process.env.GITHUB_TOKEN  // Optional API token
+};
+```
+
+### Build-time Data Fetching
+
+The `scripts/fetch-results.js` script fetches data during build:
+
+```javascript
+// Configuration at top of file
+const GITHUB_OWNER = 'aliasfoxkde';
+const GITHUB_REPO = 'atheon-benchmark-results';
+const RESULTS_PATH = 'results';
+```
+
+### Environment Variables
+
+```bash
+# Optional: GitHub token for higher API rate limits
+export GITHUB_TOKEN="your_github_token"
+
+# The build script automatically uses this if available
+```
+
+## 📊 Current Deployment Status
+
+**Live Site**: https://atheon-benchmark-dashboard.pages.dev/
+
+**Current Configuration**:
+- **Framework**: Next.js 16.2.9 with static export
+- **Hosting**: Cloudflare Pages
+- **Data Source**: GitHub repository (aliasfoxkde/atheon-benchmark-results)
+- **Build Type**: Static site with build-time data fetching
+- **Caching**: Multi-layer caching (build-time + browser localStorage)
+
+**Performance**:
+- **Page Load**: < 2s average
+- **Data Refresh**: On each build/deployment
+- **Static Assets**: CDN-cached globally
+- **PWA**: Offline capable
+
+## 🔄 Continuous Deployment
+
+### GitHub Actions (Recommended)
+
+Create `.github/workflows/deploy.yml`:
+
+```yaml
+name: Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: |
+          cd dashboard
+          npm ci
+
+      - name: Build and deploy
+        run: |
+          cd dashboard
+          npm run build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: atheon-benchmark-dashboard
+          directory: dashboard/out
+```
+
+### Manual Deployment
+
+```bash
+# Deploy latest changes
+git push origin main
+# Then run: npm run deploy
+```
+
+## 🐛 Troubleshooting
+
+### Build Issues
+
+**Problem**: Build fails with "GitHub API rate limit exceeded"
+```bash
+# Solution: Add GitHub token
+export GITHUB_TOKEN="your_token"
+npm run build
+```
+
+**Problem**: Results page shows no data
+```bash
+# Solution: Check GitHub repository has results
+curl https://api.github.com/repos/aliasfoxkde/atheon-benchmark-results/contents/results
+```
+
+### Deployment Issues
+
+**Problem**: Deployment fails with "Unauthorized"
+```bash
+# Solution: Authenticate with Cloudflare
+npx wrangler login
+npm run deploy
+```
+
+**Problem**: Site not updating after deployment
+```bash
+# Solution: Clear browser cache and Cloudflare cache
+npx wrangler pages cache clear --project-name=atheon-benchmark-dashboard
+```
+
+## 🧪 Testing Deployments
+
+### Test Production Deployment
+
+```bash
+# Test main site
+curl -I https://atheon-benchmark-dashboard.pages.dev/
+
+# Test results data
+curl https://atheon-benchmark-dashboard.pages.dev/benchmark-results.json | jq '.'
+
+# Test metadata
+curl https://atheon-benchmark-dashboard.pages.dev/benchmark-metadata.json | jq '.'
+```
+
+### Test Locally
+
+```bash
+cd dashboard
+npm run build
+npm run serve
+# Visit http://localhost:8080
+```
+
+## 📈 Performance Monitoring
+
+### Cloudflare Analytics
+
+Access analytics at:
+https://dash.cloudflare.com/[account-id]/pages/view/atheon-benchmark-dashboard/analytics
+
+### Key Metrics
+
+- **Page Load Time**: Should be < 2s
+- **First Contentful Paint**: Should be < 1s
+- **Time to Interactive**: Should be < 3s
+- **Cache Hit Rate**: Should be > 80%
+
+## 🔒 Security
+
+### API Key Management
+
+- Never commit API keys to the repository
+- Use environment variables for sensitive data
+- Rotate GitHub tokens regularly
+- Use GitHub Secrets in CI/CD
+
+### Static Site Security
+
+The dashboard is static, which provides inherent security:
+- No server-side code execution
+- No database connections
+- No user authentication required
+- Read-only GitHub API access
+
+## 🔄 Rollback Procedure
+
+If deployment fails:
+
+```bash
+# List recent deployments
+npx wrangler pages deployment list --project-name=atheon-benchmark-dashboard
+
+# Rollback to previous deployment (manual process)
+# Redeploy previous version or use Cloudflare dashboard
+```
+
+## 📚 Additional Resources
+
+- [Cloudflare Pages Documentation](https://developers.cloudflare.com/pages/)
+- [Next.js Static Exports](https://nextjs.org/docs/app/building-your-application/deploying/static-exports)
+- [GitHub REST API](https://docs.github.com/en/rest)
 
 ---
 
-Last updated: June 19, 2026
+**Need Help?** Open an issue at [GitHub Issues](https://github.com/aliasfoxkde/Atheon-Benchmark/issues)
+
+**Last updated**: June 19, 2026

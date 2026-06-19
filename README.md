@@ -2,6 +2,11 @@
 
 Community-driven AI benchmark platform for comparing Claude performance with and without Atheon MCP integration across different hardware configurations.
 
+**🌐 Live Dashboard**: https://atheon-benchmark-dashboard.pages.dev/
+
+[![Deploy Status](https://github.com/aliasfoxkde/Atheon-Benchmark/actions/workflows/deploy.yml/badge.svg)](https://github.com/aliasfoxkde/Atheon-Benchmark/actions/workflows/deploy.yml)
+[![Test Status](https://github.com/aliasfoxkde/Atheon-Benchmark/actions/workflows/test.yml/badge.svg)](https://github.com/aliasfoxkde/Atheon-Benchmark/actions/workflows/test.yml)
+
 ## 🚀 Overview
 
 Atheon Benchmark is a comprehensive benchmarking system that allows you to:
@@ -9,13 +14,14 @@ Atheon Benchmark is a comprehensive benchmarking system that allows you to:
 - **Run benchmarks locally** on your system using our CLI tool
 - **Upload results to GitHub** for community sharing
 - **Compare performance** across different hardware configurations
-- **View analytics** through our web dashboard
+- **View analytics** through our modern web dashboard
+- **Pattern analysis** using 152 Atheon patterns across 19 categories
 
 The system tests Claude AI performance across different configurations:
 
 - **Vanilla Claude**: Direct API calls (baseline)
 - **MCP Integration**: Claude with generic MCP tool support
-- **Atheon Integration**: Claude with Atheon pattern matching and quality gates
+- **Atheon Integration**: Claude with Atheon pattern matching and quality gates (152 patterns)
 
 ## ✨ Features
 
@@ -102,12 +108,15 @@ export GITHUB_REPO="your-org/attheon-benchmark-results"
 
 #### 2. View Results Online
 
-Visit the web dashboard: https://atheon-benchmark.com/results
+Visit the web dashboard: **https://atheon-benchmark-dashboard.pages.dev/**
+
+- **Results Page**: https://atheon-benchmark-dashboard.pages.dev/results
+- **Benchmark Page**: https://atheon-benchmark-dashboard.pages.dev/benchmark
 
 Or run locally:
 ```bash
 # Clone and setup dashboard
-git clone https://github.com/your-org/Atheon-Benchmark.git
+git clone https://github.com/aliasfoxkde/Atheon-Benchmark.git
 cd Atheon-Benchmark/dashboard
 npm install
 npm run dev
@@ -220,9 +229,9 @@ export GITHUB_REPO="your-username/attheon-benchmark-results"
 ### 5. View Results Online
 
 Visit the web dashboard to view and compare results:
-- **Live Dashboard**: https://atheon-benchmark.com
-- **Results Page**: https://atheon-benchmark.com/results
-- **GitHub Repository**: https://github.com/your-org/attheon-benchmark-results
+- **Live Dashboard**: https://atheon-benchmark-dashboard.pages.dev
+- **Results Page**: https://atheon-benchmark-dashboard.pages.dev/results
+- **GitHub Repository**: https://github.com/aliasfoxkde/atheon-benchmark-results
 
 ## 🏗️ Development
 
@@ -389,17 +398,16 @@ This project is licensed under the MIT License - see the [LICENSE](./LICENSE) fi
 
 ## 📮 Support
 
-- 📧 Email: support@atheon-benchmark.com
-- 💬 Discord: [Join our Discord server](https://discord.gg/atheon-benchmark)
-- 🐛 Bug Reports: [GitHub Issues](https://github.com/your-username/Atheon-Benchmark/issues)
-- 📖 Documentation: [Full Documentation](https://docs.atheon-benchmark.com)
+- 🐛 Bug Reports: [GitHub Issues](https://github.com/aliasfoxkde/Atheon-Benchmark/issues)
+- 📖 Documentation: [Full Documentation](https://github.com/aliasfoxkde/Atheon-Benchmark/blob/main/docs/README.md)
+- 💬 Discussions: [GitHub Discussions](https://github.com/aliasfoxkde/Atheon-Benchmark/discussions)
 
 ## 🔗 Links
 
-- **Website**: [https://atheon-benchmark.com](https://atheon-benchmark.com)
-- **Documentation**: [https://docs.atheon-benchmark.com](https://docs.atheon-benchmark.com)
-- **GitHub**: [https://github.com/your-username/Atheon-Benchmark](https://github.com/your-username/Atheon-Benchmark)
+- **Dashboard**: [https://atheon-benchmark-dashboard.pages.dev](https://atheon-benchmark-dashboard.pages.dev)
+- **GitHub**: [https://github.com/aliasfoxkde/Atheon-Benchmark](https://github.com/aliasfoxkde/Atheon-Benchmark)
 - **Atheon**: [https://github.com/HoraDomu/Atheon](https://github.com/HoraDomu/Atheon)
+- **Results Repo**: [https://github.com/aliasfoxkde/atheon-benchmark-results](https://github.com/aliasfoxkde/atheon-benchmark-results)
 
 ---
 

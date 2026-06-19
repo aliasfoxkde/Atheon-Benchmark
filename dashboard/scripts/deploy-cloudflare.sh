@@ -47,28 +47,15 @@ if [ "$SKIP_BUILD" != "true" ]; then
     npm run build
 fi
 
-# For static export, we need to copy the built files
-if [ -d "$BUILD_DIR" ]; then
-    echo -e "${YELLOW}📁 Preparing static files...${NC}"
-    rm -rf "$STATIC_DIR"
-    mkdir -p "$STATIC_DIR"
-
-    # Copy static assets
-    if [ -d "public" ]; then
-        cp -r public/* "$STATIC_DIR/"
-    fi
-
-    # Copy built Next.js files
-    cp -r "$BUILD_DIR"/* "$STATIC_DIR/"
-
-    # Copy service worker and manifest
-    if [ -f "public/sw.js" ]; then
-        cp "public/sw.js" "$STATIC_DIR/"
-    fi
-
-    if [ -f "public/manifest.json" ]; then
-        cp "public/manifest.json" "$STATIC_DIR/"
-    fi
+# For static export, the out directory already contains everything we need
+if [ -d "$STATIC_DIR" ]; then
+    echo -e "${YELLOW}📁 Static files ready in ${STATIC_DIR}/${NC}"
+    echo -e "${YELLOW}📁 Build output verified:${NC}"
+    ls -la "$STATIC_DIR/" | head -10
+else
+    echo -e "${RED}❌ Static export directory not found: ${STATIC_DIR}${NC}"
+    echo -e "${YELLOW}💡 Make sure to run 'npm run build' first${NC}"
+    exit 1
 fi
 
 echo -e "${YELLOW}🌐 Deploying to Cloudflare Pages...${NC}"
