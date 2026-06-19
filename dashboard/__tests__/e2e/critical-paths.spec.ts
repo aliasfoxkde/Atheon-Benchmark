@@ -3,33 +3,11 @@
  * Quick validation tests to ensure basic functionality works
  */
 
-import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
-import { chromium, Browser, Page, BrowserContext } from 'playwright';
+import { test, expect } from '@playwright/test';
 
-describe('Critical Path Smoke Tests', () => {
-  let browser: Browser;
-  let context: BrowserContext;
-  let page: Page;
-
-  beforeAll(async () => {
-    browser = await chromium.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
-    context = await browser.newContext({
-      baseURL: process.env.TEST_BASE_URL || 'http://localhost:3000'
-    });
-    page = await context.newPage();
-  });
-
-  afterAll(async () => {
-    await page.close();
-    await context.close();
-    await browser.close();
-  });
-
-  describe('Application Startup', () => {
-    it('should load the main page', async () => {
+test.describe('Critical Path Smoke Tests', () => {
+  test.describe('Application Startup', () => {
+    test('should load the main page', async ({ page }) => {
       await page.goto('/');
 
       // Wait for page to load
@@ -44,7 +22,7 @@ describe('Critical Path Smoke Tests', () => {
       expect(heading).toContain('Atheon Benchmark');
     });
 
-    it('should have working navigation', async () => {
+    test('should have working navigation', async ({ page }) => {
       await page.goto('/');
 
       // Check for navigation links
@@ -61,7 +39,7 @@ describe('Critical Path Smoke Tests', () => {
       expect(url).toBeTruthy();
     });
 
-    it('should load all static assets', async () => {
+    test('should load all static assets', async ({ page }) => {
       await page.goto('/');
 
       // Wait for page to be fully loaded
@@ -84,7 +62,7 @@ describe('Critical Path Smoke Tests', () => {
       expect(jsRequests.length).toBeGreaterThan(0);
     });
 
-    it('should have no console errors', async () => {
+    test('should have no console errors', async ({ page }) => {
       const consoleErrors: string[] = [];
 
       page.on('console', (msg) => {
@@ -102,7 +80,7 @@ describe('Critical Path Smoke Tests', () => {
   });
 
   describe('Results Page Smoke Tests', () => {
-    it('should load the results page', async () => {
+    test('should load the results page', async ({ page }) => {
       await page.goto('/results');
 
       // Wait for page to load
@@ -116,7 +94,7 @@ describe('Critical Path Smoke Tests', () => {
       expect(heading).toBeTruthy();
     });
 
-    it('should load benchmark data', async () => {
+    test('should load benchmark data', async ({ page }) => {
       await page.goto('/results');
 
       // Wait for data to load
@@ -132,7 +110,7 @@ describe('Critical Path Smoke Tests', () => {
       }
     });
 
-    it('should display static results file', async () => {
+    test('should display static results file', async ({ page }) => {
       const response = await page.request.get('/benchmark-results.json');
 
       expect(response.ok()).toBe(true);
@@ -147,7 +125,7 @@ describe('Critical Path Smoke Tests', () => {
       }
     });
 
-    it('should display metadata file', async () => {
+    test('should display metadata file', async ({ page }) => {
       const response = await page.request.get('/benchmark-metadata.json');
 
       expect(response.ok()).toBe(true);
@@ -159,7 +137,7 @@ describe('Critical Path Smoke Tests', () => {
   });
 
   describe('Benchmark Page Smoke Tests', () => {
-    it('should load the benchmark page', async () => {
+    test('should load the benchmark page', async ({ page }) => {
       await page.goto('/benchmark');
 
       // Wait for page to load
@@ -173,7 +151,7 @@ describe('Critical Path Smoke Tests', () => {
       expect(content.length).toBeGreaterThan(1000);
     });
 
-    it('should have benchmark form or content', async () => {
+    test('should have benchmark form or content', async ({ page }) => {
       await page.goto('/benchmark');
 
       // Wait for page to load
@@ -186,7 +164,7 @@ describe('Critical Path Smoke Tests', () => {
   });
 
   describe('Static Assets Smoke Tests', () => {
-    it('should serve manifest.json', async () => {
+    test('should serve manifest.json', async ({ page }) => {
       const response = await page.request.get('/manifest.json');
 
       expect(response.ok()).toBe(true);
@@ -196,14 +174,14 @@ describe('Critical Path Smoke Tests', () => {
       expect(manifest).toHaveProperty('short_name');
     });
 
-    it('should serve service worker', async () => {
+    test('should serve service worker', async ({ page }) => {
       const response = await page.request.get('/sw.js');
 
       // Service worker should be accessible
       expect(response.status()).toBe(200);
     });
 
-    it('should serve favicon', async () => {
+    test('should serve favicon', async ({ page }) => {
       const response = await page.request.get('/favicon.ico');
 
       expect(response.status()).toBe(200);
@@ -211,7 +189,7 @@ describe('Critical Path Smoke Tests', () => {
   });
 
   describe('API Integration Smoke Tests', () => {
-    it('should handle GitHub API integration', async () => {
+    test('should handle GitHub API integration', async ({ page }) => {
       await page.goto('/results');
 
       // Wait for page to load
@@ -222,7 +200,7 @@ describe('Critical Path Smoke Tests', () => {
       expect(apiErrors).toBe(0);
     });
 
-    it('should use cached data when available', async () => {
+    test('should use cached data when available', async ({ page }) => {
       // First visit to populate cache
       await page.goto('/results');
       await page.waitForLoadState('networkidle');
@@ -239,7 +217,7 @@ describe('Critical Path Smoke Tests', () => {
   });
 
   describe('Responsive Design Smoke Tests', () => {
-    it('should work on mobile viewport', async () => {
+    test('should work on mobile viewport', async ({ page }) => {
       await page.setViewportSize({ width: 375, height: 667 });
       await page.goto('/');
 
@@ -254,7 +232,7 @@ describe('Critical Path Smoke Tests', () => {
       expect(viewport).toContain('width=device-width');
     });
 
-    it('should work on tablet viewport', async () => {
+    test('should work on tablet viewport', async ({ page }) => {
       await page.setViewportSize({ width: 768, height: 1024 });
       await page.goto('/');
 
@@ -265,7 +243,7 @@ describe('Critical Path Smoke Tests', () => {
       expect(content.length).toBeGreaterThan(1000);
     });
 
-    it('should work on desktop viewport', async () => {
+    test('should work on desktop viewport', async ({ page }) => {
       await page.setViewportSize({ width: 1920, height: 1080 });
       await page.goto('/');
 
@@ -278,7 +256,7 @@ describe('Critical Path Smoke Tests', () => {
   });
 
   describe('Performance Smoke Tests', () => {
-    it('should load main page quickly', async () => {
+    test('should load main page quickly', async ({ page }) => {
       const startTime = Date.now();
       await page.goto('/');
       await page.waitForLoadState('networkidle');
@@ -288,7 +266,7 @@ describe('Critical Path Smoke Tests', () => {
       expect(loadTime).toBeLessThan(5000);
     });
 
-    it('should load results page quickly', async () => {
+    test('should load results page quickly', async ({ page }) => {
       const startTime = Date.now();
       await page.goto('/results');
       await page.waitForLoadState('networkidle');
@@ -298,7 +276,7 @@ describe('Critical Path Smoke Tests', () => {
       expect(loadTime).toBeLessThan(5000);
     });
 
-    it('should have reasonable memory usage', async () => {
+    test('should have reasonable memory usage', async ({ page }) => {
       await page.goto('/');
 
       // Get page metrics
@@ -310,13 +288,13 @@ describe('Critical Path Smoke Tests', () => {
   });
 
   describe('Error Handling Smoke Tests', () => {
-    it('should handle 404 pages gracefully', async () => {
+    test('should handle 404 pages gracefully', async ({ page }) => {
       const response = await page.request.get('/non-existent-page');
 
       expect(response.status()).toBe(404);
     });
 
-    it('should handle invalid API data gracefully', async () => {
+    test('should handle invalid API data gracefully', async ({ page }) => {
       // Navigate to results page
       await page.goto('/results');
       await page.waitForLoadState('networkidle');
