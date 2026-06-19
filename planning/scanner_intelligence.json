@@ -1,0 +1,30 @@
+{
+  "performance_data": [
+    "ResearchFinding(category=<ResearchCategory.PERFORMANCE: 'performance'>, source='performance_monitoring', title='Performance Insight: Performance Optimization Opportunity', description='Identified opportunities for performance improvement', severity='medium', confidence=0.7, data={'insight': {'name': 'Performance Optimization Opportunity', 'description': 'Identified opportunities for performance improvement', 'severity': 'medium', 'confidence': 0.7, 'complexity': 'medium'}}, timestamp='2026-06-19T14:21:44.474714', actionable=True, implementation_complexity='medium')"
+  ],
+  "quality_metrics": {
+    "pattern_accuracy": 0.85,
+    "false_positive_rate": 0.05,
+    "detection_rate": 0.9
+  },
+  "optimization_opportunities": [
+    {
+      "area": "scanning_speed",
+      "improvement": "20%"
+    },
+    {
+      "area": "memory_usage",
+      "improvement": "15%"
+    }
+  ],
+  "benchmark_candidates": [
+    "new_security_patterns",
+    "quality_improvements",
+    "performance_optimizations"
+  ],
+  "recommendations": [
+    "Add new performance baselines",
+    "Optimize based on performance insights",
+    "Create benchmarks for new patterns"
+  ]
+}

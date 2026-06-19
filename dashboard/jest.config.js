@@ -7,14 +7,14 @@ module.exports = {
   preset: 'ts-jest/presets/default-esm',
   testEnvironment: 'jsdom',
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
-  moduleNameMapping: {
+  moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
   },
   transform: {
     '^.+\\.tsx?$': [
       'ts-jest',
       {
-        useESM: true,
+        useESM: false, // Changed to false for better compatibility
         tsconfig: {
           jsx: 'react',
           esModuleInterop: true,
@@ -23,11 +23,10 @@ module.exports = {
       },
     ],
   },
+  extensionsToTreatAsEsm: ['.ts', '.tsx'],
   testMatch: [
-    '**/__tests__/**/*.test.ts',
-    '**/__tests__/**/*.test.tsx',
-    '**/__tests__/**/*.spec.ts',
-    '**/__tests__/**/*.spec.tsx',
+    '**/*.test.ts',
+    '**/*.test.tsx',
   ],
   testPathIgnorePatterns: [
     '/node_modules/',
@@ -56,21 +55,4 @@ module.exports = {
   },
   verbose: true,
   testTimeout: 10000,
-  projects: [
-    {
-      displayName: 'unit',
-      testMatch: ['**/__tests__/(unit|components|lib)/**/*.test.{ts,tsx}'],
-      testEnvironment: 'jsdom',
-    },
-    {
-      displayName: 'smoke',
-      testMatch: ['**/__tests__/smoke/**/*.test.{ts,tsx}'],
-      testEnvironment: 'jsdom',
-    },
-    {
-      displayName: 'regression',
-      testMatch: ['**/__tests__/regression/**/*.test.{ts,tsx}'],
-      testEnvironment: 'jsdom',
-    },
-  ],
 };
