@@ -3,6 +3,7 @@
  * Tests for health monitoring and status reporting
  */
 
+import React from 'react';
 import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { HealthMonitor } from '../health-monitor';

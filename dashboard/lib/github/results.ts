@@ -71,6 +71,10 @@ export class GitHubResultsFetcher {
       });
 
       if (!response.ok) {
+        // Check if this is a "not found" error which should return empty array
+        if (response.status === 404) {
+          return [];
+        }
         throw new Error(`GitHub API error: ${response.statusText}`);
       }
 
@@ -101,7 +105,7 @@ export class GitHubResultsFetcher {
       return results;
     } catch (error) {
       console.error('Failed to fetch results from GitHub:', error);
-      return [];
+      throw error;
     }
   }
 

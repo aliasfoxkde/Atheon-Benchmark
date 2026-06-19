@@ -3,6 +3,7 @@
  * Tests for performance tracking and monitoring
  */
 
+import React from 'react';
 import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
 import { render, screen } from '@testing-library/react';
 import { PerformanceMonitor } from '../performance-monitor';

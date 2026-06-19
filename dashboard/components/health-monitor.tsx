@@ -5,6 +5,7 @@
 
 'use client';
 
+import React from 'react';
 import { useEffect, useState } from 'react';
 import { Activity, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
 

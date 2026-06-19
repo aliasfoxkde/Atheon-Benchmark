@@ -83,12 +83,13 @@ export class CachedGitHubResultsFetcher extends GitHubResultsFetcher {
     } catch (error) {
       console.error('[GitHub Cache] Fetch error:', error);
 
-      // Return stale cache if available
+      // Return stale cache if available (even if expired)
       if (cached && cached.data.length > 0) {
         console.log('[GitHub Cache] Returning stale cache due to fetch error');
         return cached.data;
       }
 
+      // If no cache available, throw the error
       throw error;
     }
   }
@@ -125,6 +126,17 @@ export class CachedGitHubResultsFetcher extends GitHubResultsFetcher {
       return {
         total_systems: this.metadataCache.systems.size,
         last_updated: this.metadataCache.timestamp,
+        is_cached: true,
+      };
+    }
+
+    // Check if we have valid main cache even if metadata cache is invalid
+    const cacheKey = 'all-results';
+    const cached = this.cache.get(cacheKey);
+    if (cached && this.isCacheValid(cached)) {
+      return {
+        total_systems: cached.data.length,
+        last_updated: cached.timestamp,
         is_cached: true,
       };
     }
