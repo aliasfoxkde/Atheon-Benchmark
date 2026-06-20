@@ -14,12 +14,41 @@ global.fetch = jest.fn();
 describe('HealthMonitor Component', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.useFakeTimers();
+    // Don't use fake timers by default to avoid conflicts with async operations
+    // jest.useFakeTimers();
+
+    // Ensure performance API is properly mocked for component tests
+    const mockNavigationTiming = {
+      loadEventEnd: 2000,
+      domInteractive: 800,
+      startTime: 0,
+      responseEnd: 500,
+      domComplete: 1500,
+      fetchStart: 100,
+      domContentLoadedEventEnd: 1200,
+      responseStart: 300,
+      requestStart: 200,
+      connectEnd: 150,
+      duration: 2000,
+      name: 'navigation',
+      entryType: 'navigation',
+    };
+
+    global.performance = {
+      ...global.performance,
+      getEntriesByType: jest.fn((type: string) => {
+        if (type === 'navigation') return [mockNavigationTiming];
+        if (type === 'paint') return [{ name: 'first-contentful-paint', startTime: 800, entryType: 'paint' }];
+        if (type === 'largest-contentful-paint') return [{ startTime: 1200, size: 5000, entryType: 'largest-contentful-paint', name: 'largest-contentful-paint' }];
+        return [];
+      }),
+      now: jest.fn(() => Date.now()),
+    };
   });
 
   afterEach(() => {
-    jest.runOnlyPendingTimers();
-    jest.useRealTimers();
+    // jest.runOnlyPendingTimers();
+    // jest.useRealTimers();
   });
 
   describe('Rendering', () => {

@@ -3,6 +3,9 @@
  * Global configuration and mocks for tests
  */
 
+// Import jest-dom matchers
+require('@testing-library/jest-dom');
+
 // Mock window and browser APIs
 
 // Mock localStorage
@@ -71,6 +74,9 @@ Object.defineProperty(window, 'performance', {
   writable: true,
   value: performanceMock,
 });
+
+// Also set performance on global to ensure it's available in all contexts
+global.performance = performanceMock;
 
 // Mock IntersectionObserver
 global.IntersectionObserver = class IntersectionObserver {
