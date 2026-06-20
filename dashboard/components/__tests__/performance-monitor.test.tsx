@@ -50,6 +50,37 @@ describe('PerformanceMonitor Component', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers();
+
+    // Ensure performance API is properly mocked for each test
+    global.performance = {
+      getEntriesByType: jest.fn((type) => {
+        if (type === 'navigation') return [mockPerformanceEntries[0]];
+        if (type === 'paint') return [mockPerformanceEntries[1]];
+        if (type === 'largest-contentful-paint') return [{ startTime: 1200, size: 5000 }];
+        return [];
+      }),
+      now: jest.fn(() => Date.now()),
+      mark: jest.fn(),
+      measure: jest.fn(),
+      memory: {
+        usedJSHeapSize: 10000000,
+        totalJSHeapSize: 20000000,
+        jsHeapSizeLimit: 50000000
+      }
+    };
+
+    // Mock PerformanceObserver
+    (global as any).PerformanceObserver = class PerformanceObserver {
+      constructor() {}
+      observe() {}
+      disconnect() {}
+    };
+
+    // Set document state to complete so metrics are collected immediately
+    Object.defineProperty(document, 'readyState', {
+      writable: true,
+      value: 'complete'
+    });
   });
 
   afterEach(() => {

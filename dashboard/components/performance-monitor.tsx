@@ -65,6 +65,13 @@ export function PerformanceMonitor() {
     }
   }, []);
 
+  // Log performance data in development
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development' && metrics) {
+      console.log('[Performance Monitor]', metrics);
+    }
+  }, [metrics]);
+
   if (!isVisible || !metrics) return null;
 
   return (
