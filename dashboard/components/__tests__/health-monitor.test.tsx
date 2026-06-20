@@ -261,6 +261,48 @@ describe('HealthMonitor Component', () => {
   });
 
   describe('Accessibility', () => {
+    beforeEach(() => {
+      // Ensure performance API is mocked for accessibility tests
+      const mockNavigationTiming = {
+        loadEventEnd: 2000,
+        domInteractive: 800,
+        startTime: 0,
+        responseEnd: 500,
+        domComplete: 1500,
+        fetchStart: 100,
+        domContentLoadedEventEnd: 1200,
+        responseStart: 300,
+        requestStart: 200,
+        connectEnd: 150,
+        duration: 2000,
+        name: 'navigation',
+        entryType: 'navigation',
+      };
+
+      global.performance = {
+        ...global.performance,
+        getEntriesByType: jest.fn((type: string) => {
+          if (type === 'navigation') return [mockNavigationTiming];
+          if (type === 'paint') return [{ name: 'first-contentful-paint', startTime: 800, entryType: 'paint' }];
+          return [];
+        }),
+        now: jest.fn(() => Date.now()),
+      };
+
+      // Mock PerformanceObserver
+      (global as any).PerformanceObserver = class PerformanceObserver {
+        constructor() {}
+        observe() {}
+        disconnect() {}
+      };
+
+      // Ensure document is in complete state
+      Object.defineProperty(document, 'readyState', {
+        writable: true,
+        value: 'complete'
+      });
+    });
+
     it('should have proper ARIA labels', () => {
       render(<HealthMonitor />);
 
