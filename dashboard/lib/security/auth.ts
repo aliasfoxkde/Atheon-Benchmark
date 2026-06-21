@@ -106,12 +106,17 @@ export class SecurityManager {
    * Get client identifier for rate limiting
    */
   getClientIdentifier(request: Request): string {
-    // Use IP address or API key as identifier
+    // Use API key if provided
     const apiKey = request.headers.get('x-api-key');
     if (apiKey) return `key:${apiKey}`;
 
-    // Fall back to IP (would need proper implementation in real environment)
-    return `ip:${Date.now()}`;
+    // Extract real IP from Cloudflare/forwarded headers
+    const cfConnectingIp = request.headers.get('cf-connecting-ip');
+    const xForwardedFor = request.headers.get('x-forwarded-for');
+    const xRealIp = request.headers.get('x-real-ip');
+
+    const ip = cfConnectingIp || (xForwardedFor?.split(',')[0]) || xRealIp || 'unknown';
+    return `ip:${ip}`;
   }
 
   /**

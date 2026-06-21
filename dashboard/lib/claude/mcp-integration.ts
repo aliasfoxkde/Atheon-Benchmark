@@ -407,13 +407,63 @@ export const EXAMPLE_MCP_TOOLS: MCPTool[] = [
     handler: async (input) => {
       try {
         // Validate expression contains only safe mathematical characters
-        // This is a mitigation for the security risk of Function() constructor
         const safePattern = /^[\d+\-*/().%\s]+$/;
         if (!safePattern.test(input.expression)) {
           throw new Error('Expression contains invalid characters');
         }
-        // Safe evaluation of mathematical expressions
-        const result = Function('"use strict"; return (' + input.expression + ')')();
+        // Safe recursive descent parser - no Function() or eval()
+        const expr = input.expression.replace(/\s+/g, '');
+        let pos = 0;
+
+        function parseExpression(): number {
+          let left = parseTerm();
+          while (pos < expr.length) {
+            const op = expr[pos];
+            if (op === '+' || op === '-') {
+              pos++;
+              const right = parseTerm();
+              left = op === '+' ? left + right : left - right;
+            } else {
+              break;
+            }
+          }
+          return left;
+        }
+
+        function parseTerm(): number {
+          let left = parseFactor();
+          while (pos < expr.length) {
+            const op = expr[pos];
+            if (op === '*' || op === '/' || op === '%') {
+              pos++;
+              const right = parseFactor();
+              if (op === '*') left = left * right;
+              else if (op === '/') left = left / right;
+              else left = left % right;
+            } else {
+              break;
+            }
+          }
+          return left;
+        }
+
+        function parseFactor(): number {
+          if (expr[pos] === '(') {
+            pos++;
+            const result = parseExpression();
+            if (expr[pos] !== ')') throw new Error('Missing closing parenthesis');
+            pos++;
+            return result;
+          }
+          let numStr = '';
+          while (pos < expr.length && /[\d.]/.test(expr[pos])) {
+            numStr += expr[pos++];
+          }
+          if (numStr === '') throw new Error('Expected number');
+          return parseFloat(numStr);
+        }
+
+        const result = parseExpression();
         return { result };
       } catch (error) {
         throw new Error(`Invalid expression: ${input.expression}`);

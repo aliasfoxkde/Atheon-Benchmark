@@ -15,13 +15,13 @@ Atheon Benchmark is a comprehensive benchmarking system that allows you to:
 - **Upload results to GitHub** for community sharing
 - **Compare performance** across different hardware configurations
 - **View analytics** through our modern web dashboard
-- **Pattern analysis** using 152 Atheon patterns across 19 categories
+- **Pattern analysis** using 185 Atheon patterns across 16 categories
 
 The system tests Claude AI performance across different configurations:
 
 - **Vanilla Claude**: Direct API calls (baseline)
 - **MCP Integration**: Claude with generic MCP tool support
-- **Atheon Integration**: Claude with Atheon pattern matching and quality gates (152 patterns)
+- **Atheon Integration**: Claude with Atheon pattern matching and quality gates (185 patterns)
 
 ## ✨ Features
 
