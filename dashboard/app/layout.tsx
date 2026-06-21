@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { PerformanceMonitor } from "@/components/performance-monitor";
 import { HealthMonitor } from "@/components/health-monitor";
+import { ErrorBoundaryWrapper } from "@/components/error-boundary";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -82,7 +83,9 @@ export default function RootLayout({
               </div>
             </header>
             <main className="flex-1">
-              {children}
+              <ErrorBoundaryWrapper>
+                {children}
+              </ErrorBoundaryWrapper>
             </main>
             <PerformanceMonitor />
             <HealthMonitor />

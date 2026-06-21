@@ -38,6 +38,11 @@ interface ResultRecord {
 
 /**
  * D1 Database Manager Class
+ *
+ * Production: Bind to D1 via Cloudflare Workers environment:
+ *   constructor(config: DatabaseConfig, db: D1Database) { this.db = db; this.ready = true; }
+ *
+ * Local dev: CreateDatabase() returns instance with ready=false, all methods return empty/null
  */
 export class D1Database {
   private db: any; // D1 database binding
@@ -46,75 +51,17 @@ export class D1Database {
 
   constructor(config: DatabaseConfig) {
     this.config = config;
-    this.initialize();
+    // D1 binding must be passed from Cloudflare Workers env
+    // e.g., new D1Database(config, env.DB)
+    this.ready = false;
   }
 
   /**
-   * Initialize database connection
+   * Bind D1 database from Cloudflare Workers environment
    */
-  private async initialize(): Promise<void> {
-    try {
-      // In a real D1 environment, this would be: this.db = env.DB;
-      // For now, we'll use a local simulation
-      this.db = this.createLocalSimulation();
-      this.ready = true;
-      console.log('D1 Database initialized');
-    } catch (error) {
-      console.error('Failed to initialize D1 Database:', error);
-      this.ready = false;
-    }
-  }
-
-  /**
-   * Create local simulation for development
-   */
-  private createLocalSimulation(): any {
-    // Local storage simulation for development
-    const storage = new Map<string, any[]>();
-
-    return {
-      async prepare(statement: string, params?: any[]) {
-        const queryKey = `${statement}:${JSON.stringify(params || [])}`;
-
-        return {
-          bind(...values: any[]) {
-            const key = `${statement}:${JSON.stringify(values)}`;
-
-            return {
-              async run() {
-                if (statement.trim().toUpperCase().startsWith('SELECT')) {
-                  // Return simulated data
-                  const results = storage.get(key) || [];
-                  return { success: true, results };
-                } else if (statement.trim().toUpperCase().startsWith('INSERT')) {
-                  // Store data
-                  const existing = storage.get(key) || [];
-                  existing.push(values);
-                  storage.set(key, existing);
-                  return { success: true };
-                } else if (statement.trim().toUpperCase().startsWith('UPDATE')) {
-                  // Update data
-                  return { success: true };
-                } else if (statement.trim().toUpperCase().startsWith('DELETE')) {
-                  // Delete data
-                  storage.delete(key);
-                  return { success: true };
-                }
-
-                return { success: true };
-              },
-              async first() {
-                const results = storage.get(key) || [];
-                return results[0] || null;
-              },
-              async all() {
-                return { results: storage.get(key) || [] };
-              }
-            };
-          }
-        };
-      }
-    };
+  bindD1(db: any): void {
+    this.db = db;
+    this.ready = true;
   }
 
   /**

@@ -12,6 +12,7 @@ import {
   filterResults,
   compareSystems,
   getResultsStatistics,
+  buildResultGitHubUrl,
   type BenchmarkReport,
   type ResultsFilter,
 } from '@/lib/github/cache';
@@ -612,7 +613,7 @@ export default function ResultsPage() {
                     <td className="px-6 py-4">
                       <div className="flex gap-2">
                         <button
-                          onClick={() => window.open(`https://github.com/aliasfoxkde/Atheon-Benchmark-Results/blob/main/results/2026/06/19/${system.system_id}.json`, '_blank')}
+                          onClick={() => window.open(buildResultGitHubUrl(system.system_id, system.submitted_at?.split('T')[0].replace(/-/g, '/')), '_blank')}
                           className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
                           title="View on GitHub"
                         >

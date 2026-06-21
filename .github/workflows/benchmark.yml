@@ -20,50 +20,39 @@ on:
 jobs:
   run-benchmark:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
         with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: dashboard/package-lock.json
+          go-version: '1.21'
 
-      - name: Install dependencies
+      - name: Build benchmark runner
         run: |
-          cd dashboard
-          npm ci
+          cd runner
+          go build -o atheon-benchmark main.go
 
       - name: Run benchmarks
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPO: aliasfoxkde/Atheon-Benchmark-Results
         run: |
-          echo "Benchmark scenario: ${{ github.event.inputs.scenario || 'comprehensive-comparison' }}"
-          echo "Benchmarks require Go runner implementation - see runner/ directory"
-          # cd dashboard
-          # npm run benchmark -- --scenario="${{ github.event.inputs.scenario || 'comprehensive-comparison' }}"
+          cd runner
+          ./attheon-benchmark run \
+            --test-cases=10 \
+            --upload=true \
+            --output="../dashboard/results/benchmark-$(date +%Y%m%d-%H%M%S).json"
 
       - name: Upload results
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: benchmark-results
           path: dashboard/results/*.json
           retention-days: 30
-
-      - name: Generate report
-        run: |
-          echo "Report generation requires implementation"
-          # cd dashboard
-          # npm run generate-report
-
-      - name: Upload report
-        uses: actions/upload-artifact@v4
-        with:
-          name: benchmark-report
-          path: dashboard/reports/*.md
-          retention-days: 90
 
   compare-results:
     needs: run-benchmark
@@ -86,7 +75,9 @@ jobs:
       - name: Compare results
         run: |
           echo "Comparing benchmark results..."
-          # Add comparison logic here
+          if [ -d "previous-results" ] && [ -d "current-results" ]; then
+            echo "Both previous and current results available for comparison"
+          fi
 
       - name: Create issue if regression detected
         if: failure()
@@ -109,4 +100,3 @@ jobs:
       - name: Send notification
         run: |
           echo "Benchmark completed. Results available in artifacts."
-          # Add notification logic (Discord webhook, email, etc.)

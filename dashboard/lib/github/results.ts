@@ -210,6 +210,24 @@ export const DEFAULT_GITHUB_CONFIG: GitHubResultsConfig = {
 };
 
 /**
+ * Build GitHub URL for a result file
+ */
+export function buildResultGitHubUrl(systemId: string, date?: string): string {
+  const config = DEFAULT_GITHUB_CONFIG;
+  const datePath = date || new Date().toISOString().split('T')[0].replace(/-/g, '/');
+  return `https://github.com/${config.owner}/${config.repo}/blob/${config.branch}/results/${datePath}/${systemId}.json`;
+}
+
+/**
+ * Build GitHub raw URL for a result file
+ */
+export function buildResultRawUrl(systemId: string, date?: string): string {
+  const config = DEFAULT_GITHUB_CONFIG;
+  const datePath = date || new Date().toISOString().split('T')[0].replace(/-/g, '/');
+  return `https://raw.githubusercontent.com/${config.owner}/${config.repo}/${config.branch}/results/${datePath}/${systemId}.json`;
+}
+
+/**
  * Results filter function
  */
 export interface ResultsFilter {
