@@ -35,6 +35,14 @@
 - Fixed correlation NaN with same issue
 - Fixed forwardRef component type assertion (object not function)
 
-### Gap Identified
-- Benchmarks use `github.com/aliasfoxkde/Atheon` (57 patterns), NOT Atheon-Enhanced (179 patterns)
-- To use enhanced: change go.mod to reference `github.com/aliasfoxkde/Atheon-Enhanced`
+### Gap Investigated: Pattern Loading
+- go.mod correctly references `github.com/aliasfoxkde/Atheon` (which is the local `/nas/Temp/repos/Atheon`)
+- The dashboard does NOT load patterns from the bundled patterns.bundle file
+- Instead, it uses 7 hardcoded patterns in `lib/claude/atheon-integration.ts` (ATHEON_PATTERNS array)
+- The bundled patterns.bundle contains 185 patterns from the community YAML files
+- Fix would require: load patterns from bundle at runtime or build time, rather than hardcoding
+
+### Actual Issue Identified
+- The dashboard's `ATHEON_PATTERNS` in `atheon-integration.ts` has only 7 patterns hardcoded
+- Should load from `/nas/Temp/repos/Atheon/core/patterns.bundle` (gzip+json format)
+- Binary scanner already points to correct path but pattern loading is not implemented

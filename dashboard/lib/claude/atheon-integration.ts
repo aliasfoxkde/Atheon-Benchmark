@@ -17,6 +17,8 @@ import {
   ClaudeMessage
 } from './client';
 
+import { loadPatternsFromBundle, BundlePattern } from '../atheon/binary-scanner';
+
 export interface AtheonPattern {
   name: string;
   category: string;
@@ -63,8 +65,8 @@ export const ATHEON_CATEGORIES = [
   'frameworks'
 ] as const;
 
-// Example Atheon patterns (these would normally come from the Atheon Go library)
-export const ATHEON_PATTERNS: AtheonPattern[] = [
+// Fallback patterns when bundle is not available
+const FALLBACK_ATHEON_PATTERNS: AtheonPattern[] = [
   {
     name: 'aws-access-key',
     category: 'secrets',
@@ -115,6 +117,93 @@ export const ATHEON_PATTERNS: AtheonPattern[] = [
     description: 'AI-related content detected'
   }
 ];
+
+// Cache for loaded patterns
+let cachedPatterns: AtheonPattern[] | null = null;
+let patternsLoadPromise: Promise<AtheonPattern[]> | null = null;
+
+/**
+ * Convert bundle pattern to AtheonPattern format
+ */
+function convertBundlePattern(bundlePattern: BundlePattern): AtheonPattern {
+  // Map category to severity - use sensible defaults
+  const categorySeverities: Record<string, 'critical' | 'high' | 'medium' | 'low'> = {
+    'secrets': 'critical',
+    'security': 'critical',
+    'security-hardening': 'high',
+    'code-quality': 'medium',
+    'accessibility': 'high',
+    'devops': 'medium',
+    'ai-detection': 'low',
+    'healthcare': 'high',
+    'finance': 'high',
+    'pii': 'critical',
+    'frameworks': 'low',
+    'performance': 'medium',
+    'api-integration': 'medium',
+    'cloud-native': 'medium',
+    'data-visualization': 'low',
+    'web-development': 'low',
+    'web-security': 'high',
+    'pwa': 'low',
+  };
+
+  return {
+    name: bundlePattern.name,
+    category: bundlePattern.category,
+    severity: categorySeverities[bundlePattern.category] || 'medium',
+    pattern: bundlePattern.match,
+    description: `${bundlePattern.category}: ${bundlePattern.name} pattern`,
+  };
+}
+
+/**
+ * Load Atheon patterns from bundle or fallback to hardcoded patterns
+ * Uses caching to avoid repeated file reads
+ */
+export async function loadAtheonPatterns(): Promise<AtheonPattern[]> {
+  // Return cached patterns if available
+  if (cachedPatterns !== null) {
+    return cachedPatterns;
+  }
+
+  // If already loading, return the existing promise
+  if (patternsLoadPromise !== null) {
+    return patternsLoadPromise;
+  }
+
+  // Start loading
+  patternsLoadPromise = (async () => {
+    const bundlePath = '/nas/Temp/repos/Atheon/core/patterns.bundle';
+    const bundlePatterns = await loadPatternsFromBundle(bundlePath);
+
+    if (bundlePatterns.length > 0) {
+      cachedPatterns = bundlePatterns.map(convertBundlePattern);
+      console.log(`Loaded ${cachedPatterns.length} patterns from bundle`);
+      return cachedPatterns;
+    }
+
+    // Fallback to hardcoded patterns
+    console.log('Using fallback hardcoded patterns');
+    cachedPatterns = FALLBACK_ATHEON_PATTERNS;
+    return cachedPatterns;
+  })();
+
+  return patternsLoadPromise;
+}
+
+/**
+ * Get ATHEON_PATTERNS - loads from bundle asynchronously
+ * For synchronous access, use loadAtheonPatterns() first
+ */
+export let ATHEON_PATTERNS: AtheonPattern[] = FALLBACK_ATHEON_PATTERNS;
+
+/**
+ * Initialize ATHEON_PATTERNS from bundle (call this during app startup)
+ */
+export async function initializeAtheonPatterns(): Promise<void> {
+  ATHEON_PATTERNS = await loadAtheonPatterns();
+}
 
 export class AtheonClaudeClient extends MCPClaudeClient {
   private atheonConfig: AtheonIntegrationConfig;

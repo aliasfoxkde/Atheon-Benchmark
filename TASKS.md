@@ -25,3 +25,9 @@
 - [ ] Add timeout/AbortError test for executeMCPTool
 - [ ] Add multi-iteration tool chain test
 - [ ] Create reusable createMockMCPServer() helper
+
+## Pending: Pattern Loading (Critical Gap)
+- [ ] Add function to load patterns from gzip bundle file
+- [ ] Parse JSON pattern definitions from bundle
+- [ ] Replace hardcoded ATHEON_PATTERNS array with loaded patterns
+- [ ] Ensure fallback to hardcoded patterns if bundle unavailable

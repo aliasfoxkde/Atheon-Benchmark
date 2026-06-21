@@ -7,8 +7,19 @@ import { spawn } from 'child_process';
 import { promisify } from 'util';
 import { readFile, unlink } from 'fs/promises';
 import { join } from 'path';
+import { createReadStream } from 'fs';
+import { pipeline } from 'stream/promises';
+import { gunzip } from 'zlib';
 
 const exec = promisify(require('child_process').exec);
+
+// Pattern definition from bundle
+export interface BundlePattern {
+  name: string;
+  category: string;
+  match: string;
+  enabled: boolean;
+}
 
 // Simple UUID generator
 function uuidv4(): string {
@@ -17,6 +28,44 @@ function uuidv4(): string {
     const v = c == 'x' ? r : (r & 0x3 | 0x8);
     return v.toString(16);
   });
+}
+
+/**
+ * Load patterns from gzip bundle file
+ */
+export async function loadPatternsFromBundle(bundlePath: string): Promise<BundlePattern[]> {
+  try {
+    // Check if file exists first
+    await readFile(bundlePath);
+  } catch {
+    // Bundle doesn't exist - return empty array
+    console.warn(`Bundle file not found at ${bundlePath}`);
+    return [];
+  }
+
+  try {
+    // Read and decompress the bundle
+    const chunks: Buffer[] = [];
+    const decompressor = gunzip();
+
+    await pipeline(
+      createReadStream(bundlePath),
+      decompressor,
+      async function* (source) {
+        for await (const chunk of source) {
+          chunks.push(chunk);
+        }
+      }
+    );
+
+    const jsonContent = Buffer.concat(chunks).toString('utf8');
+    const patterns = JSON.parse(jsonContent) as BundlePattern[];
+
+    return patterns.filter(p => p.enabled);
+  } catch (error) {
+    console.warn(`Failed to load patterns from bundle: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    return [];
+  }
 }
 
 export interface AtheonFinding {
