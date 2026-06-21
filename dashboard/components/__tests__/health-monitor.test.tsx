@@ -5,11 +5,13 @@
 
 import React from 'react';
 import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { HealthMonitor } from '../health-monitor';
 
-// Mock fetch for health checks
-global.fetch = jest.fn();
+// Mock fetch for health tests - set up globally
+const mockFetch = jest.fn();
+global.fetch = mockFetch;
 
 describe('HealthMonitor Component', () => {
   beforeEach(() => {
@@ -96,6 +98,9 @@ describe('HealthMonitor Component', () => {
 
   describe('Health Checks', () => {
     beforeEach(() => {
+      // Clear previous mock calls
+      mockFetch.mockClear();
+
       // Set environment to development for consistent behavior
       process.env.NODE_ENV = 'development';
 
@@ -106,7 +111,7 @@ describe('HealthMonitor Component', () => {
       });
 
       // Mock successful fetch responses
-      (global.fetch as jest.MockedFunction<typeof fetch>).mockImplementation((url) => {
+      mockFetch.mockImplementation((url) => {
         if (url === '/benchmark-results.json') {
           return Promise.resolve({
             ok: true,
@@ -143,7 +148,8 @@ describe('HealthMonitor Component', () => {
               domInteractive: 1000,
               startTime: 0
             }
-          ])
+          ]),
+          now: jest.fn(() => Date.now())
         }
       });
     });
@@ -151,14 +157,24 @@ describe('HealthMonitor Component', () => {
     it('should perform health checks on mount', async () => {
       render(<HealthMonitor />);
 
-      // Open the panel
+      // Health checks run on mount immediately, before any interaction
+      // Wait for fetch calls from the useEffect
+      await waitFor(() => {
+        expect(mockFetch).toHaveBeenCalled();
+      }, { timeout: 5000 });
+
+      // Verify specific URLs were called
+      expect(mockFetch).toHaveBeenCalledWith('/benchmark-results.json');
+      expect(mockFetch).toHaveBeenCalledWith('/benchmark-metadata.json');
+
+      // Now open the panel to see results
       const button = screen.getByRole('button');
       fireEvent.click(button);
 
-      // Wait longer for async operations to complete
+      // Should show health check results
       await waitFor(() => {
-        expect(global.fetch).toHaveBeenCalled();
-      }, { timeout: 5000 });
+        expect(screen.getByText('Benchmark Data')).toBeInTheDocument();
+      });
     });
 
     it('should display health check results', async () => {
@@ -177,27 +193,52 @@ describe('HealthMonitor Component', () => {
     it('should show healthy status for successful checks', async () => {
       render(<HealthMonitor />);
 
+      // Wait for health checks to complete
+      await waitFor(() => {
+        expect(mockFetch).toHaveBeenCalledWith('/benchmark-results.json');
+        expect(mockFetch).toHaveBeenCalledWith('/benchmark-metadata.json');
+      }, { timeout: 5000 });
+
+      // Open the panel
       const button = screen.getByRole('button');
       fireEvent.click(button);
 
+      // Check for healthy status indicators
       await waitFor(() => {
-        const statusItems = screen.getAllByText(/✅|healthy/i);
-        expect(statusItems.length).toBeGreaterThan(0);
-      }, { timeout: 8000 });
+        expect(screen.getByText('Benchmark Data')).toBeInTheDocument();
+        expect(screen.getByText('Metadata')).toBeInTheDocument();
+        expect(screen.getByText('Page Load')).toBeInTheDocument();
+        // Check for success messages instead of icons (icons are SVG elements)
+        expect(screen.getByText(/results available/i)).toBeInTheDocument();
+        expect(screen.getByText(/metadata loaded/i)).toBeInTheDocument();
+      }, { timeout: 3000 });
     });
 
     it('should show unhealthy status for failed API calls', async () => {
-      (global.fetch as jest.MockedFunction<typeof fetch>).mockRejectedValueOnce(new Error('Network error'));
+      // Clear previous mocks
+      mockFetch.mockClear();
+
+      // Mock fetch to reject for benchmark results
+      mockFetch
+        .mockRejectedValueOnce(new Error('Network error'))
+        .mockRejectedValueOnce(new Error('Network error'));
 
       render(<HealthMonitor />);
 
+      // Wait for health checks to attempt and fail
+      await waitFor(() => {
+        expect(mockFetch).toHaveBeenCalled();
+      }, { timeout: 5000 });
+
+      // Open the panel
       const button = screen.getByRole('button');
       fireEvent.click(button);
 
+      // Check for unhealthy status indicators
       await waitFor(() => {
-        const errorStatus = screen.getByText(/unhealthy|failed/i);
-        expect(errorStatus).toBeInTheDocument();
-      }, { timeout: 8000 });
+        const unhealthyTexts = screen.getAllByText(/unhealthy|failed/i);
+        expect(unhealthyTexts.length).toBeGreaterThan(0);
+      }, { timeout: 3000 });
     });
 
     it('should display latency information', async () => {
@@ -215,20 +256,38 @@ describe('HealthMonitor Component', () => {
 
   describe('Error Handling', () => {
     it('should handle network errors gracefully', async () => {
-      (global.fetch as jest.MockedFunction<typeof fetch>).mockRejectedValue(new Error('Network error'));
+      // Clear previous mocks
+      mockFetch.mockClear();
+
+      // Mock fetch to reject all calls
+      mockFetch.mockRejectedValue(new Error('Network error'));
 
       render(<HealthMonitor />);
 
+      // Wait for health checks to attempt and fail
+      await waitFor(() => {
+        expect(mockFetch).toHaveBeenCalled();
+      }, { timeout: 5000 });
+
+      // Open the panel
       const button = screen.getByRole('button');
       fireEvent.click(button);
 
+      // Should show error states without crashing
+      // The component shows "Failed to fetch" message for both checks
       await waitFor(() => {
-        expect(screen.getByText(/failed to fetch/i)).toBeInTheDocument();
-      }, { timeout: 8000 });
+        // Use getAllByText since there are multiple "Failed to fetch" messages
+        const errorMessages = screen.getAllByText('Failed to fetch');
+        expect(errorMessages.length).toBeGreaterThan(0);
+      }, { timeout: 5000 });
     });
 
     it('should handle invalid JSON responses', async () => {
-      (global.fetch as jest.MockedFunction<typeof fetch>).mockResolvedValue({
+      // Clear previous mocks
+      mockFetch.mockClear();
+
+      // Mock fetch to return invalid JSON
+      mockFetch.mockResolvedValue({
         ok: true,
         json: async () => { throw new Error('Invalid JSON'); }
       } as Response);
@@ -240,7 +299,7 @@ describe('HealthMonitor Component', () => {
 
       await waitFor(() => {
         expect(screen.getByText(/error|failed/i)).toBeInTheDocument();
-      }, { timeout: 8000 });
+      }, { timeout: 3000 });
     });
   });
 
@@ -255,16 +314,16 @@ describe('HealthMonitor Component', () => {
 
       // Wait for initial health checks
       await waitFor(() => {
-        expect(global.fetch).toHaveBeenCalled();
-      }, { timeout: 8000 });
+        expect(mockFetch).toHaveBeenCalled();
+      }, { timeout: 3000 });
 
-      const initialCallCount = (global.fetch as jest.MockedFunction<typeof fetch>).mock.calls.length;
+      const initialCallCount = mockFetch.mock.calls.length;
 
       // Fast forward 1 minute
       jest.advanceTimersByTime(60000);
 
       await waitFor(() => {
-        expect((global.fetch as jest.MockedFunction<typeof fetch>).mock.calls.length).toBeGreaterThan(initialCallCount);
+        expect(mockFetch.mock.calls.length).toBeGreaterThan(initialCallCount);
       });
     });
   });
@@ -324,12 +383,18 @@ describe('HealthMonitor Component', () => {
 
       const button = screen.getByRole('button');
 
-      // Test Enter key
-      fireEvent.keyDown(button, { key: 'Enter', code: 'Enter' });
+      // Test that button can be focused
+      button.focus();
+      expect(button).toHaveFocus();
 
+      // Test Enter key - native HTML buttons should handle this
+      // Since userEvent is timing out, we'll simulate the keyboard event directly
+      fireEvent.keyDown(button, { key: 'Enter', code: 'Enter', keyCode: 13 });
+
+      // After Enter key, the panel should open (simulating button click behavior)
       await waitFor(() => {
         expect(screen.getByText('System Health')).toBeInTheDocument();
-      });
+      }, { timeout: 5000 });
     });
 
     it('should have proper color contrast', () => {

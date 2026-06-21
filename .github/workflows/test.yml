@@ -22,7 +22,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'npm'
           cache-dependency-path: 'dashboard/package-lock.json'
 
@@ -34,13 +34,13 @@ jobs:
       - name: Run ESLint
         run: |
           cd dashboard
-          npm run lint || echo "No linting configured yet"
+          npm run lint
         continue-on-error: true
 
       - name: TypeScript type check
         run: |
           cd dashboard
-          npx tsc --noEmit || echo "TypeScript check completed"
+          npx tsc --noEmit
 
   test:
     runs-on: ubuntu-latest
@@ -53,7 +53,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'npm'
           cache-dependency-path: 'dashboard/package-lock.json'
 
@@ -62,11 +62,20 @@ jobs:
           cd dashboard
           npm ci
 
-      - name: Run tests
+      - name: Run tests with coverage
         run: |
           cd dashboard
-          npm test || echo "No tests configured yet"
+          npm run test:ci
         continue-on-error: true
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        if: success()
+        with:
+          files: ./dashboard/coverage/lcov.info
+          flags: unittests
+          fail_ci_if_error: false
+          verbose: true
 
   build-test:
     runs-on: ubuntu-latest
@@ -79,7 +88,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'npm'
           cache-dependency-path: 'dashboard/package-lock.json'
 

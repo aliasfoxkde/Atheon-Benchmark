@@ -82,14 +82,22 @@ export function HealthMonitor() {
       }
 
       // Check page performance
-      const perfData = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
-      if (perfData) {
-        const loadTime = perfData.loadEventEnd - perfData.startTime;
+      try {
+        const perfData = performance.getEntriesByType && performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+        if (perfData) {
+          const loadTime = perfData.loadEventEnd - perfData.startTime;
+          checks.push({
+            name: 'Page Load',
+            status: loadTime < 3000 ? 'healthy' : loadTime < 5000 ? 'degraded' : 'unhealthy',
+            message: `${Math.round(loadTime)}ms load time`,
+            latency: Math.round(loadTime)
+          });
+        }
+      } catch (error) {
         checks.push({
           name: 'Page Load',
-          status: loadTime < 3000 ? 'healthy' : loadTime < 5000 ? 'degraded' : 'unhealthy',
-          message: `${Math.round(loadTime)}ms load time`,
-          latency: Math.round(loadTime)
+          status: 'degraded',
+          message: 'Performance data unavailable'
         });
       }
 
@@ -125,6 +133,12 @@ export function HealthMonitor() {
     return (
       <button
         onClick={() => setIsVisible(true)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setIsVisible(true);
+          }
+        }}
         className="fixed bottom-4 right-4 p-2 bg-white dark:bg-black border border-zinc-200 dark:border-zinc-800 rounded-full shadow-lg hover:shadow-xl transition-shadow"
         title="Show health monitor"
       >

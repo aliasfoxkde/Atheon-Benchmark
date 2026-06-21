@@ -79,7 +79,7 @@ test.describe('Critical Path Smoke Tests', () => {
     });
   });
 
-  describe('Results Page Smoke Tests', () => {
+  test.describe('Results Page Smoke Tests', () => {
     test('should load the results page', async ({ page }) => {
       await page.goto('/results');
 
@@ -136,7 +136,7 @@ test.describe('Critical Path Smoke Tests', () => {
     });
   });
 
-  describe('Benchmark Page Smoke Tests', () => {
+  test.describe('Benchmark Page Smoke Tests', () => {
     test('should load the benchmark page', async ({ page }) => {
       await page.goto('/benchmark');
 
@@ -163,7 +163,7 @@ test.describe('Critical Path Smoke Tests', () => {
     });
   });
 
-  describe('Static Assets Smoke Tests', () => {
+  test.describe('Static Assets Smoke Tests', () => {
     test('should serve manifest.json', async ({ page }) => {
       const response = await page.request.get('/manifest.json');
 
@@ -188,7 +188,7 @@ test.describe('Critical Path Smoke Tests', () => {
     });
   });
 
-  describe('API Integration Smoke Tests', () => {
+  test.describe('API Integration Smoke Tests', () => {
     test('should handle GitHub API integration', async ({ page }) => {
       await page.goto('/results');
 
@@ -216,7 +216,7 @@ test.describe('Critical Path Smoke Tests', () => {
     });
   });
 
-  describe('Responsive Design Smoke Tests', () => {
+  test.describe('Responsive Design Smoke Tests', () => {
     test('should work on mobile viewport', async ({ page }) => {
       await page.setViewportSize({ width: 375, height: 667 });
       await page.goto('/');
@@ -255,7 +255,7 @@ test.describe('Critical Path Smoke Tests', () => {
     });
   });
 
-  describe('Performance Smoke Tests', () => {
+  test.describe('Performance Smoke Tests', () => {
     test('should load main page quickly', async ({ page }) => {
       const startTime = Date.now();
       await page.goto('/');
@@ -287,7 +287,7 @@ test.describe('Critical Path Smoke Tests', () => {
     });
   });
 
-  describe('Error Handling Smoke Tests', () => {
+  test.describe('Error Handling Smoke Tests', () => {
     test('should handle 404 pages gracefully', async ({ page }) => {
       const response = await page.request.get('/non-existent-page');
 
