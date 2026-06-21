@@ -51,7 +51,7 @@ Three different Claude integration approaches:
 
 Security and quality validation using Atheon:
 
-- **Pattern Scanning**: 105+ patterns across 8 categories
+- **Pattern Scanning**: 185+ patterns from bundle file, 8 categories
 - **Quality Enforcement**: Configurable strictness levels
 - **Real-time Validation**: Continuous scanning during execution
 - **Finding Reports**: Detailed security and quality reports

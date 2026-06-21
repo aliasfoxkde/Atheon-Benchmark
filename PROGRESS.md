@@ -58,3 +58,8 @@
 - Added `createMockMCPServer()` helper function
 - Added timeout/AbortError test for MCP tool execution
 - Added multi-iteration tool chain test
+
+### Documentation Updates
+- ARCHITECTURE.md: Fixed pattern count (185 not 105)
+- TESTING.md: Updated coverage thresholds (62-75% actual)
+- 846 tests passing, coverage thresholds met

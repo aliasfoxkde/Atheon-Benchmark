@@ -16,10 +16,10 @@
 - [x] Add missing MCP edge case tests (timeouts, AbortError, multi-iteration chains)
 - [x] Create shared MCP mock helper
 
-## Phase 4: Documentation
-- [ ] Update ARCHITECTURE.md with current state
-- [ ] Update TESTING.md with coverage results
-- [ ] Update README with benchmark integration details
+## Phase 4: Documentation (Completed)
+- [x] Update ARCHITECTURE.md with current state (185 patterns, not 105)
+- [x] Update TESTING.md with coverage results (846 tests, 75% statements)
+- [x] Update README with benchmark integration details
 
 ## Phase 5: Atheon Pattern Loading (COMPLETED)
 - [x] Investigate patterns.bundle format (gzip+json, 185 patterns)
