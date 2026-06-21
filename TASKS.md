@@ -26,8 +26,9 @@
 - [ ] Add multi-iteration tool chain test
 - [ ] Create reusable createMockMCPServer() helper
 
-## Pending: Pattern Loading (Critical Gap)
-- [ ] Add function to load patterns from gzip bundle file
-- [ ] Parse JSON pattern definitions from bundle
-- [ ] Replace hardcoded ATHEON_PATTERNS array with loaded patterns
-- [ ] Ensure fallback to hardcoded patterns if bundle unavailable
+## Completed: Pattern Loading (Critical Gap)
+- [x] Add loadPatternsFromBundle() to binary-scanner.ts
+- [x] Parse JSON pattern definitions from gzip bundle
+- [x] Replace hardcoded ATHEON_PATTERNS with loaded patterns (185 vs 7)
+- [x] Ensure fallback to hardcoded patterns if bundle unavailable
+- [x] Add caching to avoid repeated file reads

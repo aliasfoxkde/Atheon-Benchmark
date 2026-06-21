@@ -42,7 +42,9 @@
 - The bundled patterns.bundle contains 185 patterns from the community YAML files
 - Fix would require: load patterns from bundle at runtime or build time, rather than hardcoding
 
-### Actual Issue Identified
-- The dashboard's `ATHEON_PATTERNS` in `atheon-integration.ts` has only 7 patterns hardcoded
-- Should load from `/nas/Temp/repos/Atheon/core/patterns.bundle` (gzip+json format)
-- Binary scanner already points to correct path but pattern loading is not implemented
+### Actual Issue Fixed
+- Added `loadPatternsFromBundle()` to binary-scanner.ts
+- Pattern bundle is gzip+json with 185 patterns from community YAML files
+- `loadAtheonPatterns()` and `initializeAtheonPatterns()` handle async loading with caching
+- Falls back to 7 hardcoded patterns if bundle unavailable
+- All 844 tests still passing after changes
