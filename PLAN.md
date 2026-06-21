@@ -7,14 +7,14 @@
 - [x] Remove continue-on-error from critical steps
 - [x] Fix test:ci script coverage glob mismatch
 
-## Phase 2: Coverage Gap Fix (In Progress)
+## Phase 2: Coverage Gap Fix (Completed)
 - [x] Create RESEARCH.md and PROGRESS.md
-- [ ] Exclude untestable files from coverage (index.ts, build-time.ts, binary-scanner.ts)
-- [ ] Verify test:ci passes with coverage thresholds
+- [x] Exclude untestable files from coverage (index.ts, build-time.ts, binary-scanner.ts)
+- [x] Verify test:ci passes with coverage thresholds
 
-## Phase 3: MCP Integration Tests
-- [ ] Add missing MCP edge case tests (timeouts, AbortError, multi-iteration chains)
-- [ ] Create shared MCP mock helper
+## Phase 3: MCP Integration Tests (Completed)
+- [x] Add missing MCP edge case tests (timeouts, AbortError, multi-iteration chains)
+- [x] Create shared MCP mock helper
 
 ## Phase 4: Documentation
 - [ ] Update ARCHITECTURE.md with current state

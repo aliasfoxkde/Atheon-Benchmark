@@ -406,6 +406,12 @@ export const EXAMPLE_MCP_TOOLS: MCPTool[] = [
     },
     handler: async (input) => {
       try {
+        // Validate expression contains only safe mathematical characters
+        // This is a mitigation for the security risk of Function() constructor
+        const safePattern = /^[\d+\-*/().%\s]+$/;
+        if (!safePattern.test(input.expression)) {
+          throw new Error('Expression contains invalid characters');
+        }
         // Safe evaluation of mathematical expressions
         const result = Function('"use strict"; return (' + input.expression + ')')();
         return { result };

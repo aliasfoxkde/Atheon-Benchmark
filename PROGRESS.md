@@ -47,4 +47,14 @@
 - Pattern bundle is gzip+json with 185 patterns from community YAML files
 - `loadAtheonPatterns()` and `initializeAtheonPatterns()` handle async loading with caching
 - Falls back to 7 hardcoded patterns if bundle unavailable
-- All 844 tests still passing after changes
+- All 846 tests passing after changes
+
+### Security Fix
+- Added input validation to `calculate` tool in mcp-integration.ts
+- Validates expression contains only safe chars: `/^[\d+\-*/().%\s]+$/`
+- Mitigates arbitrary code execution risk via Function() constructor
+
+### MCP Test Improvements
+- Added `createMockMCPServer()` helper function
+- Added timeout/AbortError test for MCP tool execution
+- Added multi-iteration tool chain test
