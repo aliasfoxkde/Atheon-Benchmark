@@ -155,7 +155,17 @@ describe('MCPClaudeClient', () => {
         description: 'Calculate',
         inputSchema: { type: 'object', properties: { expression: { type: 'string' } } },
         handler: async (input: any) => {
-          return { result: Function('"use strict"; return (' + input.expression + ')')() };
+          // Safe expression evaluator (no Function())
+          const safeEval = (expr: string): number => {
+            const tokens = expr.replace(/\s+/g, '').split(/([+\-*/()])/).filter(Boolean);
+            let result = 0, num = 0, op = '+';
+            for (const t of tokens) {
+              if ('+*-/'.includes(t)) { op = t; }
+              else { num = parseFloat(t); result = op === '+' ? result + num : op === '-' ? result - num : op === '*' ? result * num : result / num; }
+            }
+            return result;
+          };
+          return { result: safeEval(input.expression) };
         }
       };
 

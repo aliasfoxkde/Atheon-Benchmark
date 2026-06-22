@@ -9,9 +9,10 @@ import { readFile, unlink } from 'fs/promises';
 import { join } from 'path';
 import { createReadStream } from 'fs';
 import { pipeline } from 'stream/promises';
-import { gunzip } from 'zlib';
+import { createGunzip } from 'zlib';
 
 const exec = promisify(require('child_process').exec);
+const execFile = promisify(require('child_process').execFile);
 
 // Pattern definition from bundle
 export interface BundlePattern {
@@ -46,7 +47,7 @@ export async function loadPatternsFromBundle(bundlePath: string): Promise<Bundle
   try {
     // Read and decompress the bundle
     const chunks: Buffer[] = [];
-    const decompressor = gunzip();
+    const decompressor = createGunzip();
 
     await pipeline(
       createReadStream(bundlePath),
@@ -181,10 +182,11 @@ export class AtheonBinaryScanner {
     filesScanned: number;
   }> {
     const categories = this.config.categories.join(',');
-    const cmd = `${this.config.binaryPath} --json --categories=${categories} ${path}`;
+    // Use execFile with array args to avoid shell injection
+    const args = ['--json', '--categories=' + categories, path];
 
     try {
-      const { stdout, stderr } = await exec(cmd, {
+      const { stdout, stderr } = await execFile(this.config.binaryPath, args, {
         timeout: this.config.timeout,
       });
 

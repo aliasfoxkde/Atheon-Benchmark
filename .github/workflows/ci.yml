@@ -6,9 +6,14 @@ on:
   pull_request:
     branches: [main, develop]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lint:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -31,6 +36,7 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -49,17 +55,52 @@ jobs:
       - name: Run tests
         run: |
           cd dashboard
-          npm test || echo "No tests configured yet"
+          npm run test:ci
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        if: success()
+        with:
+          files: ./dashboard/coverage/lcov.info
+          flags: unittests
+          fail_ci_if_error: false
+
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [lint, test]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: dashboard/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd dashboard
+          npm ci
 
       - name: Build project
         run: |
           cd dashboard
           npm run build
 
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: next-build
+          path: dashboard/.next
+          retention-days: 1
+
   deploy-staging:
-    needs: [lint, test]
+    needs: [build]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/develop'
+    timeout-minutes: 10
     environment:
       name: staging
       url: https://staging.atheon-benchmark.com
@@ -84,7 +125,7 @@ jobs:
           npm run build
 
       - name: Deploy to Cloudflare Pages (Staging)
-        uses: cloudflare/pages-action@v1
+        uses: cloudflare/pages-action@v2
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -93,9 +134,10 @@ jobs:
           gitBranch: develop
 
   deploy-production:
-    needs: [lint, test]
+    needs: [build]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
+    timeout-minutes: 15
     environment:
       name: production
       url: https://atheon-benchmark.com
@@ -120,7 +162,7 @@ jobs:
           npm run build
 
       - name: Deploy to Cloudflare Pages (Production)
-        uses: cloudflare/pages-action@v1
+        uses: cloudflare/pages-action@v2
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -139,6 +181,7 @@ jobs:
 
   security-scan:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 

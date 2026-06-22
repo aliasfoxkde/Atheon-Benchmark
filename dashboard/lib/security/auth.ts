@@ -27,7 +27,7 @@ export class SecurityManager {
 
   constructor(config: Partial<AuthConfig> = {}) {
     this.config = {
-      enabled: config.enabled ?? false, // Disabled by default
+      enabled: config.enabled ?? true, // Enabled by default
       apiKey: config.apiKey || process.env.API_KEY,
       rateLimit: config.rateLimit || {
         requests: 100,

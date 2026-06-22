@@ -14,10 +14,15 @@ on:
         default: false
         type: boolean
 
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     name: Deploy to Cloudflare Pages
+    timeout-minutes: 20
 
     steps:
       - name: Checkout repository
@@ -35,10 +40,10 @@ jobs:
           cd dashboard
           npm ci
 
-      - name: Run tests (if available)
+      - name: Run tests
         run: |
           cd dashboard
-          npm test || echo "No tests configured yet"
+          npm run test:ci
 
       - name: Build application
         if: github.event.inputs.skip-build != 'true'
@@ -49,32 +54,21 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Deploy to Cloudflare Pages
-        uses: cloudflare/pages-action@v1
+        uses: cloudflare/pages-action@v2
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: atheon-benchmark-dashboard
           directory: dashboard/out
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
-          wranglerVersion: '3.22.0'
-
-      - name: Comment deployment status on PR
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: '✅ Dashboard deployed to Cloudflare Pages preview environment!'
-            })
+          wranglerVersion: '3.100'
 
   test-deployment:
     runs-on: ubuntu-latest
     name: Test deployed site
     needs: deploy
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    timeout-minutes: 10
 
     steps:
       - name: Wait for deployment
@@ -84,9 +78,9 @@ jobs:
         run: |
           response=$(curl -s -o /dev/null -w "%{http_code}" https://atheon-benchmark-dashboard.pages.dev/)
           if [ $response -eq 200 ]; then
-            echo "✅ Main site is accessible"
+            echo "Main site is accessible"
           else
-            echo "❌ Main site returned HTTP $response"
+            echo "Main site returned HTTP $response"
             exit 1
           fi
 
@@ -94,11 +88,11 @@ jobs:
         run: |
           response=$(curl -s https://atheon-benchmark-dashboard.pages.dev/benchmark-results.json)
           if echo "$response" | jq -e '. | length >= 0' > /dev/null; then
-            echo "✅ Results data is accessible and valid"
+            echo "Results data is accessible and valid"
             count=$(echo "$response" | jq '. | length')
-            echo "📊 Found $count benchmark results"
+            echo "Found $count benchmark results"
           else
-            echo "❌ Results data is not valid"
+            echo "Results data is not valid"
             exit 1
           fi
 
@@ -106,8 +100,8 @@ jobs:
         run: |
           response=$(curl -s https://atheon-benchmark-dashboard.pages.dev/benchmark-metadata.json)
           if echo "$response" | jq -e '.total_systems' > /dev/null; then
-            echo "✅ Metadata is accessible and valid"
+            echo "Metadata is accessible and valid"
           else
-            echo "❌ Metadata is not valid"
+            echo "Metadata is not valid"
             exit 1
           fi

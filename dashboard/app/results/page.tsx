@@ -31,40 +31,6 @@ export default function ResultsPage() {
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const [cacheStats, setCacheStats] = useState<{total_systems: number, is_cached: boolean, last_updated: number | null}>({total_systems: 0, is_cached: false, last_updated: null});
 
-  useEffect(() => {
-    loadResults();
-  }, []);
-
-  const filteredResults = filter ? filterResults(results, filter) : results;
-  const statistics = getResultsStatistics(filteredResults);
-  const systemComparisons = compareSystems(filteredResults);
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (focusedIndex === -1) return;
-
-      const systems = filteredResults;
-      if (event.key === 'ArrowDown') {
-        event.preventDefault();
-        setFocusedIndex((prev) => Math.min(prev + 1, systems.length - 1));
-      } else if (event.key === 'ArrowUp') {
-        event.preventDefault();
-        setFocusedIndex((prev) => Math.max(prev - 1, 0));
-      } else if (event.key === 'Enter' && focusedIndex >= 0 && focusedIndex < systems.length) {
-        event.preventDefault();
-        const system = systems[focusedIndex];
-        toggleSystemSelection(system.system_id);
-      } else if (event.key === 'Escape') {
-        event.preventDefault();
-        setFocusedIndex(-1);
-        clearSelection();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [focusedIndex, filteredResults]);
-
   const loadResults = async () => {
     try {
       setLoading(true);
@@ -105,6 +71,10 @@ export default function ResultsPage() {
     }
   };
 
+  const filteredResults = filter ? filterResults(results, filter) : results;
+  const statistics = getResultsStatistics(filteredResults);
+  const systemComparisons = compareSystems(filteredResults);
+
   const toggleSystemSelection = (systemId: string) => {
     const newSelection = new Set(selectedSystems);
     if (newSelection.has(systemId)) {
@@ -118,6 +88,78 @@ export default function ResultsPage() {
   const clearSelection = () => {
     setSelectedSystems(new Set());
   };
+
+  // Load results on mount
+  useEffect(() => {
+    const doLoad = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Try to load from static file first (for deployed sites)
+        try {
+          const response = await fetch('/benchmark-results.json');
+          if (response.ok) {
+            const data = await response.json();
+            setResults(data);
+            setCacheStats({
+              total_systems: data.length,
+              is_cached: true,
+              last_updated: Date.now()
+            });
+            console.log('[Results] Loaded from static file');
+            return;
+          }
+        } catch (staticError) {
+          console.log('[Results] Static file not available, trying GitHub API...');
+        }
+
+        // Fallback to GitHub API for local development
+        const fetcher = createCachedGitHubResultsFetcher(DEFAULT_GITHUB_CONFIG);
+        const data = await fetcher.fetchAllResults();
+
+        // Update cache statistics
+        const stats = fetcher.getCachedStatistics();
+        setCacheStats(stats);
+
+        setResults(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load results');
+        console.error('[Results] Failed to load results:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    doLoad();
+  }, []);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (focusedIndex === -1) return;
+
+      const systems = filteredResults;
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        setFocusedIndex((prev) => Math.min(prev + 1, systems.length - 1));
+      } else if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        setFocusedIndex((prev) => Math.max(prev - 1, 0));
+      } else if (event.key === 'Enter' && focusedIndex >= 0 && focusedIndex < systems.length) {
+        event.preventDefault();
+        const system = systems[focusedIndex];
+        toggleSystemSelection(system.system_id);
+      } else if (event.key === 'Escape') {
+        event.preventDefault();
+        setFocusedIndex(-1);
+        clearSelection();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [focusedIndex, filteredResults]);
+
 
   if (loading) {
     return (

@@ -6,6 +6,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { benchmarkClient, BenchmarkConfig, BenchmarkResult } from '@/lib/benchmark/client';
 
 export default function BenchmarkPage() {
@@ -21,11 +22,6 @@ export default function BenchmarkPage() {
     testCases: 5,
   });
 
-  // Load all benchmarks on mount
-  useEffect(() => {
-    loadBenchmarks();
-  }, []);
-
   const loadBenchmarks = async () => {
     try {
       const response = await benchmarkClient.getAllBenchmarks();
@@ -36,6 +32,11 @@ export default function BenchmarkPage() {
       console.error('Failed to load benchmarks:', err);
     }
   };
+
+  // Load all benchmarks on mount
+  useEffect(() => {
+    loadBenchmarks();
+  }, [loadBenchmarks]);
 
   const handleStartBenchmark = async () => {
     setIsRunning(true);
@@ -116,12 +117,12 @@ export default function BenchmarkPage() {
               Comprehensive AI benchmarking with real Atheon integration
             </p>
             <div className="flex gap-2 mt-4">
-              <a href="/" className="text-blue-600 dark:text-blue-400 hover:underline">
+              <Link href="/" className="text-blue-600 dark:text-blue-400 hover:underline">
                 ← Back to Home
-              </a>
-              <a href="/results" className="text-blue-600 dark:text-blue-400 hover:underline">
+              </Link>
+              <Link href="/results" className="text-blue-600 dark:text-blue-400 hover:underline">
                 View Results →
-              </a>
+              </Link>
             </div>
           </div>
 
@@ -162,7 +163,7 @@ export default function BenchmarkPage() {
                 </label>
                 <select
                   value={config.scenario}
-                  onChange={(e) => setConfig({ ...config, scenario: e.target.value as any })}
+                  onChange={(e) => setConfig({ ...config, scenario: e.target.value as 'vanilla' | 'mcp' | 'atheon' })}
                   className="w-full px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-black dark:text-zinc-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="vanilla">🟢 Vanilla Claude (Baseline)</option>
@@ -353,7 +354,7 @@ export default function BenchmarkPage() {
                 Individual Test Results
               </h3>
               <div className="space-y-3 max-h-96 overflow-y-auto">
-                {results.results.map((result: any, index: number) => (
+                {results.results.map((result: BenchmarkResult['results'][number], index: number) => (
                   <div
                     key={index}
                     className={`p-4 rounded-lg border transition-all ${

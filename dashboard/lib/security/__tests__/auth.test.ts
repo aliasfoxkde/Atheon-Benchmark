@@ -47,12 +47,12 @@ describe('SecurityManager', () => {
       expect(manager).toBeDefined();
     });
 
-    it('should be disabled by default', () => {
-      // When disabled, checkAuth returns true
+    it('should be enabled by default', () => {
+      // When enabled without valid key, checkAuth returns false
       const request = new MockRequest('http://localhost', {
         headers: { 'x-api-key': 'wrong' }
       });
-      expect(manager.checkAuth(request)).toBe(true);
+      expect(manager.checkAuth(request)).toBe(false);
     });
 
     it('should accept custom config', () => {

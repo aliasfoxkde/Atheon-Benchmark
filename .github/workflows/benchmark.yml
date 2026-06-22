@@ -17,6 +17,10 @@ on:
           - atheon-integrated
           - comprehensive-comparison
 
+concurrency:
+  group: benchmark-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   run-benchmark:
     runs-on: ubuntu-latest
@@ -41,7 +45,7 @@ jobs:
           GITHUB_REPO: aliasfoxkde/Atheon-Benchmark-Results
         run: |
           cd runner
-          ./attheon-benchmark run \
+          ./atheon-benchmark run \
             --test-cases=10 \
             --upload=true \
             --output="../dashboard/results/benchmark-$(date +%Y%m%d-%H%M%S).json"
@@ -50,33 +54,28 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: benchmark-results
+          name: benchmark-results-${{ github.run_id }}
           path: dashboard/results/*.json
           retention-days: 30
 
   compare-results:
     needs: run-benchmark
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
       - name: Download previous results
         uses: actions/download-artifact@v4
         with:
-          name: benchmark-results
-          path: previous-results
-
-      - name: Download current results
-        uses: actions/download-artifact@v4
-        with:
-          name: benchmark-results
+          name: benchmark-results-${{ github.run_id }}
           path: current-results
 
       - name: Compare results
         run: |
           echo "Comparing benchmark results..."
-          if [ -d "previous-results" ] && [ -d "current-results" ]; then
-            echo "Both previous and current results available for comparison"
+          if [ -d "current-results" ]; then
+            echo "Results available for analysis"
           fi
 
       - name: Create issue if regression detected
@@ -95,6 +94,7 @@ jobs:
   notify-results:
     needs: [run-benchmark, compare-results]
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     if: always()
     steps:
       - name: Send notification

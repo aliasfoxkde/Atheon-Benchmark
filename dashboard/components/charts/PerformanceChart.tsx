@@ -6,6 +6,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import type { Chart, ChartConfiguration } from 'chart.js';
 
 interface PerformanceChartProps {
   data: {
@@ -23,7 +24,7 @@ interface PerformanceChartProps {
 
 export function PerformanceChart({ data, type = 'bar', title }: PerformanceChartProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const chartRef = useRef<any>(null);
+  const chartRef = useRef<Chart | null>(null);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -38,7 +39,7 @@ export function PerformanceChart({ data, type = 'bar', title }: PerformanceChart
       if (canvasRef.current) {
         const ctx = canvasRef.current.getContext('2d');
         if (ctx) {
-          chartRef.current = new Chart(ctx, {
+          const config: ChartConfiguration = {
             type,
             data,
             options: {
@@ -79,7 +80,8 @@ export function PerformanceChart({ data, type = 'bar', title }: PerformanceChart
                 },
               },
             },
-          });
+          };
+          chartRef.current = new Chart(ctx, config);
         }
       }
     };

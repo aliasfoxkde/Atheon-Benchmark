@@ -184,9 +184,14 @@ export class BenchmarkExecutor {
    * Initialize Claude clients for different configurations
    */
   private async initializeClients(): Promise<void> {
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      throw new Error('ANTHROPIC_API_KEY environment variable is required');
+    }
+
     // Vanilla client
     this.clients.set('vanilla', createVanillaClaudeClient({
-      apiKey: process.env.ANTHROPIC_API_KEY || 'mock-api-key',
+      apiKey,
       model: this.scenario.claude_config.model,
       timeout: this.scenario.claude_config.timeout,
     }));
@@ -194,7 +199,7 @@ export class BenchmarkExecutor {
     // MCP client
     if (this.scenario.mcp_config?.enabled) {
       this.clients.set('mcp', createMCPClaudeClient({
-        apiKey: process.env.ANTHROPIC_API_KEY || 'mock-api-key',
+        apiKey,
         model: this.scenario.claude_config.model,
         timeout: this.scenario.claude_config.timeout,
         mcpServers: this.scenario.mcp_config.servers.map(server => ({
@@ -209,7 +214,7 @@ export class BenchmarkExecutor {
     // Atheon client
     if (this.scenario.atheon_config?.enabled || this.scenario.mcp_config?.enabled) {
       this.clients.set('atheon', createAtheonClaudeClient({
-        apiKey: process.env.ANTHROPIC_API_KEY || 'mock-api-key',
+        apiKey,
         model: this.scenario.claude_config.model,
         timeout: this.scenario.claude_config.timeout,
         mcpServers: [{
