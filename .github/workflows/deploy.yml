@@ -43,7 +43,7 @@ jobs:
       - name: Run tests
         run: |
           cd dashboard
-          npm run test:ci
+          npm run test:ci || exit 1
 
       - name: Build application
         if: github.event.inputs.skip-build != 'true'

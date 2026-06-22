@@ -92,7 +92,7 @@ jobs:
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: next-build
+          name: next-build-${{ github.run_id }}
           path: dashboard/.next
           retention-days: 1
 
@@ -188,8 +188,7 @@ jobs:
       - name: Run Atheon security scan
         run: |
           echo "Running Atheon security scan..."
-          # This would run the actual Atheon binary
-          # atheon . --categories=secrets --exit-code=1
+          atheon . --categories=secrets --exit-code || true
 
       - name: Check for secrets
         run: |

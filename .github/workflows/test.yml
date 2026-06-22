@@ -105,11 +105,11 @@ jobs:
       - name: Verify build output
         run: |
           cd dashboard
-          if [ -d "out" ]; then
-            echo "✅ Build output directory exists"
+          if [ -d "out" ] && [ "$(ls -A out/)" ]; then
+            echo "✅ Build output directory exists and is not empty"
             ls -la out/
           else
-            echo "❌ Build output directory not found"
+            echo "❌ Build output directory is missing or empty"
             exit 1
           fi
 
