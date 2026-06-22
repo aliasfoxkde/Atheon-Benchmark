@@ -3,8 +3,8 @@
 ## Phase 1: Critical Security Fixes
 - [x] C1: Fix command injection in binary-scanner.ts (exec → execFile)
 - [x] C2: Enable auth by default, wire into server routes
-- [ ] C3: Fix permissive CORS in server/src/index.ts
-- [ ] C4: Add Zod validation to POST endpoints
+- [x] C3: Fix permissive CORS in server/src/index.ts
+- [x] C4: Add Zod validation to POST endpoints
 - [x] C5: Remove mock-api-key fallback, fail fast
 - [x] C6: Replace Function() in mcp-integration tests with mathjs
 
@@ -53,7 +53,7 @@
 
 ## Phase 6: Dependencies & Scripts
 - [ ] D1: Fix lucide-react version
-- [ ] D2: Add server/package-lock.json
+- [ ] D2: Add server/package-lock.json (done)
 - [ ] D3: Update wrangler
 - [ ] D4: Update vitest
 - [ ] D5: Update @types/node
