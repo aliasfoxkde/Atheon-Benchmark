@@ -4,6 +4,7 @@
  */
 
 import { Env } from './types';
+import { validateBody, createBenchmarkSchema, createConfigurationSchema, createTestCaseSchema } from './validation';
 
 export interface Env {
   // D1 Database binding
@@ -27,12 +28,18 @@ export default {
       const url = new URL(request.url);
       const path = url.pathname;
 
-      // CORS headers
-      const corsHeaders = {
-        'Access-Control-Allow-Origin': '*',
+      // CORS headers - use environment variable or restrict to known origins
+      const allowedOrigins = (env.ENVIRONMENT === 'production')
+        ? (env.ALLOWED_ORIGINS ? env.ALLOWED_ORIGINS.split(',') : ['https://atheon-benchmark.com', 'https://www.atheon-benchmark.com'])
+        : ['http://localhost:3000', 'http://127.0.0.1:3000'];
+      const origin = request.headers.get('Origin');
+      const corsHeaders: Record<string, string> = {
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
       };
+      if (origin && allowedOrigins.includes(origin)) {
+        corsHeaders['Access-Control-Allow-Origin'] = origin;
+      }
 
       // Handle OPTIONS requests for CORS
       if (request.method === 'OPTIONS') {
@@ -59,7 +66,7 @@ export default {
           status: 500,
           headers: {
             'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*'
+            ...corsHeaders
           }
         }
       );
@@ -72,6 +79,13 @@ async function healthCheck(env: Env): Promise<Response> {
     // Test database connection
     const dbResult = await env.DB.prepare('SELECT 1 as test').first<{ test: number }>();
 
+    const healthOrigin = request.headers.get('Origin');
+    const healthCorsHeaders: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (healthOrigin && allowedOrigins.includes(healthOrigin)) {
+      healthCorsHeaders['Access-Control-Allow-Origin'] = healthOrigin;
+    }
     return new Response(
       JSON.stringify({
         status: 'healthy',
@@ -81,12 +95,7 @@ async function healthCheck(env: Env): Promise<Response> {
         database: dbResult?.test === 1 ? 'connected' : 'error',
         timestamp: new Date().toISOString()
       }),
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
-        }
-      }
+      { headers: healthCorsHeaders }
     );
   } catch (error) {
     return new Response(
@@ -115,8 +124,8 @@ async function handleApiRequest(
   const path = url.pathname;
   const method = request.method;
 
-  // Parse body for POST/PUT requests
-  let body: any = null;
+  // Parse and validate body for POST/PUT requests
+  let body: unknown = null;
   if (method === 'POST' || method === 'PUT') {
     try {
       body = await request.json();
@@ -131,6 +140,25 @@ async function handleApiRequest(
           }
         }
       );
+    }
+
+    // Validate body based on endpoint
+    const pathLower = path.toLowerCase();
+    if (pathLower === '/api/benchmarks' && method === 'POST') {
+      const result = validateBody(createBenchmarkSchema, body);
+      if (!result.success) {
+        return new Response(JSON.stringify({ error: result.error }), { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+      }
+    } else if (pathLower === '/api/configurations' && method === 'POST') {
+      const result = validateBody(createConfigurationSchema, body);
+      if (!result.success) {
+        return new Response(JSON.stringify({ error: result.error }), { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+      }
+    } else if (pathLower === '/api/test-cases' && method === 'POST') {
+      const result = validateBody(createTestCaseSchema, body);
+      if (!result.success) {
+        return new Response(JSON.stringify({ error: result.error }), { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+      }
     }
   }
 
@@ -224,7 +252,7 @@ async function getBenchmarks(env: Env, url: URL, headers: Record<string, string>
   }
 }
 
-async function createBenchmark(env: Env, body: any, headers: Record<string, string>): Promise<Response> {
+async function createBenchmark(env: Env, body: unknown, headers: Record<string, string>): Promise<Response> {
   const id = crypto.randomUUID();
   const { name, description, configuration_id, config } = body;
 
@@ -288,7 +316,7 @@ async function deleteBenchmark(env: Env, id: string, headers: Record<string, str
   }
 }
 
-async function executeBenchmark(env: Env, benchmarkId: string, body: any, headers: Record<string, string>): Promise<Response> {
+async function executeBenchmark(env: Env, benchmarkId: string, body: unknown, headers: Record<string, string>): Promise<Response> {
   // This is a placeholder for benchmark execution
   // In a full implementation, this would trigger the actual benchmark execution process
   return new Response(
@@ -381,7 +409,7 @@ async function getConfigurations(env: Env, headers: Record<string, string>): Pro
   }
 }
 
-async function createConfiguration(env: Env, body: any, headers: Record<string, string>): Promise<Response> {
+async function createConfiguration(env: Env, body: unknown, headers: Record<string, string>): Promise<Response> {
   const id = crypto.randomUUID();
   const { name, description, config, is_public } = body;
 
@@ -471,7 +499,7 @@ async function getTestCases(env: Env, url: URL, headers: Record<string, string>)
   }
 }
 
-async function createTestCase(env: Env, body: any, headers: Record<string, string>): Promise<Response> {
+async function createTestCase(env: Env, body: unknown, headers: Record<string, string>): Promise<Response> {
   const id = crypto.randomUUID();
   const { name, description, category, difficulty, input_prompt, expected_output, validation_rules } = body;
 
