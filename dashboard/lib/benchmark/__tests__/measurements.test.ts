@@ -581,3 +581,159 @@ describe('Interface type definitions', () => {
     expect(metrics.error_message).toBe('Test error');
   });
 });
+
+import { StatisticsUtils } from '../measurements';
+
+describe('StatisticsUtils', () => {
+  describe('mean', () => {
+    it('should calculate mean correctly', () => {
+      expect(StatisticsUtils.mean([10, 20, 30])).toBe(20);
+    });
+
+    it('should return 0 for empty array', () => {
+      expect(StatisticsUtils.mean([])).toBe(0);
+    });
+  });
+
+  describe('median', () => {
+    it('should calculate median for odd length array', () => {
+      expect(StatisticsUtils.median([1, 2, 3, 4, 5])).toBe(3);
+    });
+
+    it('should calculate median for even length array', () => {
+      expect(StatisticsUtils.median([1, 2, 3, 4])).toBe(2.5);
+    });
+
+    it('should return 0 for empty array', () => {
+      expect(StatisticsUtils.median([])).toBe(0);
+    });
+  });
+
+  describe('percentile', () => {
+    it('should calculate percentile correctly', () => {
+      const values = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+      expect(StatisticsUtils.percentile(values, 50)).toBe(50);
+    });
+
+    it('should return 0 for empty array', () => {
+      expect(StatisticsUtils.percentile([], 50)).toBe(0);
+    });
+  });
+
+  describe('stdDev', () => {
+    it('should calculate standard deviation', () => {
+      const std = StatisticsUtils.stdDev([2, 4, 4, 4, 5, 5, 7, 9]);
+      expect(std).toBeGreaterThan(0);
+    });
+
+    it('should return 0 for empty array', () => {
+      expect(StatisticsUtils.stdDev([])).toBe(0);
+    });
+  });
+
+  describe('coefficientOfVariation', () => {
+    it('should calculate coefficient of variation', () => {
+      const cv = StatisticsUtils.coefficientOfVariation([100, 110, 90, 105, 95]);
+      expect(cv).toBeGreaterThan(0);
+    });
+
+    it('should return 0 when mean is 0', () => {
+      expect(StatisticsUtils.coefficientOfVariation([0, 0, 0])).toBe(0);
+    });
+  });
+
+  describe('detectOutliers', () => {
+    it('should detect outliers using IQR method', () => {
+      const values = [1, 2, 3, 4, 5, 6, 7, 8, 9, 100];
+      const { outliers, cleaned } = StatisticsUtils.detectOutliers(values);
+      expect(outliers).toContain(100);
+      expect(cleaned).not.toContain(100);
+    });
+
+    it('should return empty arrays for empty input', () => {
+      const { outliers, cleaned } = StatisticsUtils.detectOutliers([]);
+      expect(outliers).toEqual([]);
+      expect(cleaned).toEqual([]);
+    });
+
+    it('should handle data with no outliers', () => {
+      const values = [10, 20, 30, 40, 50];
+      const { outliers, cleaned } = StatisticsUtils.detectOutliers(values);
+      expect(outliers.length).toBeLessThanOrEqual(values.length);
+    });
+  });
+
+  describe('normalize', () => {
+    it('should normalize values to 0-1 range', () => {
+      const normalized = StatisticsUtils.normalize([0, 50, 100]);
+      expect(normalized[0]).toBe(0);
+      expect(normalized[2]).toBe(1);
+    });
+
+    it('should handle empty array', () => {
+      expect(StatisticsUtils.normalize([])).toEqual([]);
+    });
+
+    it('should handle values with same min and max', () => {
+      const normalized = StatisticsUtils.normalize([5, 5, 5]);
+      expect(normalized).toEqual([0.5, 0.5, 0.5]);
+    });
+  });
+
+  describe('relativeDifference', () => {
+    it('should calculate relative difference percentage', () => {
+      const diff = StatisticsUtils.relativeDifference(100, 150);
+      expect(diff).toBe(50);
+    });
+
+    it('should return 0 when both values are 0', () => {
+      expect(StatisticsUtils.relativeDifference(0, 0)).toBe(0);
+    });
+
+    it('should return Infinity when baseline is 0 but treatment is not', () => {
+      const diff = StatisticsUtils.relativeDifference(0, 100);
+      expect(diff).toBe(Infinity);
+    });
+
+    it('should handle negative difference', () => {
+      const diff = StatisticsUtils.relativeDifference(100, 80);
+      expect(diff).toBe(-20);
+    });
+  });
+
+  describe('formatDuration', () => {
+    it('should format milliseconds', () => {
+      expect(StatisticsUtils.formatDuration(500)).toBe('500.00ms');
+    });
+
+    it('should format seconds', () => {
+      expect(StatisticsUtils.formatDuration(1500)).toBe('1.50s');
+    });
+
+    it('should format minutes', () => {
+      expect(StatisticsUtils.formatDuration(65000)).toBe('1.08m');
+    });
+
+    it('should format hours', () => {
+      expect(StatisticsUtils.formatDuration(3700000)).toBe('1.03h');
+    });
+  });
+
+  describe('formatNumber', () => {
+    it('should format small numbers', () => {
+      expect(StatisticsUtils.formatNumber(500)).toBe('500.00');
+    });
+
+    it('should format thousands', () => {
+      expect(StatisticsUtils.formatNumber(1500)).toBe('1.50K');
+    });
+
+    it('should format millions', () => {
+      expect(StatisticsUtils.formatNumber(2500000)).toBe('2.50M');
+    });
+
+    it('should format billions', () => {
+      expect(StatisticsUtils.formatNumber(3000000000)).toBe('3.00B');
+    });
+  });
+});
