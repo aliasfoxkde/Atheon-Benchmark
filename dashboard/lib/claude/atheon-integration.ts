@@ -122,6 +122,9 @@ const FALLBACK_ATHEON_PATTERNS: AtheonPattern[] = [
 let cachedPatterns: AtheonPattern[] | null = null;
 let patternsLoadPromise: Promise<AtheonPattern[]> | null = null;
 
+// Default bundle path fallback when env var is not set
+const DEFAULT_ATHEON_BUNDLE_PATH = '/nas/Temp/repos/Atheon/core/patterns.bundle';
+
 /**
  * Convert bundle pattern to AtheonPattern format
  */
@@ -174,7 +177,7 @@ export async function loadAtheonPatterns(): Promise<AtheonPattern[]> {
 
   // Start loading
   patternsLoadPromise = (async () => {
-    const bundlePath = process.env.ATHEON_BUNDLE_PATH || '/nas/Temp/repos/Atheon/core/patterns.bundle';
+    const bundlePath = process.env.ATHEON_BUNDLE_PATH || DEFAULT_ATHEON_BUNDLE_PATH;
     const bundlePatterns = await loadPatternsFromBundle(bundlePath);
 
     if (bundlePatterns.length > 0) {

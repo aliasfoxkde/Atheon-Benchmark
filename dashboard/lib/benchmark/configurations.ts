@@ -5,6 +5,9 @@
 
 import { TestGenerationConfig, PREDEFINED_CONFIGS } from './test-cases';
 
+// Default retry count for API calls
+export const DEFAULT_MAX_RETRIES = 3;
+
 // Define BenchmarkConfig locally since we're in a different directory structure
 export interface BenchmarkConfig {
   timeout: number;
@@ -79,7 +82,7 @@ export const BENCHMARK_SCENARIOS: BenchmarkScenario[] = [
     claude_config: {
       model: 'claude-3-5-sonnet-20241022',
       timeout: 30000,
-      max_retries: 3,
+      max_retries: DEFAULT_MAX_RETRIES,
     },
     execution: {
       parallel_tests: 5,
@@ -103,7 +106,7 @@ export const BENCHMARK_SCENARIOS: BenchmarkScenario[] = [
     claude_config: {
       model: 'claude-3-5-sonnet-20241022',
       timeout: 45000,
-      max_retries: 3,
+      max_retries: DEFAULT_MAX_RETRIES,
     },
     mcp_config: {
       enabled: true,
@@ -132,7 +135,7 @@ export const BENCHMARK_SCENARIOS: BenchmarkScenario[] = [
     claude_config: {
       model: 'claude-3-5-sonnet-20241022',
       timeout: 60000,
-      max_retries: 3,
+      max_retries: DEFAULT_MAX_RETRIES,
     },
     mcp_config: {
       enabled: true,
@@ -185,7 +188,7 @@ export const BENCHMARK_SCENARIOS: BenchmarkScenario[] = [
     claude_config: {
       model: 'claude-3-5-sonnet-20241022',
       timeout: 60000,
-      max_retries: 3,
+      max_retries: DEFAULT_MAX_RETRIES,
     },
     execution: {
       parallel_tests: 4,
@@ -272,7 +275,7 @@ export function createBenchmarkConfig(
     claude_config: options.claude_config || {
       model: 'claude-3-5-sonnet-20241022',
       timeout: 30000,
-      max_retries: 3,
+      max_retries: DEFAULT_MAX_RETRIES,
     },
     mcp_config: options.mcp_config,
     atheon_config: options.atheon_config,

@@ -3,6 +3,11 @@
  * This module provides comprehensive measurement and statistical analysis capabilities
  */
 
+// Statistical constants
+export const CONFIDENCE_LEVEL_95 = 1.96;  // Z-score for 95% confidence interval
+export const P_VALUE_THRESHOLD = 0.05;    // Standard significance threshold
+export const DEFAULT_CONFIDENCE_LEVEL = 0.95;  // 95% confidence level
+
 export interface Measurement {
   timestamp: number;
   value: number;
@@ -164,7 +169,7 @@ export class PerformanceCollector {
       : values[Math.floor(n / 2)];
 
     // 95% confidence interval
-    const margin = 1.96 * std_dev / Math.sqrt(n);
+    const margin = CONFIDENCE_LEVEL_95 * std_dev / Math.sqrt(n);
     const confidenceInterval = {
       lower: mean - margin,
       upper: mean + margin,
@@ -257,8 +262,8 @@ export class PerformanceCollector {
     return {
       test: 'independent-two-sample-t-test',
       p_value: pValue,
-      significant: pValue < 0.05,
-      confidence: 0.95,
+      significant: pValue < P_VALUE_THRESHOLD,
+      confidence: DEFAULT_CONFIDENCE_LEVEL,
     };
   }
 

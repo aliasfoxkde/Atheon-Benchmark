@@ -18,6 +18,9 @@ import {
 } from '../claude';
 import { PerformanceCollector, createPerformanceCollector, PerformanceMetrics, StatisticalSummary } from './measurements';
 
+// Default MCP server URL
+const DEFAULT_MCP_SERVER_URL = 'http://localhost:3000';
+
 export interface BenchmarkExecution {
   id: string;
   scenario: BenchmarkScenario;
@@ -204,7 +207,7 @@ export class BenchmarkExecutor {
         timeout: this.scenario.claude_config.timeout,
         mcpServers: this.scenario.mcp_config.servers.map(server => ({
           name: server,
-          endpoint: `http://localhost:3000/${server}`,
+          endpoint: `${DEFAULT_MCP_SERVER_URL}/${server}`,
           tools: [],
           enabled: true,
         })),
@@ -219,7 +222,7 @@ export class BenchmarkExecutor {
         timeout: this.scenario.claude_config.timeout,
         mcpServers: [{
           name: 'atheon-mcp',
-          endpoint: 'http://localhost:3000/atheon',
+          endpoint: `${DEFAULT_MCP_SERVER_URL}/atheon`,
           tools: [],
           enabled: true,
         }],
