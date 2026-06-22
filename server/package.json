@@ -13,10 +13,13 @@
     "test:coverage": "vitest --coverage",
     "build": "tsc",
     "build:workers": "tsc && wrangler build",
+    "lint": "eslint src/",
+    "lint:check": "eslint src/",
     "db:migrate": "wrangler d1 execute DB --file=../schemas/database.sql",
     "db:migrate:local": "wrangler d1 execute DB --local --file=../schemas/database.sql",
     "db:query": "wrangler d1 execute DB --command",
-    "db:query:local": "wrangler d1 execute DB --local --command"
+    "db:query:local": "wrangler d1 execute DB --local --command",
+    "audit": "npm audit"
   },
   "keywords": [
     "cloudflare",
@@ -30,10 +33,10 @@
   "license": "MIT",
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20241127.0",
-    "@types/node": "^20.10.0",
+    "@types/node": "^22",
     "typescript": "^5.3.3",
-    "vitest": "^1.0.0",
-    "wrangler": "^3.80.0"
+    "vitest": "^2.0.0",
+    "wrangler": "^4.0.0"
   },
   "dependencies": {
     "itty-router": "^4.0.0",
