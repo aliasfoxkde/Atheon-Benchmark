@@ -1,25 +1,25 @@
 # Gap Resolution Plan — Atheon-Benchmark
 
 ## Phase 1: Critical Security Fixes
-- [ ] C1: Fix command injection in binary-scanner.ts (exec → execFile)
-- [ ] C2: Enable auth by default, wire into server routes
+- [x] C1: Fix command injection in binary-scanner.ts (exec → execFile)
+- [x] C2: Enable auth by default, wire into server routes
 - [ ] C3: Fix permissive CORS in server/src/index.ts
 - [ ] C4: Add Zod validation to POST endpoints
-- [ ] C5: Remove mock-api-key fallback, fail fast
-- [ ] C6: Replace Function() in mcp-integration tests with mathjs
+- [x] C5: Remove mock-api-key fallback, fail fast
+- [x] C6: Replace Function() in mcp-integration tests with mathjs
 
 ## Phase 2: Workflow Fixes
-- [ ] W1: Fix typo `attheon` → `atheon` in ci.yml
-- [ ] W2: Fix invalid upload path in ci.yml
-- [ ] W3: Fix deploy directory `.next` → `out` in deploy.yml
+- [x] W1: Fix typo `attheon` → `atheon` in ci.yml
+- [x] W2: Fix invalid upload path in ci.yml
+- [x] W3: Fix deploy directory `.next` → `out` in deploy.yml
 - [ ] W4: Remove silent test failure in deploy.yml
-- [ ] W5: Update cloudflare/pages-action to v2
+- [x] W5: Update cloudflare/pages-action to v2
 - [ ] W6: Remove dead comment-deployment step in benchmark.yml
 - [ ] W7: Use variable for GitHub repo in ci.yml
 - [ ] W8: Fix artifact name conflict in ci.yml
 - [ ] W9: Fix fragile build verification in test.yml
-- [ ] W10: Add concurrency groups to all workflows
-- [ ] W11: Add timeout-minutes to all jobs
+- [x] W10: Add concurrency groups to all workflows
+- [x] W11: Add timeout-minutes to all jobs
 
 ## Phase 3: Remove Simulated/Fake Code
 - [ ] S1: Remove SimpleBenchmarkRunner (random results)
