@@ -29,9 +29,9 @@ export class VanillaClaudeClient {
       baseURL: config.baseURL || process.env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com'
     };
 
-    // Allow sandbox mode without API key for testing
+    // Fail fast if no API key is provided - simulation mode is not allowed for benchmarks
     if (!this.config.apiKey) {
-      console.warn('No API key provided - running in simulation mode');
+      throw new Error('ANTHROPIC_API_KEY environment variable is required for benchmarks');
     }
 
     this.baseURL = this.config.baseURL;

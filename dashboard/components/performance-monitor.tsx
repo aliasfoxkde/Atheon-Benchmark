@@ -25,41 +25,74 @@ export function PerformanceMonitor() {
 
     window.addEventListener('keydown', handleKeyPress);
 
-    // Measure performance metrics
-    if ('performance' in window && 'PerformanceObserver' in window) {
-      const measureMetrics = () => {
-        const perfData = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
-        const paintEntries = performance.getEntriesByType('paint');
-
-        const fcpEntry = paintEntries.find((entry) => entry.name === 'first-contentful-paint');
-        const fcp = fcpEntry ? fcpEntry.startTime : 0;
-
-        // Get LCP (would need PerformanceObserver for real-time)
-        const lcp = fcp + 100; // Estimate
-
-        // Calculate other metrics
-        const ttfb = perfData ? perfData.responseStart - perfData.requestStart : 0;
-        const fid = Math.random() * 50; // Placeholder
-        const cls = Math.random() * 0.1; // Placeholder
-
-        setMetrics({
-          fcp: Math.round(fcp),
-          lcp: Math.round(lcp),
-          fid: Math.round(fid),
-          cls: parseFloat(cls.toFixed(3)),
-          ttfb: Math.round(ttfb),
-        });
+    // Measure performance metrics using Web Vitals API
+    if ('PerformanceObserver' in window) {
+      const metricsMap: PerformanceMetrics = {
+        fcp: 0,
+        lcp: 0,
+        fid: 0,
+        cls: 0,
+        ttfb: 0,
       };
 
-      // Measure after page load
-      if (document.readyState === 'complete') {
-        measureMetrics();
-      } else {
-        window.addEventListener('load', measureMetrics);
+      // Observe First Contentful Paint
+      const fcpObserver = new PerformanceObserver((entryList) => {
+        const entries = entryList.getEntries();
+        if (entries.length > 0) {
+          metricsMap.fcp = Math.round(entries[entries.length - 1].startTime);
+        }
+      });
+      fcpObserver.observe({ type: 'paint', buffered: true });
+
+      // Observe Largest Contentful Paint
+      const lcpObserver = new PerformanceObserver((entryList) => {
+        const entries = entryList.getEntries();
+        if (entries.length > 0) {
+          metricsMap.lcp = Math.round(entries[entries.length - 1].startTime);
+        }
+      });
+      lcpObserver.observe({ type: 'largest-contentful-paint', buffered: true });
+
+      // Observe First Input Delay
+      const fidObserver = new PerformanceObserver((entryList) => {
+        const entries = entryList.getEntries();
+        if (entries.length > 0) {
+          const firstInput = entries[0] as PerformanceEventTiming;
+          metricsMap.fid = Math.round(firstInput.processingStart - firstInput.startTime);
+        }
+      });
+      fidObserver.observe({ type: 'first-input', buffered: true });
+
+      // Observe Cumulative Layout Shift
+      let clsValue = 0;
+      const clsObserver = new PerformanceObserver((entryList) => {
+        for (const entry of entryList.getEntries()) {
+          const layoutShift = entry as PerformanceEntry & { hadRecentInput?: boolean; value?: number };
+          if (!layoutShift.hadRecentInput && layoutShift.value) {
+            clsValue += layoutShift.value;
+          }
+        }
+        metricsMap.cls = parseFloat(clsValue.toFixed(3));
+      });
+      clsObserver.observe({ type: 'layout-shift', buffered: true });
+
+      // Get navigation timing for TTFB
+      const navTiming = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+      if (navTiming) {
+        metricsMap.ttfb = Math.round(navTiming.responseStart - navTiming.requestStart);
       }
 
+      // Set metrics after collection period
+      const timeoutId = setTimeout(() => {
+        setMetrics(metricsMap);
+      }, 3000);
+
       return () => {
-        window.removeEventListener('load', measureMetrics);
+        clearTimeout(timeoutId);
+        fcpObserver.disconnect();
+        lcpObserver.disconnect();
+        fidObserver.disconnect();
+        clsObserver.disconnect();
         window.removeEventListener('keydown', handleKeyPress);
       };
     }

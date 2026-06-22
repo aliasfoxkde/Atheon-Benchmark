@@ -174,7 +174,7 @@ export async function loadAtheonPatterns(): Promise<AtheonPattern[]> {
 
   // Start loading
   patternsLoadPromise = (async () => {
-    const bundlePath = '/nas/Temp/repos/Atheon/core/patterns.bundle';
+    const bundlePath = process.env.ATHEON_BUNDLE_PATH || '/nas/Temp/repos/Atheon/core/patterns.bundle';
     const bundlePatterns = await loadPatternsFromBundle(bundlePath);
 
     if (bundlePatterns.length > 0) {

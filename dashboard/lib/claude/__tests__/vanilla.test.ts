@@ -95,13 +95,12 @@ describe('VanillaClaudeClient', () => {
       expect(config.baseURL).toBe('https://custom.api.com');
     });
 
-    it('should warn when no API key provided', () => {
+    it('should throw error when no API key provided', () => {
       const originalKey = process.env.ANTHROPIC_API_KEY;
       delete process.env.ANTHROPIC_API_KEY;
 
-      new VanillaClaudeClient();
-      expect(console.warn).toHaveBeenCalledWith(
-        expect.stringContaining('No API key provided')
+      expect(() => new VanillaClaudeClient()).toThrow(
+        'ANTHROPIC_API_KEY environment variable is required for benchmarks'
       );
 
       process.env.ANTHROPIC_API_KEY = originalKey;
@@ -119,18 +118,28 @@ describe('VanillaClaudeClient', () => {
     });
   });
 
-  describe('execute - Simulation Mode', () => {
+  describe('execute - API Mode', () => {
     beforeEach(() => {
-      // No API key, so it uses simulation mode
-      const originalKey = process.env.ANTHROPIC_API_KEY;
-      delete process.env.ANTHROPIC_API_KEY;
-      client = new VanillaClaudeClient({});
-      process.env.ANTHROPIC_API_KEY = originalKey;
+      client = new VanillaClaudeClient({ apiKey: 'test-key' });
     });
 
-    it('should execute in simulation mode without API key', async () => {
+    it('should execute API call successfully', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          id: 'msg_123',
+          type: 'message',
+          role: 'assistant',
+          content: [{ type: 'text', text: 'Test response' }],
+          model: 'claude-3-5-sonnet-20241022',
+          stop_reason: 'end_turn',
+          stop_sequence: null,
+          usage: { input_tokens: 10, output_tokens: 20 }
+        })
+      });
+
       const messages: ClaudeMessage[] = [
-        { role: 'user', content: 'Hello, test case 1 in vanilla scenario' }
+        { role: 'user', content: 'Hello' }
       ];
 
       const { response, metrics } = await client.execute(messages);
@@ -141,7 +150,21 @@ describe('VanillaClaudeClient', () => {
       expect(metrics.success).toBe(true);
     });
 
-    it('should return simulated response with text content', async () => {
+    it('should return response with text content', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          id: 'msg_123',
+          type: 'message',
+          role: 'assistant',
+          content: [{ type: 'text', text: 'Test response' }],
+          model: 'claude-3-5-sonnet-20241022',
+          stop_reason: 'end_turn',
+          stop_sequence: null,
+          usage: { input_tokens: 10, output_tokens: 20 }
+        })
+      });
+
       const messages: ClaudeMessage[] = [
         { role: 'user', content: 'Test case 5 in mcp scenario' }
       ];
@@ -153,19 +176,47 @@ describe('VanillaClaudeClient', () => {
       expect(textContent?.text).toBeTruthy();
     });
 
-    it('should calculate tokens in simulation mode', async () => {
+    it('should calculate tokens from API response', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          id: 'msg_123',
+          type: 'message',
+          role: 'assistant',
+          content: [{ type: 'text', text: 'Test response' }],
+          model: 'claude-3-5-sonnet-20241022',
+          stop_reason: 'end_turn',
+          stop_sequence: null,
+          usage: { input_tokens: 10, output_tokens: 20 }
+        })
+      });
+
       const messages: ClaudeMessage[] = [
         { role: 'user', content: 'Hello' }
       ];
 
       const { metrics } = await client.execute(messages);
 
-      expect(metrics.inputTokens).toBeGreaterThan(0);
-      expect(metrics.outputTokens).toBeGreaterThan(0);
-      expect(metrics.totalTokens).toBe(metrics.inputTokens + metrics.outputTokens);
+      expect(metrics.inputTokens).toBe(10);
+      expect(metrics.outputTokens).toBe(20);
+      expect(metrics.totalTokens).toBe(30);
     });
 
     it('should record start and end times', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          id: 'msg_123',
+          type: 'message',
+          role: 'assistant',
+          content: [{ type: 'text', text: 'Test response' }],
+          model: 'claude-3-5-sonnet-20241022',
+          stop_reason: 'end_turn',
+          stop_sequence: null,
+          usage: { input_tokens: 10, output_tokens: 20 }
+        })
+      });
+
       const messages: ClaudeMessage[] = [{ role: 'user', content: 'Test' }];
 
       const before = Date.now();
@@ -177,7 +228,33 @@ describe('VanillaClaudeClient', () => {
       expect(metrics.duration).toBe(metrics.endTime - metrics.startTime);
     });
 
-    it('should generate unique message IDs', async () => {
+    it('should generate unique message IDs from API', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          id: 'msg_123',
+          type: 'message',
+          role: 'assistant',
+          content: [{ type: 'text', text: 'Response 1' }],
+          model: 'claude-3-5-sonnet-20241022',
+          stop_reason: 'end_turn',
+          stop_sequence: null,
+          usage: { input_tokens: 10, output_tokens: 20 }
+        })
+      }).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          id: 'msg_456',
+          type: 'message',
+          role: 'assistant',
+          content: [{ type: 'text', text: 'Response 2' }],
+          model: 'claude-3-5-sonnet-20241022',
+          stop_reason: 'end_turn',
+          stop_sequence: null,
+          usage: { input_tokens: 10, output_tokens: 20 }
+        })
+      });
+
       const messages: ClaudeMessage[] = [{ role: 'user', content: 'Test' }];
 
       const { response: r1 } = await client.execute(messages);

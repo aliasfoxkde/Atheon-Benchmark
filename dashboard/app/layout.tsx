@@ -118,16 +118,6 @@ export default function RootLayout({
             `,
           }}
         />
-        {/* Cloudflare Web Analytics */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                // Cloudflare Web Analytics
-                // Add your Cloudflare Web Analytics script here
-                // Visit https://dash.cloudflare.com/[account-id]/web-analytics
-                console.log('Cloudflare Web Analytics placeholder - configure in production');
-              })();
             `,
           }}
         />

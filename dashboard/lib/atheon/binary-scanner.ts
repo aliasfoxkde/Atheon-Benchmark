@@ -103,13 +103,13 @@ export class AtheonBinaryScanner {
 
   constructor(config: Partial<AtheonConfig> = {}) {
     this.config = {
-      binaryPath: config.binaryPath || '/nas/Temp/repos/Atheon/atheon',
+      binaryPath: config.binaryPath || process.env.ATHEON_BINARY_PATH || 'atheon',
       categories: config.categories || ['secrets', 'code-quality', 'security'],
       severity: config.severity || ['critical', 'high', 'medium'],
       timeout: config.timeout || 10000,
     };
 
-    this.tempDir = '/tmp/atheon-scans';
+    this.tempDir = process.env.ATHEON_TEMP_DIR || require('os').tmpdir();
   }
 
   /**
@@ -320,7 +320,7 @@ export function createAtheonScanner(config?: Partial<AtheonConfig>): AtheonBinar
  * Default Atheon configuration for benchmarking
  */
 export const DEFAULT_ATHEON_CONFIG: AtheonConfig = {
-  binaryPath: '/nas/Temp/repos/Atheon/atheon',
+  binaryPath: process.env.ATHEON_BINARY_PATH || 'atheon',
   categories: ['secrets', 'code-quality', 'security'],
   severity: ['critical', 'high', 'medium'],
   timeout: 10000,
