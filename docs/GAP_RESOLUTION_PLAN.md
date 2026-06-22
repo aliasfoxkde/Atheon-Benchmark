@@ -40,16 +40,16 @@
 - [ ] H8: Extract cache key to constant
 
 ## Phase 5: Documentation Fixes
-- [ ] D1: Delete or fix docs/PLAN.md, docs/PROGRESS.md, docs/TASKS.md
-- [ ] D2: Update IMPLEMENTATION_SUMMARY.md pattern count
-- [ ] D3: Fix ATHEON_PATTERNS.md contradictions
-- [ ] D4: Fix README architecture section
-- [ ] D5: Fix broken links in README
-- [ ] D6: Fix conflicting deploy directories in DEPLOYMENT.md
-- [ ] D7: Update Node version in DEPLOYMENT.md
-- [ ] D8: Fix API.md references to non-existent modules
-- [ ] D9: Archive or delete stale docs (BENCHMARK_PLAN.md, etc.)
-- [ ] D10: Clean up planning/ directory
+- [x] D1: Delete or fix docs/PLAN.md, docs/PROGRESS.md, docs/TASKS.md
+- [x] D2: Update IMPLEMENTATION_SUMMARY.md pattern count
+- [x] D3: Fix ATHEON_PATTERNS.md contradictions
+- [x] D4: Fix README architecture section
+- [x] D5: Fix broken links in README
+- [x] D6: Fix conflicting deploy directories in DEPLOYMENT.md
+- [x] D7: Update Node version in DEPLOYMENT.md
+- [x] D8: Fix API.md references to non-existent modules
+- [x] D9: Archive or delete stale docs (BENCHMARK_PLAN.md, etc.)
+- [x] D10: Clean up planning/ directory
 
 ## Phase 6: Dependencies & Scripts
 - [ ] D1: Fix lucide-react version

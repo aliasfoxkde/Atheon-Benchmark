@@ -242,25 +242,26 @@ console.log(`Success rate: ${bestSystem.success_rate}%`);
 ### Pattern Matching
 
 ```typescript
-import { AtheonPatternMatcher } from '@/lib/atheon/patterns';
+import { loadAtheonPatterns, ATHEON_PATTERNS } from '@/lib/claude/atheon-integration';
 
-const matcher = new AtheonPatternMatcher();
+// Load patterns (or use cached ATHEON_PATTERNS)
+const patterns = await loadAtheonPatterns();
+console.log(`Patterns loaded: ${patterns.length}`);
 
-// Scan code for patterns
-const results = await matcher.scan(codeString);
-
-// Get pattern statistics
-const stats = matcher.getStatistics();
-console.log(`Patterns detected: ${stats.totalPatterns}`);
-console.log(`High severity: ${stats.highSeverity}`);
+// Scan code for patterns using the AtheonClaudeClient
+const client = createAtheonClaudeClient(config);
+const findings = await client.scanWithAtheon(codeString);
+console.log(`Findings detected: ${findings.length}`);
 ```
 
 ### Quality Gates
 
 ```typescript
-import { AtheonQualityGate } from '@/lib/atheon/quality-gates';
+import { AtheonQualityGates, createQualityGates } from '@/lib/atheon';
 
-const qualityGate = new AtheonQualityGate({
+const qualityGate = createQualityGates({
+  enabled: true,
+  strict: false,
   maxHighSeverity: 0,
   maxMediumSeverity: 5,
   requiredCategories: ['security', 'performance']
@@ -270,8 +271,8 @@ const result = await qualityGate.validate(generatedCode);
 
 if (!result.passed) {
   console.error('Quality gate failed:');
-  result.violations.forEach(violation => {
-    console.error(`- ${violation.pattern}: ${violation.message}`);
+  result.findings.forEach(finding => {
+    console.error(`- ${finding.pattern}: ${finding.message}`);
   });
 }
 ```
@@ -281,9 +282,9 @@ if (!result.passed) {
 ### Performance Metrics
 
 ```typescript
-import { collectPerformanceMetrics } from '@/lib/monitoring/analytics';
+import { collectMetrics } from '@/lib/monitoring/analytics';
 
-const metrics = collectPerformanceMetrics();
+const metrics = collectMetrics();
 console.log(`Page load time: ${metrics.pageLoadTime}ms`);
 console.log(`First contentful paint: ${metrics.firstContentfulPaint}ms`);
 ```
@@ -291,9 +292,9 @@ console.log(`First contentful paint: ${metrics.firstContentfulPaint}ms`);
 ### Error Tracking
 
 ```typescript
-import { ErrorTracker } from '@/lib/monitoring/analytics';
+import { getErrorTracker } from '@/lib/monitoring/analytics';
 
-const errorTracker = new ErrorTracker();
+const errorTracker = getErrorTracker();
 
 // Get recent errors
 const errors = errorTracker.getErrors();
@@ -325,36 +326,12 @@ const config = {
 - **Authenticated**: 5000 requests per hour
 - **Cache Duration**: 5 minutes for data, 1 hour for metadata
 
-## 🌍 Internationalization
-
-### Supported Languages
-
-```typescript
-const supportedLanguages = [
-  'en', // English (default)
-  'es', // Spanish
-  'fr', // French
-  'de', // German
-  'ja', // Japanese
-  'zh', // Chinese
-];
-```
-
-### Usage
-
-```typescript
-import { setLanguage, t } from '@/lib/i18n';
-
-setLanguage('es');
-console.log(t('dashboard.title')); // "Panel de control de Atheon Benchmark"
-```
-
 ## 🧪 Testing API
 
 ### Pattern Testing
 
 ```typescript
-import { testPattern } from '@/lib/atheon/testing';
+import { testPattern } from '@/lib/atheon/__tests__/helpers';
 
 const result = await testPattern('sql-injection', {
   code: 'db.query("SELECT * FROM users WHERE id = " + id)',
@@ -367,7 +344,7 @@ console.log(`Test result: ${result.passed ? 'PASSED' : 'FAILED'}`);
 ### Integration Testing
 
 ```typescript
-import { testDashboardIntegration } from '@/lib/testing/dashboard';
+import { testDashboardIntegration } from '@/lib/__tests__/helpers';
 
 const result = await testDashboardIntegration();
 console.log(`Dashboard tests: ${result.passed ? 'PASSED' : 'FAILED'}`);
@@ -375,51 +352,24 @@ console.log(`Dashboard tests: ${result.passed ? 'PASSED' : 'FAILED'}`);
 
 ## 📚 Client-Side API
 
-### Results Store
+### Results Data
+
+The dashboard fetches results from GitHub and provides filtering utilities:
 
 ```typescript
-import { useResultsStore } from '@/stores/results';
+import { filterResults, getResultsStatistics } from '@/lib/github/results';
 
-const {
-  results,
-  loading,
-  error,
-  filter,
-  loadResults,
-  updateFilter
-} = useResultsStore();
+// Filter results
+const filtered = filterResults(results, {
+  os: 'linux',
+  minTests: 50,
+  dateFrom: '2026-01-01T00:00:00Z'
+});
 
-// Load results
-await loadResults();
-
-// Update filter
-updateFilter({ os: 'linux' });
-
-// Access filtered results
-const filtered = useResultsStore(state =>
-  state.results.filter(result =>
-    state.filter.os ? result.system_info.os.includes(state.filter.os) : true
-  )
-);
-```
-
-### Analytics Store
-
-```typescript
-import { useAnalyticsStore } from '@/stores/analytics';
-
-const {
-  metrics,
-  errors,
-  collectMetrics,
-  exportData
-} = useAnalyticsStore();
-
-// Collect performance metrics
-collectMetrics();
-
-// Export analytics data
-const data = exportData();
+// Get statistics
+const stats = getResultsStatistics(filtered);
+console.log(`Total systems: ${stats.total_systems}`);
+console.log(`Success rate: ${stats.success_rate}%`);
 ```
 
 ## 🔄 Webhook API (Future)

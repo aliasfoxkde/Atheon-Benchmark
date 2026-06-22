@@ -1,10 +1,10 @@
 # Atheon Pattern System Guide
 
-Comprehensive guide to the Atheon pattern matching system with 152 patterns across 19 categories.
+Comprehensive guide to the Atheon pattern matching system with dynamic pattern loading.
 
 ## 🎯 Overview
 
-Atheon is a sophisticated pattern matching engine that provides static analysis and quality enforcement for code. The benchmark system integrates Atheon's 152 patterns to validate and compare code quality across different AI configurations.
+Atheon is a sophisticated pattern matching engine that provides static analysis and quality enforcement for code. The benchmark system integrates Atheon's dynamic pattern loading to validate and compare code quality across different AI configurations.
 
 ## 📊 Pattern Categories
 
@@ -115,31 +115,24 @@ const customScanner = new AtheonScanner({
 
 ## 📈 Pattern Statistics
 
-### Current Pattern Distribution
+### Pattern Categories
 
-| Category | Patterns | High Severity | Medium Severity | Low Severity |
-|----------|----------|--------------|-----------------|---------------|
-| Security | 25 | 12 | 10 | 3 |
-| Performance | 15 | 5 | 8 | 2 |
-| Code Quality | 25 | 8 | 12 | 5 |
-| Web Development | 20 | 6 | 10 | 4 |
-| API Integration | 10 | 3 | 5 | 2 |
-| Accessibility | 8 | 2 | 4 | 2 |
-| Healthcare | 5 | 3 | 2 | 0 |
-| Finance | 5 | 3 | 1 | 1 |
-| PII | 5 | 4 | 1 | 0 |
-| Secrets | 5 | 5 | 0 | 0 |
-| Cloud-Native | 8 | 2 | 4 | 2 |
-| PWA | 5 | 1 | 3 | 1 |
-| DevOps | 10 | 3 | 5 | 2 |
-| Data Visualization | 5 | 1 | 3 | 1 |
-| AI Detection | 5 | 2 | 2 | 1 |
-| Django | 5 | 1 | 3 | 1 |
-| Node.js | 5 | 2 | 2 | 1 |
-| React | 5 | 1 | 3 | 1 |
-| Web Security | 15 | 8 | 5 | 2 |
+Patterns are organized into the following categories (loaded dynamically from bundle):
 
-**Total**: 152 patterns
+| Category | Description |
+|----------|-------------|
+| Security | SQL injection, XSS, CSRF, authentication bypass |
+| Performance | N+1 queries, memory leaks, inefficient algorithms |
+| Code Quality | Code duplication, complexity, anti-patterns |
+| Secrets | API keys, credentials, tokens |
+| DevOps | CI/CD, infrastructure, monitoring |
+| AI Detection | AI-generated code detection |
+| Healthcare | HIPAA compliance, patient data handling |
+| Finance | PCI-DSS compliance, financial calculations |
+| PII | Personal data identification and protection |
+| Frameworks | Framework-specific patterns |
+
+**Total**: Dynamic - patterns loaded from bundle
 
 ## 🔧 Pattern Development
 
@@ -362,6 +355,6 @@ atheon test --report json > pattern-tests.json
 
 ---
 
-**Current Version**: 152 patterns across 19 categories
-**Last Updated**: June 19, 2026
+**Current Version**: Dynamic pattern loading
+**Last Updated**: June 21, 2026
 **Maintained By**: Atheon Community

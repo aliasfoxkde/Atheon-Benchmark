@@ -399,7 +399,7 @@ This project is licensed under the MIT License - see the [LICENSE](./LICENSE) fi
 ## 📮 Support
 
 - 🐛 Bug Reports: [GitHub Issues](https://github.com/aliasfoxkde/Atheon-Benchmark/issues)
-- 📖 Documentation: [Full Documentation](https://github.com/aliasfoxkde/Atheon-Benchmark/blob/main/docs/README.md)
+- 📖 Documentation: [Full Documentation](./docs)
 - 💬 Discussions: [GitHub Discussions](https://github.com/aliasfoxkde/Atheon-Benchmark/discussions)
 
 ## 🔗 Links

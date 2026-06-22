@@ -301,7 +301,7 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: atheon-benchmark
-          directory: dashboard/.next
+          directory: dashboard/out
 ```
 
 ### Environment Secrets
