@@ -1,1 +1,1 @@
-/home/mkinney/CLAUDE.md
+~/CLAUDE.md
