@@ -18,8 +18,8 @@ import {
 } from '../claude';
 import { PerformanceCollector, createPerformanceCollector, PerformanceMetrics, StatisticalSummary } from './measurements';
 
-// Default MCP server URL
-const DEFAULT_MCP_SERVER_URL = 'http://localhost:3000';
+// Default MCP server URL from environment
+const DEFAULT_MCP_SERVER_URL = process.env.NEXT_PUBLIC_MCP_SERVER_URL || 'http://localhost:3000';
 
 export interface BenchmarkExecution {
   id: string;

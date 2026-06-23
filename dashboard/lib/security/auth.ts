@@ -33,7 +33,7 @@ export class SecurityManager {
         requests: 100,
         window: 60, // 100 requests per minute
       },
-      allowedOrigins: config.allowedOrigins || ['http://localhost:3000', 'http://0.0.0.0:3000'],
+      allowedOrigins: config.allowedOrigins || process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
     };
   }
 
@@ -206,9 +206,5 @@ export const DEFAULT_SECURITY_CONFIG: AuthConfig = {
     requests: 100,
     window: 60,
   },
-  allowedOrigins: [
-    'http://localhost:3000',
-    'http://0.0.0.0:3000',
-    'http://192.168.*:3000',
-  ],
+  allowedOrigins: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
 };
