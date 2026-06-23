@@ -80,3 +80,25 @@
 - **Remaining**: 0
 
 **Test Status**: 910 tests passing, 0 lint errors
+
+---
+
+## Phase 8: Fresh Audit Fixes (2026-06-23)
+
+### Critical
+- [x] A1: Replace Math.random() UUID with crypto.randomUUID() in binary-scanner.ts
+
+### High
+- [x] A2: Make MCP_SERVER_URL configurable via NEXT_PUBLIC_MCP_SERVER_URL env var
+- [x] A3: Make allowedOrigins configurable via ALLOWED_ORIGINS env var
+
+### Medium (Future)
+- [ ] A4: Add error boundaries to page components
+- [ ] A5: Add input validation to user-facing form fields
+- [ ] A6: Standardize error handling in API calls
+
+### Low (Future)
+- [ ] A7: Replace console.log with proper logging infrastructure
+- [ ] A8: Add type interfaces for `any` types in MCP integration
+
+**Phase 8 Status**: Critical/High items complete, Medium/Low are improvements
