@@ -1,6 +1,7 @@
 /**
  * Simple Benchmark Runner
- * Working implementation for testing the complete flow
+ * DEPRECATED: Only for testing - generates simulated/random results
+ * Use RealBenchmarkRunner or CloudflareWorkersBenchmarkRunner for production
  */
 
 export interface SimpleBenchmarkResult {

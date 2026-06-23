@@ -122,8 +122,9 @@ const FALLBACK_ATHEON_PATTERNS: AtheonPattern[] = [
 let cachedPatterns: AtheonPattern[] | null = null;
 let patternsLoadPromise: Promise<AtheonPattern[]> | null = null;
 
-// Default bundle path fallback when env var is not set
-const DEFAULT_ATHEON_BUNDLE_PATH = '/nas/Temp/repos/Atheon/core/patterns.bundle';
+// Default bundle path - uses environment variable or sensible default
+const DEFAULT_ATHEON_BUNDLE_PATH = process.env.ATHEON_BUNDLE_PATH ||
+  (process.env.HOME ? `${process.env.HOME}/.atheon/patterns.bundle` : './patterns.bundle');
 
 /**
  * Convert bundle pattern to AtheonPattern format
