@@ -116,7 +116,7 @@ async function checkAuth(request: Request, env: Env): Promise<Response | null> {
     // No API key configured - reject all requests
     return new Response(
       JSON.stringify({ error: 'Server not configured for production' }),
-      { status: 503, headers: { 'Content-Type': 'application/json' } }
+      { status: 503, headers: { 'Content-Type': 'application/json', ...getSecurityHeaders() } }
     );
   }
 
@@ -127,7 +127,7 @@ async function checkAuth(request: Request, env: Env): Promise<Response | null> {
   if (!token || token !== apiKey) {
     return new Response(
       JSON.stringify({ error: 'Unauthorized' }),
-      { status: 401, headers: { 'Content-Type': 'application/json' } }
+      { status: 401, headers: { 'Content-Type': 'application/json', ...getSecurityHeaders() } }
     );
   }
 
@@ -158,6 +158,7 @@ async function checkRateLimit(request: Request, env: Env): Promise<Response | nu
           'X-RateLimit-Limit': String(RATE_LIMIT_MAX),
           'X-RateLimit-Remaining': '0',
           'X-RateLimit-Reset': String(current.resetTime),
+          ...getSecurityHeaders(),
         }
       }
     );
@@ -191,7 +192,7 @@ async function healthCheck(env: Env, corsHeaders: Record<string, string>): Promi
       }),
       {
         status: 500,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
       }
     );
   }

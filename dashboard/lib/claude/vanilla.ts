@@ -21,6 +21,7 @@ import {
 export class VanillaClaudeClient {
   private config: Required<ClaudeClientConfig>;
   private baseURL: string;
+  private circuitBreaker: CircuitBreaker;
 
   constructor(config: Partial<ClaudeClientConfig> = {}) {
     this.config = {
@@ -38,6 +39,21 @@ export class VanillaClaudeClient {
     }
 
     this.baseURL = this.config.baseURL;
+    this.circuitBreaker = new CircuitBreaker(DEFAULT_CIRCUIT_BREAKER_CONFIG);
+  }
+
+  /**
+   * Get circuit breaker statistics
+   */
+  getCircuitBreakerStats() {
+    return this.circuitBreaker.getStats();
+  }
+
+  /**
+   * Get current circuit breaker state
+   */
+  getCircuitBreakerState(): CircuitBreakerState {
+    return this.circuitBreaker.getState();
   }
 
   /**
@@ -157,6 +173,11 @@ export class VanillaClaudeClient {
    * Make HTTP request to Claude API
    */
   protected async makeRequest(request: ClaudeAPIRequest): Promise<ClaudeAPIResponse> {
+    // Check circuit breaker before making request
+    if (!this.circuitBreaker.canExecute()) {
+      return this.circuitBreaker.getFallbackResponse(request);
+    }
+
     // Simulation mode if no API key
     if (!this.config.apiKey) {
       return this.simulateResponse(request);
@@ -184,10 +205,12 @@ export class VanillaClaudeClient {
         throw new Error(errorData.error?.message || `HTTP ${response.status}: ${response.statusText}`);
       }
 
+      this.circuitBreaker.recordSuccess();
       return await response.json();
 
     } catch (error) {
       clearTimeout(timeoutId);
+      this.circuitBreaker.recordFailure();
 
       if (error instanceof Error) {
         if (error.name === 'AbortError') {
