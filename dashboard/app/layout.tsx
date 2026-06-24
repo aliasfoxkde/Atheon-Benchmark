@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -100,7 +101,9 @@ export default function RootLayout({
             </footer>
           </div>
         </ThemeProvider>
-        <script
+        <Script
+          id="service-worker-registration"
+          strategy="afterInteractive"
           dangerouslySetInnerHTML={{
             __html: `
               if ('serviceWorker' in navigator) {
@@ -115,9 +118,6 @@ export default function RootLayout({
                   );
                 });
               }
-            `,
-          }}
-        />
             `,
           }}
         />
