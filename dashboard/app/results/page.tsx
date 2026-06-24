@@ -16,6 +16,7 @@ import {
   type BenchmarkReport,
   type ResultsFilter,
 } from '@/lib/github/cache';
+import { exportAndDownloadResults } from '@/lib/utils';
 import { Search, TrendingUp, Clock, Server, Cpu, HardDrive, Filter, Download, RefreshCw, Calendar, BarChart3, LineChart, Activity } from 'lucide-react';
 import { SpiderChart } from '@/components/charts/spider-chart';
 import { PerformanceBarChart } from '@/components/charts/performance-bar-chart';
@@ -477,8 +478,12 @@ export default function ResultsPage() {
             </button>
             <button
               onClick={() => {
-                // Export functionality can be added here
-                alert('Export functionality coming soon!')
+                const selectedResults = filteredResults.filter(r => selectedSystems.has(r.system_id));
+                if (selectedResults.length > 0) {
+                  exportAndDownloadResults(selectedResults, `benchmark-export-${new Date().toISOString().split('T')[0]}.csv`);
+                } else {
+                  alert('Please select at least one result to export');
+                }
               }}
               className="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-1"
             >
@@ -665,6 +670,7 @@ export default function ResultsPage() {
                           </svg>
                         </button>
                         <button
+                          onClick={() => exportAndDownloadResults([system], `benchmark-${system.system_id}-${system.submitted_at?.split('T')[0] || 'results'}.csv`)}
                           className="p-2 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-lg transition-colors"
                           title="Download results"
                           aria-label="Download results"
