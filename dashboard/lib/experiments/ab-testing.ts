@@ -3,6 +3,28 @@
  * Framework for running experiments and comparing variant performance
  */
 
+/**
+ * FNV-1a hash for deterministic bucketing
+ * Produces a consistent hash from string input
+ */
+function fnv1aHash(str: string): number {
+  let hash = 2166136261;
+  for (let i = 0; i < str.length; i++) {
+    hash ^= str.charCodeAt(i);
+    hash = (hash * 16777619) >>> 0; // Force 32-bit unsigned
+  }
+  return hash;
+}
+
+/**
+ * Get deterministic bucket value (0-100) for a user+experiment
+ * Uses FNV-1a hash for consistent cross-device bucketing
+ */
+function getDeterministicBucket(userId: string, experimentId: string): number {
+  const hash = fnv1aHash(`${userId}:${experimentId}`);
+  return (hash % 100);
+}
+
 export type ExperimentStatus = 'draft' | 'running' | 'paused' | 'completed' | 'archived';
 
 export interface ExperimentVariant {
@@ -224,14 +246,14 @@ export class ABTestingEngine {
     const existing = this.getAssignment(experimentId, userId);
     if (existing) return existing;
 
-    // Select variant based on weights
-    const random = Math.random() * 100;
+    // Select variant based on weights (deterministic bucketing)
+    const bucket = getDeterministicBucket(userId || 'anonymous', experimentId);
     let cumulative = 0;
     let selectedVariant = exp.variants[0];
 
     for (const variant of exp.variants) {
       cumulative += variant.weight;
-      if (random <= cumulative) {
+      if (bucket <= cumulative) {
         selectedVariant = variant;
         break;
       }
