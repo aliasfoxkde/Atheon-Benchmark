@@ -173,9 +173,9 @@
 
 ### Future Enhancements (Not Implemented)
 - [x] F1: Full R2 storage layer implementation
-- [ ] F2: WebSocket support (vs SSE only)
-- [ ] F3: GraphQL API
-- [ ] F4: Python/Go SDK
+- [x] F2: WebSocket support (vs SSE only)
+- [x] F3: GraphQL API
+- [x] F4: Python/Go SDK
 - [x] F5: CSV/Parquet export
 - [x] F6: PDF report generation
 - [x] F7: Email notifications
