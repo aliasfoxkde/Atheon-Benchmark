@@ -265,7 +265,25 @@ async function checkAuth(request: Request, env: Env): Promise<Response | null> {
     );
   }
 
+  // Validate organization context
+  const orgId = getOrganizationId(request, env);
+  if (!orgId) {
+    return new Response(
+      JSON.stringify({ error: 'Organization context required' }),
+      { status: 400, headers: { 'Content-Type': 'application/json', ...getSecurityHeaders() } }
+    );
+  }
+
   return null;
+}
+
+/**
+ * Extract organization ID from request header or environment default
+ */
+function getOrganizationId(request: Request, env: Env): string | null {
+  // Check for org in header or use default org
+  const orgHeader = request.headers.get('X-Organization-ID');
+  return orgHeader || env.DEFAULT_ORGANIZATION || 'default';
 }
 
 async function checkRateLimit(request: Request, env: Env): Promise<Response | null> {
@@ -352,10 +370,13 @@ async function handleApiRequest(
   const method = request.method;
   const { ip } = getClientInfo(request);
 
+  // Extract organization context
+  const organizationId = getOrganizationId(request, env);
+
   // Add API version header to all v1 responses
   const apiV1Headers = getApiV1Headers(corsHeaders);
 
-  logSpan('api.request', { method, path, ip });
+  logSpan('api.request', { method, path, ip, organization_id: organizationId });
 
   // Parse and validate body for POST/PUT requests
   let body: unknown = null;
@@ -400,40 +421,40 @@ async function handleApiRequest(
   switch (true) {
     // Benchmark endpoints
     case path === '/api/v1/benchmarks' && method === 'GET':
-      response = await getBenchmarks(env, url, apiV1Headers);
+      response = await getBenchmarks(env, url, apiV1Headers, organizationId);
       break;
     case path === '/api/v1/benchmarks' && method === 'POST':
-      response = await createBenchmark(env, body, apiV1Headers);
+      response = await createBenchmark(env, body, apiV1Headers, organizationId);
       break;
     case path.match(/^\/api\/v1\/benchmarks\/[^/]+$/) && method === 'GET':
-      response = await getBenchmark(env, path.split('/').pop()!, apiV1Headers);
+      response = await getBenchmark(env, path.split('/').pop()!, apiV1Headers, organizationId);
       break;
     case path.match(/^\/api\/v1\/benchmarks\/[^/]+$/) && method === 'DELETE':
-      response = await deleteBenchmark(env, path.split('/').pop()!, apiV1Headers);
+      response = await deleteBenchmark(env, path.split('/').pop()!, apiV1Headers, organizationId);
       break;
 
     // Benchmark execution endpoint
     case path.match(/^\/api\/v1\/benchmarks\/[^/]+\/execute$/) && method === 'POST':
-      response = await executeBenchmark(env, path.split('/')[3], body, apiV1Headers);
+      response = await executeBenchmark(env, path.split('/')[3], body, apiV1Headers, organizationId);
       break;
 
     // Results endpoints
     case path === '/api/v1/results' && method === 'GET':
-      response = await getResults(env, url, apiV1Headers);
+      response = await getResults(env, url, apiV1Headers, organizationId);
       break;
     case path.match(/^\/api\/v1\/results\/[^/]+$/) && method === 'GET':
-      response = await getResult(env, path.split('/').pop()!, apiV1Headers);
+      response = await getResult(env, path.split('/').pop()!, apiV1Headers, organizationId);
       break;
 
     // Configuration endpoints
     case path === '/api/v1/configurations' && method === 'GET':
-      response = await getConfigurations(env, apiV1Headers);
+      response = await getConfigurations(env, apiV1Headers, organizationId);
       break;
     case path === '/api/v1/configurations' && method === 'POST':
-      response = await createConfiguration(env, body, apiV1Headers);
+      response = await createConfiguration(env, body, apiV1Headers, organizationId);
       break;
     case path.match(/^\/api\/v1\/configurations\/[^/]+$/) && method === 'GET':
-      response = await getConfiguration(env, path.split('/').pop()!, apiV1Headers);
+      response = await getConfiguration(env, path.split('/').pop()!, apiV1Headers, organizationId);
       break;
 
     // Test cases endpoints
@@ -482,16 +503,16 @@ async function handleApiRequest(
 // ============================================
 
 // Cache invalidation helper for benchmarks list
-async function invalidateBenchmarksCache(env: Env): Promise<void> {
+async function invalidateBenchmarksCache(env: Env, organizationId: string): Promise<void> {
   try {
     // List all cached benchmark pages and invalidate them
     // Since KV doesn't support prefix listing, we invalidate known keys
     const knownKeys = [
-      'benchmarks:page=1&limit=10&status=',
-      'benchmarks:page=1&limit=10&status=pending',
-      'benchmarks:page=1&limit=10&status=running',
-      'benchmarks:page=1&limit=10&status=completed',
-      'benchmarks:page=1&limit=10&status=failed',
+      `benchmarks:org=${organizationId}:page=1&limit=10&status=`,
+      `benchmarks:org=${organizationId}:page=1&limit=10&status=pending`,
+      `benchmarks:org=${organizationId}:page=1&limit=10&status=running`,
+      `benchmarks:org=${organizationId}:page=1&limit=10&status=completed`,
+      `benchmarks:org=${organizationId}:page=1&limit=10&status=failed`,
     ];
     // Invalidate with a short TTL to force refresh
     for (const key of knownKeys) {
@@ -505,14 +526,14 @@ async function invalidateBenchmarksCache(env: Env): Promise<void> {
   }
 }
 
-async function getBenchmarks(env: Env, url: URL, headers: Record<string, string>): Promise<Response> {
+async function getBenchmarks(env: Env, url: URL, headers: Record<string, string>, organizationId: string): Promise<Response> {
   const page = parseInt(url.searchParams.get('page') || '1');
   const limit = parseInt(url.searchParams.get('limit') || '10');
   const status = url.searchParams.get('status');
   const offset = (page - 1) * limit;
 
   // KV cache key based on query params (1 minute TTL)
-  const cacheKey = `benchmarks:page=${page}&limit=${limit}&status=${status || ''}`;
+  const cacheKey = `benchmarks:org=${organizationId}:page=${page}&limit=${limit}&status=${status || ''}`;
   const cacheGetStart = Date.now();
   const cached = await env.CACHE.get(cacheKey);
   if (cached) {
@@ -522,11 +543,11 @@ async function getBenchmarks(env: Env, url: URL, headers: Record<string, string>
     });
   }
 
-  let query = 'SELECT * FROM benchmarks';
-  const params: any[] = [];
+  let query = 'SELECT * FROM benchmarks WHERE organization_id = ?';
+  const params: any[] = [organizationId];
 
   if (status) {
-    query += ' WHERE status = ?';
+    query += ' AND status = ?';
     params.push(status);
   }
 
@@ -536,7 +557,7 @@ async function getBenchmarks(env: Env, url: URL, headers: Record<string, string>
   try {
     const queryStart = Date.now();
     const results = await env.DB.prepare(query).bind(...params).all();
-    const countResult = await env.DB.prepare('SELECT COUNT(*) as count FROM benchmarks').first<{ count: number }>();
+    const countResult = await env.DB.prepare('SELECT COUNT(*) as count FROM benchmarks WHERE organization_id = ?').bind(organizationId).first<{ count: number }>();
     logSpan('d1.query', { query_type: 'select', table: 'benchmarks' }, Date.now() - queryStart);
 
     const responseData = {
@@ -561,7 +582,7 @@ async function getBenchmarks(env: Env, url: URL, headers: Record<string, string>
   }
 }
 
-async function createBenchmark(env: Env, body: unknown, headers: Record<string, string>): Promise<Response> {
+async function createBenchmark(env: Env, body: unknown, headers: Record<string, string>, organizationId: string): Promise<Response> {
   const id = crypto.randomUUID();
   const { name, description, configuration_id, config } = body;
 
@@ -578,16 +599,16 @@ async function createBenchmark(env: Env, body: unknown, headers: Record<string, 
   try {
     const queryStart = Date.now();
     await env.DB.prepare(`
-      INSERT INTO benchmarks (id, name, description, configuration_id, metadata)
-      VALUES (?, ?, ?, ?, ?)
-    `).bind(id, name, description || '', configuration_id || 'default-config', JSON.stringify(config || {})).run();
+      INSERT INTO benchmarks (id, name, description, configuration_id, organization_id, metadata)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).bind(id, name, description || '', configuration_id || 'default-config', organizationId, JSON.stringify(config || {})).run();
     logSpan('d1.query', { query_type: 'insert', table: 'benchmarks' }, Date.now() - queryStart);
 
     // Invalidate benchmarks list cache
-    await invalidateBenchmarksCache(env);
+    await invalidateBenchmarksCache(env, organizationId);
 
     return new Response(
-      JSON.stringify({ id, name, description, configuration_id, status: 'pending' }),
+      JSON.stringify({ id, name, description, configuration_id, organization_id: organizationId, status: 'pending' }),
       {
         status: 201,
         headers: { 'Content-Type': 'application/json', ...headers }
@@ -598,10 +619,10 @@ async function createBenchmark(env: Env, body: unknown, headers: Record<string, 
   }
 }
 
-async function getBenchmark(env: Env, id: string, headers: Record<string, string>): Promise<Response> {
+async function getBenchmark(env: Env, id: string, headers: Record<string, string>, organizationId: string): Promise<Response> {
   try {
     const queryStart = Date.now();
-    const result = await env.DB.prepare('SELECT * FROM benchmarks WHERE id = ?').bind(id).first();
+    const result = await env.DB.prepare('SELECT * FROM benchmarks WHERE id = ? AND organization_id = ?').bind(id, organizationId).first();
     logSpan('d1.query', { query_type: 'select', table: 'benchmarks' }, Date.now() - queryStart);
 
     if (!result) {
@@ -623,13 +644,13 @@ async function getBenchmark(env: Env, id: string, headers: Record<string, string
   }
 }
 
-async function deleteBenchmark(env: Env, id: string, headers: Record<string, string>): Promise<Response> {
+async function deleteBenchmark(env: Env, id: string, headers: Record<string, string>, organizationId: string): Promise<Response> {
   try {
     const queryStart = Date.now();
-    await env.DB.prepare('DELETE FROM benchmarks WHERE id = ?').bind(id).run();
+    await env.DB.prepare('DELETE FROM benchmarks WHERE id = ? AND organization_id = ?').bind(id, organizationId).run();
     logSpan('d1.query', { query_type: 'delete', table: 'benchmarks' }, Date.now() - queryStart);
     // Invalidate benchmarks cache
-    await invalidateBenchmarksCache(env);
+    await invalidateBenchmarksCache(env, organizationId);
     return new Response(null, { status: 204, headers });
   } catch (error) {
     throw new Error(`Failed to delete benchmark: ${error}`);
@@ -650,26 +671,28 @@ async function batchInsertBenchmarkResults(
     duration_ms: number;
     tokens_used: number;
     passed: boolean;
+    organization_id: string;
   }>
 ): Promise<void> {
   if (results.length === 0) return;
 
   const values = results.map(r =>
-    `('${r.id}', '${r.benchmark_id}', '${r.test_case_id}', '${r.test_name}', ${r.started_at}, ${r.completed_at}, '${r.status}', ${r.duration_ms}, ${r.tokens_used}, ${r.passed ? 1 : 0})`
+    `('${r.id}', '${r.benchmark_id}', '${r.test_case_id}', '${r.test_name}', '${r.organization_id}', ${r.started_at}, ${r.completed_at}, '${r.status}', ${r.duration_ms}, ${r.tokens_used}, ${r.passed ? 1 : 0})`
   ).join(',');
 
   const queryStart = Date.now();
-  await env.DB.prepare(`INSERT INTO benchmark_results VALUES ${values}`).run();
+  await env.DB.prepare(`INSERT INTO benchmark_results (id, benchmark_id, test_case_id, test_name, organization_id, started_at, completed_at, status, duration_ms, tokens_used, passed) VALUES ${values}`).run();
   logSpan('d1.query', { query_type: 'insert', table: 'benchmark_results' }, Date.now() - queryStart);
 }
 
-async function executeBenchmark(env: Env, benchmarkId: string, body: unknown, headers: Record<string, string>): Promise<Response> {
+async function executeBenchmark(env: Env, benchmarkId: string, body: unknown, headers: Record<string, string>, organizationId: string): Promise<Response> {
   // This is a placeholder for benchmark execution
   // In a full implementation, this would trigger the actual benchmark execution process
   return new Response(
     JSON.stringify({
       message: 'Benchmark execution triggered',
       benchmark_id: benchmarkId,
+      organization_id: organizationId,
       status: 'triggered'
     }),
     {
@@ -683,17 +706,17 @@ async function executeBenchmark(env: Env, benchmarkId: string, body: unknown, he
 // RESULTS ENDPOINTS
 // ============================================
 
-async function getResults(env: Env, url: URL, headers: Record<string, string>): Promise<Response> {
+async function getResults(env: Env, url: URL, headers: Record<string, string>, organizationId: string): Promise<Response> {
   const benchmarkId = url.searchParams.get('benchmark_id');
   const page = parseInt(url.searchParams.get('page') || '1');
   const limit = parseInt(url.searchParams.get('limit') || '10');
   const offset = (page - 1) * limit;
 
-  let query = 'SELECT * FROM benchmark_results';
-  const params: any[] = [];
+  let query = 'SELECT * FROM benchmark_results WHERE organization_id = ?';
+  const params: any[] = [organizationId];
 
   if (benchmarkId) {
-    query += ' WHERE benchmark_id = ?';
+    query += ' AND benchmark_id = ?';
     params.push(benchmarkId);
   }
 
@@ -718,10 +741,10 @@ async function getResults(env: Env, url: URL, headers: Record<string, string>): 
   }
 }
 
-async function getResult(env: Env, id: string, headers: Record<string, string>): Promise<Response> {
+async function getResult(env: Env, id: string, headers: Record<string, string>, organizationId: string): Promise<Response> {
   try {
     const queryStart = Date.now();
-    const result = await env.DB.prepare('SELECT * FROM benchmark_results WHERE id = ?').bind(id).first();
+    const result = await env.DB.prepare('SELECT * FROM benchmark_results WHERE id = ? AND organization_id = ?').bind(id, organizationId).first();
     logSpan('d1.query', { query_type: 'select', table: 'benchmark_results' }, Date.now() - queryStart);
 
     if (!result) {
@@ -747,8 +770,8 @@ async function getResult(env: Env, id: string, headers: Record<string, string>):
 // CONFIGURATION ENDPOINTS
 // ============================================
 
-async function getConfigurations(env: Env, headers: Record<string, string>): Promise<Response> {
-  const cacheKey = 'configs:list';
+async function getConfigurations(env: Env, headers: Record<string, string>, organizationId: string): Promise<Response> {
+  const cacheKey = `configs:org=${organizationId}:list`;
 
   // Check KV cache (5 minute TTL)
   const cacheGetStart = Date.now();
@@ -762,7 +785,7 @@ async function getConfigurations(env: Env, headers: Record<string, string>): Pro
 
   try {
     const queryStart = Date.now();
-    const results = await env.DB.prepare('SELECT * FROM configurations ORDER BY created_at DESC').all();
+    const results = await env.DB.prepare('SELECT * FROM configurations WHERE organization_id = ? ORDER BY created_at DESC').bind(organizationId).all();
     logSpan('d1.query', { query_type: 'select', table: 'configurations' }, Date.now() - queryStart);
 
     const responseData = JSON.stringify({ data: results.results });
@@ -781,7 +804,7 @@ async function getConfigurations(env: Env, headers: Record<string, string>): Pro
   }
 }
 
-async function createConfiguration(env: Env, body: unknown, headers: Record<string, string>): Promise<Response> {
+async function createConfiguration(env: Env, body: unknown, headers: Record<string, string>, organizationId: string): Promise<Response> {
   const id = crypto.randomUUID();
   const { name, description, config, is_public } = body;
 
@@ -798,18 +821,18 @@ async function createConfiguration(env: Env, body: unknown, headers: Record<stri
   try {
     const queryStart = Date.now();
     await env.DB.prepare(`
-      INSERT INTO configurations (id, name, description, is_public, config)
-      VALUES (?, ?, ?, ?, ?)
-    `).bind(id, name, description || '', is_public || false, JSON.stringify(config)).run();
+      INSERT INTO configurations (id, name, description, organization_id, is_public, config)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).bind(id, name, description || '', organizationId, is_public || false, JSON.stringify(config)).run();
     logSpan('d1.query', { query_type: 'insert', table: 'configurations' }, Date.now() - queryStart);
 
     // Invalidate configurations cache
     const deleteStart = Date.now();
-    await env.CACHE.delete('configs:list');
+    await env.CACHE.delete(`configs:org=${organizationId}:list`);
     logSpan('kv.operation', { operation: 'delete', key: 'configs:list' }, Date.now() - deleteStart);
 
     return new Response(
-      JSON.stringify({ id, name, description, is_public, config }),
+      JSON.stringify({ id, name, description, organization_id: organizationId, is_public, config }),
       {
         status: 201,
         headers: { 'Content-Type': 'application/json', ...headers }
@@ -820,10 +843,10 @@ async function createConfiguration(env: Env, body: unknown, headers: Record<stri
   }
 }
 
-async function getConfiguration(env: Env, id: string, headers: Record<string, string>): Promise<Response> {
+async function getConfiguration(env: Env, id: string, headers: Record<string, string>, organizationId: string): Promise<Response> {
   try {
     const queryStart = Date.now();
-    const result = await env.DB.prepare('SELECT * FROM configurations WHERE id = ?').bind(id).first();
+    const result = await env.DB.prepare('SELECT * FROM configurations WHERE id = ? AND organization_id = ?').bind(id, organizationId).first();
     logSpan('d1.query', { query_type: 'select', table: 'configurations' }, Date.now() - queryStart);
 
     if (!result) {
