@@ -104,9 +104,9 @@ export enum CircuitBreakerState {
 }
 
 export interface CircuitBreakerConfig {
-  failureThreshold: number;  // Number of failures before opening (default: 5)
-  resetTimeout: number;      // Time in ms before trying half-open (default: 60000)
-  monitorWindow: number;     // Time window for counting failures in ms (default: 30000)
+  failureThreshold?: number;  // Number of failures before opening (default: 5)
+  resetTimeout?: number;      // Time in ms before trying half-open (default: 60000)
+  monitorWindow?: number;     // Time window for counting failures in ms (default: 30000)
 }
 
 export interface CircuitBreakerStats {

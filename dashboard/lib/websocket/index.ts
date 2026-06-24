@@ -7,6 +7,8 @@ export {
   WebSocketManager,
   getWebSocketManager,
   BenchmarkWebSocketClient,
+} from './client';
+export type {
   WSMessageType,
   WSMessage,
   WSClient,

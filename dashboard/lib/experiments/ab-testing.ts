@@ -367,6 +367,7 @@ export function createBenchmarkComparisonExperiment(
   treatmentConfig: Record<string, any>
 ): Experiment {
   return getABTesting().createExperiment({
+    id: `exp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     name,
     description: 'Compare benchmark performance between two configurations',
     variants: [

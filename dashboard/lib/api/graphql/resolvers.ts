@@ -158,14 +158,14 @@ export const typeDefs = `
 export const CreateBenchmarkInputSchema = z.object({
   name: z.string().min(1).max(255),
   description: z.string().max(1000).optional(),
-  config: z.record(z.any()),
+  config: z.record(z.string(), z.any()),
   organizationId: z.string().optional(),
 });
 
 export const UpdateBenchmarkInputSchema = z.object({
   name: z.string().min(1).max(255).optional(),
   description: z.string().max(1000).optional(),
-  config: z.record(z.any()).optional(),
+  config: z.record(z.string(), z.any()).optional(),
 });
 
 export const CreateResultInputSchema = z.object({
@@ -433,21 +433,9 @@ export async function executeGraphQL(
   query: string,
   variables?: Record<string, any>
 ): Promise<any> {
-  const { graphql } = await import('graphql');
-  const { makeExecutableSchema } = await import('@graphql-tools/schema');
-
-  // For demo purposes, using simple schema
-  // In production, this would use the actual schema with D1/KV
-  const schema = makeExecutableSchema({
-    typeDefs,
-    resolvers,
-  });
-
-  return graphql({
-    schema,
-    source: query,
-    variableValues: variables,
-  });
+  // GraphQL requires server-side execution - not available in static export
+  // For Cloudflare Workers, use the actual GraphQL implementation
+  throw new Error('GraphQL execution requires server-side environment');
 }
 
 // REST-to-GraphQL bridge for HTTP endpoints

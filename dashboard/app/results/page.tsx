@@ -670,7 +670,12 @@ export default function ResultsPage() {
                           </svg>
                         </button>
                         <button
-                          onClick={() => exportAndDownloadResults([system], `benchmark-${system.system_id}-${system.submitted_at?.split('T')[0] || 'results'}.csv`)}
+                          onClick={() => {
+                            const report = filteredResults.find(r => r.system_id === system.system_id);
+                            if (report) {
+                              exportAndDownloadResults([report], `benchmark-${system.system_id}-${system.submitted_at?.split('T')[0] || 'results'}.csv`);
+                            }
+                          }}
                           className="p-2 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-lg transition-colors"
                           title="Download results"
                           aria-label="Download results"

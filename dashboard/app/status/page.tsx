@@ -6,7 +6,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Globe, Database, Cloud, Cpu, Github, Activity, CheckCircle, AlertTriangle, XCircle, RefreshCw, ExternalLink } from 'lucide-react';
+import { Globe, Database, Cloud, Cpu, Activity, CheckCircle, AlertTriangle, XCircle, RefreshCw, ExternalLink } from 'lucide-react';
 
 interface ServiceStatus {
   name: string;
@@ -349,7 +349,7 @@ export default function StatusPage() {
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
-                  {service.name === 'GitHub API' && <Github className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />}
+                  {service.name === 'GitHub API' && <Globe className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />}
                   {service.name === 'Claude API' && <Cpu className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />}
                   {service.name === 'Cloudflare' && <Cloud className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />}
                   {service.name === 'Benchmark Data' && <Database className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />}
