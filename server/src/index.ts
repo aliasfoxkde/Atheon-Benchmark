@@ -46,13 +46,25 @@ export default {
         return new Response(null, { headers: corsHeaders });
       }
 
-      // Health check endpoint
+      // Health check endpoint (no auth required)
       if (path === '/health') {
-        return healthCheck(env);
+        return healthCheck(env, corsHeaders);
       }
 
-      // API routes
+      // API routes (require authentication)
       if (path.startsWith('/api/')) {
+        // Check API key authentication
+        const authError = await checkAuth(request, env);
+        if (authError) {
+          return authError;
+        }
+
+        // Check rate limit
+        const rateLimitError = await checkRateLimit(request, env);
+        if (rateLimitError) {
+          return rateLimitError;
+        }
+
         return handleApiRequest(request, env, ctx, corsHeaders);
       }
 
@@ -74,18 +86,78 @@ export default {
   },
 };
 
-async function healthCheck(env: Env): Promise<Response> {
+// Rate limit store (in-memory for single instance, use KV for distributed)
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT_WINDOW = 60; // seconds
+const RATE_LIMIT_MAX = 100; // requests per window
+
+async function checkAuth(request: Request, env: Env): Promise<Response | null> {
+  // Skip auth in development
+  if (env.ENVIRONMENT !== 'production') {
+    return null;
+  }
+
+  const apiKey = env.API_KEY;
+  if (!apiKey) {
+    // No API key configured - reject all requests
+    return new Response(
+      JSON.stringify({ error: 'Server not configured for production' }),
+      { status: 503, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  const authHeader = request.headers.get('Authorization');
+  const keyHeader = request.headers.get('X-API-Key');
+  const token = authHeader?.replace('Bearer ', '') || keyHeader;
+
+  if (!token || token !== apiKey) {
+    return new Response(
+      JSON.stringify({ error: 'Unauthorized' }),
+      { status: 401, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  return null;
+}
+
+async function checkRateLimit(request: Request, env: Env): Promise<Response | null> {
+  const clientIP = request.headers.get('CF-Connecting-IP') ||
+                   request.headers.get('X-Forwarded-For')?.split(',')[0] ||
+                   'unknown';
+  const now = Date.now();
+  const key = `ratelimit:${clientIP}`;
+
+  const current = rateLimitMap.get(key);
+  if (!current || now > current.resetTime) {
+    rateLimitMap.set(key, { count: 1, resetTime: now + (RATE_LIMIT_WINDOW * 1000) });
+    return null;
+  }
+
+  if (current.count >= RATE_LIMIT_MAX) {
+    return new Response(
+      JSON.stringify({ error: 'Rate limit exceeded', retryAfter: Math.ceil((current.resetTime - now) / 1000) }),
+      {
+        status: 429,
+        headers: {
+          'Content-Type': 'application/json',
+          'Retry-After': String(Math.ceil((current.resetTime - now) / 1000)),
+          'X-RateLimit-Limit': String(RATE_LIMIT_MAX),
+          'X-RateLimit-Remaining': '0',
+          'X-RateLimit-Reset': String(current.resetTime),
+        }
+      }
+    );
+  }
+
+  current.count++;
+  return null;
+}
+
+async function healthCheck(env: Env, corsHeaders: Record<string, string>): Promise<Response> {
   try {
     // Test database connection
     const dbResult = await env.DB.prepare('SELECT 1 as test').first<{ test: number }>();
 
-    const healthOrigin = request.headers.get('Origin');
-    const healthCorsHeaders: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-    if (healthOrigin && allowedOrigins.includes(healthOrigin)) {
-      healthCorsHeaders['Access-Control-Allow-Origin'] = healthOrigin;
-    }
     return new Response(
       JSON.stringify({
         status: 'healthy',
@@ -95,7 +167,7 @@ async function healthCheck(env: Env): Promise<Response> {
         database: dbResult?.test === 1 ? 'connected' : 'error',
         timestamp: new Date().toISOString()
       }),
-      { headers: healthCorsHeaders }
+      { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
     );
   } catch (error) {
     return new Response(
@@ -105,10 +177,7 @@ async function healthCheck(env: Env): Promise<Response> {
       }),
       {
         status: 500,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
-        }
+        headers: { 'Content-Type': 'application/json' }
       }
     );
   }

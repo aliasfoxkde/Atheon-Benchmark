@@ -16,6 +16,8 @@ export interface Env {
   ENVIRONMENT: string;
   APP_NAME: string;
   APP_VERSION: string;
+  API_KEY?: string;
+  ALLOWED_ORIGINS?: string;
 }
 
 export interface ExecutionContext {
