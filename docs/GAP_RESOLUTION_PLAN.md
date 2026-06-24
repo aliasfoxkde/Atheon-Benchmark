@@ -114,19 +114,19 @@
 
 ### High (Architectural Gaps)
 - [ ] A9-4: Add OpenTelemetry distributed tracing for Workers
-- [ ] A9-5: Implement circuit breaker pattern for Claude API calls
+- [x] A9-5: Implement circuit breaker pattern for Claude API calls
 - [ ] A9-6: Add D1 batch insert for benchmark results
 - [ ] A9-7: Implement multi-tenancy with organization_id scoping
 
 ### Medium (Operational Maturity)
 - [ ] A9-8: Generate SBOM (Software Bill of Materials)
 - [ ] A9-9: Add dependency-review-action to CI
-- [ ] A9-10: Add KV caching for frequently-read configurations
-- [ ] A9-11: Add security headers to Worker responses (CSP, HSTS)
+- [x] A9-10: Add KV caching for frequently-read configurations
+- [x] A9-11: Add security headers to Worker responses (CSP, HSTS)
 
 ### Low (Future Enhancements)
 - [ ] A9-12: Add API versioning strategy (/api/v1/)
 - [ ] A9-13: Implement refresh token rotation
 - [ ] A9-14: Add audit logging for security events
 
-**Phase 9 Status**: Critical complete, High/Medium/Low are planned
+**Phase 9 Status**: 6/14 complete (A9-5, A9-10, A9-11 newly done)
