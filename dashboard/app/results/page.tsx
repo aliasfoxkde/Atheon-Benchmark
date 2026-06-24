@@ -658,16 +658,18 @@ export default function ResultsPage() {
                           onClick={() => window.open(buildResultGitHubUrl(system.system_id, system.submitted_at?.split('T')[0].replace(/-/g, '/')), '_blank')}
                           className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
                           title="View on GitHub"
+                          aria-label="View on GitHub"
                         >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path d="M9 19c-5 1-7-7-7s2 7 7 7 7-7 7-7-7-2 7-7 7-7zm0-2v6M3 13h6" />
                           </svg>
                         </button>
                         <button
                           className="p-2 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-lg transition-colors"
                           title="Download results"
+                          aria-label="Download results"
                         >
-                          <Download className="w-4 h-4" />
+                          <Download className="w-4 h-4" aria-hidden="true" />
                         </button>
                       </div>
                     </td>

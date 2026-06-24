@@ -189,6 +189,6 @@
 - [ ] F15: API status page
 - [ ] F16: Periodic background sync for PWA
 - [ ] F17: Service worker update notifications
-- [ ] F18: aria-labels on all icon-only buttons
+- [x] F18: aria-labels on all icon-only buttons
 
-**Phase 11 Status**: 8/25 complete, 17 future enhancements marked for later
+**Phase 11 Status**: 9/25 complete, 16 future enhancements marked for later
