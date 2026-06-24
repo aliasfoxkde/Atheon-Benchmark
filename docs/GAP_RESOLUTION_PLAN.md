@@ -185,10 +185,10 @@
 - [ ] F11: Real-time collaboration
 - [ ] F12: SSO/SAML authentication
 - [ ] F13: i18n implementation (next-intl)
-- [ ] F14: Interactive onboarding tour
+- [x] F14: Interactive onboarding tour
 - [x] F15: API status page
 - [x] F16: Periodic background sync for PWA
 - [x] F17: Service worker update notifications
 - [x] F18: aria-labels on all icon-only buttons
 
-**Phase 11 Status**: 12/25 complete, 13 future enhancements marked for later
+**Phase 11 Status**: 13/25 complete, 12 future enhancements marked for later
