@@ -262,7 +262,8 @@ async function auditLog(env: Env, event: AuditEvent): Promise<void> {
   };
   const key = `audit:${Date.now()}:${Math.random()}`;
   const cachePutStart = Date.now();
-  await env.CACHE.put(key, JSON.stringify(entry), { expirationTtl: 86400 * 30 }); // 30 days
+  // 90 days retention for SOC 2 compliance (requires 90+ days audit trail)
+  await env.CACHE.put(key, JSON.stringify(entry), { expirationTtl: 86400 * 90 });
   logSpan('kv.operation', { operation: 'put', key: 'audit' }, Date.now() - cachePutStart);
 }
 
@@ -313,10 +314,22 @@ async function checkAuth(request: Request, env: Env): Promise<Response | null> {
 }
 
 /**
- * Extract organization ID from request header or environment default
+ * Extract organization ID from authenticated context
+ * SECURITY: In production, organization is derived from authenticated credentials,
+ * NOT from the X-Organization-ID header which can be spoofed.
+ * X-Organization-ID header is only allowed in development/non-production environments.
  */
 function getOrganizationId(request: Request, env: Env): string | null {
-  // Check for org in header or use default org
+  // In production, organization must come from authenticated context
+  // For now, we use the global API key's organization (single-tenant default)
+  // TODO: Implement per-org API keys or JWT-based organization claims for proper multi-tenancy
+  if (env.ENVIRONMENT === 'production') {
+    // Production: Derive org from authenticated context, not from header
+    // Currently using global API key so org is DEFAULT_ORGANIZATION
+    return env.DEFAULT_ORGANIZATION || 'default';
+  }
+
+  // Development: Allow X-Organization-ID header for testing
   const orgHeader = request.headers.get('X-Organization-ID');
   return orgHeader || env.DEFAULT_ORGANIZATION || 'default';
 }
@@ -1062,18 +1075,19 @@ async function refreshToken(env: Env, body: unknown, headers: Record<string, str
       );
     }
 
-    // Token rotation: invalidate old token and issue new one
-    await env.REFRESH_TOKENS.delete(tokenKey);
-
-    // Generate new refresh token
+    // Token rotation: generate and store new token BEFORE invalidating old one
+    // This prevents token loss if the new token storage fails
     const newRefreshToken = generateRefreshToken(token.userId, token.organizationId);
 
-    // Store new refresh token
+    // Store new refresh token first
     await env.REFRESH_TOKENS.put(
       getRefreshTokenKey(newRefreshToken.tokenId),
       JSON.stringify(newRefreshToken),
       { expirationTtl: 7 * 24 * 60 * 60 } // 7 days
     );
+
+    // Only after successful storage, invalidate old token
+    await env.REFRESH_TOKENS.delete(tokenKey);
 
     // Return new tokens (access token would be generated in a full implementation)
     return new Response(

@@ -121,6 +121,8 @@ export class SecurityManager {
 
   /**
    * Validate CORS origin
+   * SECURITY: Uses anchored regex to prevent bypass via crafted origins like
+   * 'evil.com.https://legitimate.com' which could match '*.legitimate.com'
    */
   validateOrigin(origin: string | null): boolean {
     if (!origin) return true; // Allow same-origin requests
@@ -129,9 +131,23 @@ export class SecurityManager {
       return true; // Allow all origins if not configured
     }
 
-    return this.config.allowedOrigins.some(allowed =>
-      origin === allowed || origin.match(allowed.replace('*', '.*'))
-    );
+    return this.config.allowedOrigins.some(allowed => {
+      // Exact match (most common case)
+      if (origin === allowed) return true;
+
+      // For wildcard patterns, use anchored regex to prevent bypass
+      if (allowed.includes('*')) {
+        // Escape regex special characters except *, then anchor the match
+        const pattern = '^' + allowed.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace('*', '.*') + '$';
+        try {
+          return new RegExp(pattern).test(origin);
+        } catch {
+          return false;
+        }
+      }
+
+      return false;
+    });
   }
 
   /**

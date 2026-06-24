@@ -65,4 +65,7 @@ enabled = true
 
 # Limits configuration
 [limits]
-cpu_ms = 50  # CPU time limit in milliseconds
+# CPU time limit - 30s is maximum for Cloudflare Workers
+# This is CPU time (compute), not wall-clock time
+# Benchmark execution with API calls may need more compute time for pattern matching
+cpu_ms = 30000
