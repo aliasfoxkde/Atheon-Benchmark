@@ -72,7 +72,7 @@ export default function ResultsPage() {
     }
   };
 
-  const filteredResults = filter ? filterResults(results, filter) : results;
+  const filteredResults = Object.keys(filter).length > 0 ? filterResults(results, filter) : results;
   const statistics = getResultsStatistics(filteredResults);
   const systemComparisons = compareSystems(filteredResults);
 

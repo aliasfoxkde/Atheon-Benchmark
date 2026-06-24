@@ -25,6 +25,28 @@ function getDeterministicBucket(userId: string, experimentId: string): number {
   return (hash % 100);
 }
 
+/**
+ * Approximation of the standard normal cumulative distribution function (CDF)
+ * Uses the Abramowitz and Stegun approximation
+ * Returns probability that a standard normal random variable is less than x
+ */
+function normalCDF(x: number): number {
+  const a1 = 0.254829592;
+  const a2 = -0.284496736;
+  const a3 = 1.421413741;
+  const a4 = -1.453152027;
+  const a5 = 1.061405429;
+  const p = 0.3275911;
+
+  const sign = x < 0 ? -1 : 1;
+  x = Math.abs(x) / Math.sqrt(2);
+
+  const t = 1.0 / (1.0 + p * x);
+  const y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+
+  return 0.5 * (1.0 + sign * y);
+}
+
 export type ExperimentStatus = 'draft' | 'running' | 'paused' | 'completed' | 'archived';
 
 export interface ExperimentVariant {
@@ -339,8 +361,9 @@ export class ABTestingEngine {
       const se = Math.sqrt(pooledP * (1 - pooledP) * (1/n1 + 1/n2));
       const z = se > 0 ? (p2 - p1) / se : 0;
 
-      // Approximate confidence (simplified)
-      const confidence = Math.min(99.9, Math.abs(z) * 30);
+      // Calculate confidence using proper normal CDF approximation
+      // confidence = (2 * normalCDF(|z|) - 1) * 100 for two-tailed test
+      const confidence = normalCDF(Math.abs(z)) * 200 - 100;
       const isSignificant = confidence >= 95 && Math.abs(lift) > 5;
 
       results.push({
