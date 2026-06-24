@@ -176,7 +176,7 @@
 - [ ] F2: WebSocket support (vs SSE only)
 - [ ] F3: GraphQL API
 - [ ] F4: Python/Go SDK
-- [ ] F5: CSV/Parquet export
+- [x] F5: CSV/Parquet export
 - [ ] F6: PDF report generation
 - [ ] F7: Email notifications
 - [ ] F8: A/B testing framework
@@ -191,4 +191,4 @@
 - [x] F17: Service worker update notifications
 - [x] F18: aria-labels on all icon-only buttons
 
-**Phase 11 Status**: 14/25 complete, 11 future enhancements marked for later
+**Phase 11 Status**: 15/25 complete, 10 future enhancements marked for later
