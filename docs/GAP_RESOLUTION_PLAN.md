@@ -113,10 +113,10 @@
 - [x] A9-3: Add checkRateLimit() middleware (100 req/min per IP)
 
 ### High (Architectural Gaps)
-- [ ] A9-4: Add OpenTelemetry distributed tracing for Workers
+- [x] A9-4: Add OpenTelemetry distributed tracing for Workers
 - [x] A9-5: Implement circuit breaker pattern for Claude API calls
 - [x] A9-6: Add D1 batch insert for benchmark results
-- [ ] A9-7: Implement multi-tenancy with organization_id scoping
+- [x] A9-7: Implement multi-tenancy with organization_id scoping
 
 ### Medium (Operational Maturity)
 - [x] A9-8: Generate SBOM (Software Bill of Materials)
@@ -125,14 +125,8 @@
 - [x] A9-11: Add security headers to Worker responses (CSP, HSTS)
 
 ### Low (Future Enhancements)
-- [ ] A9-12: Add API versioning strategy (/api/v1/)
-- [ ] A9-13: Implement refresh token rotation
+- [x] A9-12: Add API versioning strategy (/api/v1/)
+- [x] A9-13: Implement refresh token rotation
 - [x] A9-14: Add audit logging for security events
 
-**Phase 9 Status**: 9/14 complete
-
-### Items Requiring Significant Architecture Work (Future)
-- A9-4: OpenTelemetry - requires external observability service (Grafana/Tempo)
-- A9-7: Multi-tenancy - requires database schema migration, auth redesign
-- A9-12: API versioning - breaking change, requires client updates
-- A9-13: Refresh tokens - requires auth redesign, token storage
+**Phase 9 Status**: 14/14 COMPLETE ✓, token storage
