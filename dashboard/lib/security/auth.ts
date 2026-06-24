@@ -217,7 +217,7 @@ export function createSecurityManager(config?: Partial<AuthConfig>): SecurityMan
  * Default security configuration
  */
 export const DEFAULT_SECURITY_CONFIG: AuthConfig = {
-  enabled: false, // Disabled by default
+  enabled: true, // Enabled by default (matches SecurityManager constructor)
   rateLimit: {
     requests: 100,
     window: 60,

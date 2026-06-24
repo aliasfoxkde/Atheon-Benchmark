@@ -180,16 +180,18 @@ export class WebSocketManager {
   }
 
   /**
-   * Check for dead connections
+   * Check for dead connections and send pings
    */
   private checkDeadConnections(): void {
     this.clients.forEach((client, id) => {
       if (!client.isAlive) {
+        // Previous ping not responded to, disconnect
         this.handleDisconnect(id);
         return;
       }
+      // Send ping and wait for pong to mark as alive
       client.isAlive = false;
-      // The ping would be sent here if we had access to the raw ws
+      client.send({ type: 'ping', timestamp: Date.now(), payload: null });
     });
   }
 

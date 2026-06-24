@@ -9,7 +9,7 @@
 
 export type Locale = 'en' | 'es' | 'fr' | 'de' | 'ja' | 'zh';
 
-export const SUPPORTED_LOCALES: Locale[] = ['en'];
+export const SUPPORTED_LOCALES: Locale[] = ['en', 'es', 'fr', 'de', 'ja', 'zh'];
 export const DEFAULT_LOCALE: Locale = 'en';
 
 export interface TranslationKeys {

@@ -337,8 +337,8 @@ describe('createSecurityManager', () => {
 });
 
 describe('DEFAULT_SECURITY_CONFIG', () => {
-  it('should be disabled by default', () => {
-    expect(DEFAULT_SECURITY_CONFIG.enabled).toBe(false);
+  it('should be enabled by default', () => {
+    expect(DEFAULT_SECURITY_CONFIG.enabled).toBe(true);
   });
 
   it('should have rate limit config', () => {
