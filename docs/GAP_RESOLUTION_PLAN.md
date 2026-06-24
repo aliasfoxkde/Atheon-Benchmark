@@ -127,6 +127,12 @@
 ### Low (Future Enhancements)
 - [ ] A9-12: Add API versioning strategy (/api/v1/)
 - [ ] A9-13: Implement refresh token rotation
-- [ ] A9-14: Add audit logging for security events
+- [x] A9-14: Add audit logging for security events
 
-**Phase 9 Status**: 8/14 complete
+**Phase 9 Status**: 9/14 complete
+
+### Items Requiring Significant Architecture Work (Future)
+- A9-4: OpenTelemetry - requires external observability service (Grafana/Tempo)
+- A9-7: Multi-tenancy - requires database schema migration, auth redesign
+- A9-12: API versioning - breaking change, requires client updates
+- A9-13: Refresh tokens - requires auth redesign, token storage
