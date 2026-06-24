@@ -539,7 +539,7 @@ export default function ResultsPage() {
             <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
               {filteredResults.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-16 text-center">
+                  <td colSpan={7} className="px-6 py-16 text-center">
                     <div className="flex flex-col items-center gap-4">
                       <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center">
                         <Server className="w-8 h-8 text-white" />
