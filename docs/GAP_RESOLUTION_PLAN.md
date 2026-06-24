@@ -188,7 +188,7 @@
 - [ ] F14: Interactive onboarding tour
 - [ ] F15: API status page
 - [x] F16: Periodic background sync for PWA
-- [ ] F17: Service worker update notifications
+- [x] F17: Service worker update notifications
 - [x] F18: aria-labels on all icon-only buttons
 
-**Phase 11 Status**: 9/25 complete, 16 future enhancements marked for later
+**Phase 11 Status**: 11/25 complete, 14 future enhancements marked for later

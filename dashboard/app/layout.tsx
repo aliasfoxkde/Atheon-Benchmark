@@ -127,11 +127,23 @@ export default function RootLayout({
                       }
                       // Listen for messages from service worker
                       navigator.serviceWorker.addEventListener('message', function(event) {
-                        if (event.data && event.data.type === 'PERIODIC_SYNC_COMPLETE') {
-                          console.log('Background sync completed, refreshing data...');
-                          window.dispatchEvent(new CustomEvent('sw-data-updated', {detail: event.data}));
+                        if (event.data) {
+                          switch (event.data.type) {
+                            case 'PERIODIC_SYNC_COMPLETE':
+                              console.log('Background sync completed, refreshing data...');
+                              window.dispatchEvent(new CustomEvent('sw-data-updated', {detail: event.data}));
+                              break;
+                            case 'SW_UPDATE_AVAILABLE':
+                              console.log('Service worker update available:', event.data);
+                              window.dispatchEvent(new CustomEvent('sw-update-available', {detail: event.data}));
+                              break;
+                          }
                         }
                       });
+                      // Check for updates periodically (every 6 hours)
+                      setInterval(function() {
+                        registration.update();
+                      }, 6 * 60 * 60 * 1000);
                     },
                     function(err) {
                       console.log('Service Worker registration failed:', err);
