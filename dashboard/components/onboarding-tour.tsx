@@ -5,7 +5,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, ChevronLeft, ChevronRight, Home, BarChart3, Activity, CheckCircle } from 'lucide-react';
 
 interface TourStep {

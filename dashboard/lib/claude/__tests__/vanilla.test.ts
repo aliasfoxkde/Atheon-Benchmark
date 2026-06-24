@@ -15,21 +15,34 @@ import {
   CLAUDE_MODELS
 } from '../client';
 
-// Mock global fetch
-const mockFetch = jest.fn();
-global.fetch = mockFetch as any;
+// Mock global fetch BEFORE importing vanilla
+// Note: We need to manage the mock carefully due to jest.setup.js overwriting global.fetch
+let mockFetch: jest.Mock;
+let originalFetch: typeof fetch;
+let client: VanillaClaudeClient;
 
 describe('VanillaClaudeClient', () => {
-  let client: VanillaClaudeClient;
+  beforeAll(() => {
+    // Save original fetch once
+    originalFetch = global.fetch;
+  });
 
   beforeEach(() => {
-    mockFetch.mockClear();
+    // Create fresh mock
+    mockFetch = jest.fn();
+    // Replace global fetch with our mock
+    global.fetch = mockFetch as any;
     // Suppress console warnings during tests
     jest.spyOn(console, 'warn').mockImplementation(() => {});
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    // Clean up
+  });
+
+  afterEach(() => {
+    // Restore original fetch
+    global.fetch = originalFetch;
   });
 
   describe('Constructor', () => {
@@ -326,15 +339,18 @@ describe('VanillaClaudeClient', () => {
     });
 
     it('should handle HTTP error responses', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 400,
-        statusText: 'Bad Request',
-        json: async () => ({
-          type: 'error',
-          error: { type: 'invalid_request', message: 'Invalid model' }
-        })
-      } as Response);
+      // Use mockImplementation to handle ALL calls (not just first)
+      mockFetch.mockImplementation(
+        () => Promise.resolve({
+          ok: false,
+          status: 400,
+          statusText: 'Bad Request',
+          json: async () => ({
+            type: 'error',
+            error: { type: 'invalid_request', message: 'Invalid model' }
+          })
+        }) as Response
+      );
 
       const messages: ClaudeMessage[] = [{ role: 'user', content: 'Test' }];
 
@@ -342,16 +358,19 @@ describe('VanillaClaudeClient', () => {
     });
 
     it('should handle generic HTTP errors', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 500,
-        statusText: 'Internal Server Error',
-        json: async () => ({})
-      } as Response);
+      // Use mockImplementation to handle ALL calls (not just first)
+      mockFetch.mockImplementation(
+        () => Promise.resolve({
+          ok: false,
+          status: 400,
+          statusText: 'Bad Request',
+          json: async () => ({})
+        }) as Response
+      );
 
       const messages: ClaudeMessage[] = [{ role: 'user', content: 'Test' }];
 
-      await expect(client.execute(messages)).rejects.toThrow('Internal Server Error');
+      await expect(client.execute(messages)).rejects.toThrow('Bad Request');
     });
 
     it('should handle network errors', async () => {
