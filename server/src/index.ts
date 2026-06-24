@@ -370,6 +370,9 @@ async function createBenchmark(env: Env, body: unknown, headers: Record<string, 
       VALUES (?, ?, ?, ?, ?)
     `).bind(id, name, description || '', configuration_id || 'default-config', JSON.stringify(config || {})).run();
 
+    // Invalidate benchmarks list cache
+    await invalidateBenchmarksCache(env);
+
     return new Response(
       JSON.stringify({ id, name, description, configuration_id, status: 'pending' }),
       {
