@@ -300,6 +300,28 @@ async function handleApiRequest(
 // BENCHMARK ENDPOINTS
 // ============================================
 
+// Cache invalidation helper for benchmarks list
+async function invalidateBenchmarksCache(env: Env): Promise<void> {
+  try {
+    // List all cached benchmark pages and invalidate them
+    // Since KV doesn't support prefix listing, we invalidate known keys
+    const knownKeys = [
+      'benchmarks:page=1&limit=10&status=',
+      'benchmarks:page=1&limit=10&status=pending',
+      'benchmarks:page=1&limit=10&status=running',
+      'benchmarks:page=1&limit=10&status=completed',
+      'benchmarks:page=1&limit=10&status=failed',
+    ];
+    // Invalidate with a short TTL to force refresh
+    for (const key of knownKeys) {
+      await env.CACHE.delete(key);
+    }
+  } catch (error) {
+    // Log but don't fail the request if cache invalidation fails
+    console.error('Failed to invalidate benchmarks cache:', error);
+  }
+}
+
 async function getBenchmarks(env: Env, url: URL, headers: Record<string, string>): Promise<Response> {
   const page = parseInt(url.searchParams.get('page') || '1');
   const limit = parseInt(url.searchParams.get('limit') || '10');
@@ -411,10 +433,37 @@ async function getBenchmark(env: Env, id: string, headers: Record<string, string
 async function deleteBenchmark(env: Env, id: string, headers: Record<string, string>): Promise<Response> {
   try {
     await env.DB.prepare('DELETE FROM benchmarks WHERE id = ?').bind(id).run();
+    // Invalidate benchmarks cache
+    await invalidateBenchmarksCache(env);
     return new Response(null, { status: 204, headers });
   } catch (error) {
     throw new Error(`Failed to delete benchmark: ${error}`);
   }
+}
+
+// Batch insert helper for benchmark results
+async function batchInsertBenchmarkResults(
+  env: Env,
+  results: Array<{
+    id: string;
+    benchmark_id: string;
+    test_case_id: string;
+    test_name: string;
+    started_at: number;
+    completed_at: number;
+    status: string;
+    duration_ms: number;
+    tokens_used: number;
+    passed: boolean;
+  }>
+): Promise<void> {
+  if (results.length === 0) return;
+
+  const values = results.map(r =>
+    `('${r.id}', '${r.benchmark_id}', '${r.test_case_id}', '${r.test_name}', ${r.started_at}, ${r.completed_at}, '${r.status}', ${r.duration_ms}, ${r.tokens_used}, ${r.passed ? 1 : 0})`
+  ).join(',');
+
+  await env.DB.prepare(`INSERT INTO benchmark_results VALUES ${values}`).run();
 }
 
 async function executeBenchmark(env: Env, benchmarkId: string, body: unknown, headers: Record<string, string>): Promise<Response> {
@@ -544,6 +593,9 @@ async function createConfiguration(env: Env, body: unknown, headers: Record<stri
       INSERT INTO configurations (id, name, description, is_public, config)
       VALUES (?, ?, ?, ?, ?)
     `).bind(id, name, description || '', is_public || false, JSON.stringify(config)).run();
+
+    // Invalidate configurations cache
+    await env.CACHE.delete('configs:list');
 
     return new Response(
       JSON.stringify({ id, name, description, is_public, config }),
