@@ -7,6 +7,42 @@ import { Env } from './types';
 import { validateBody, createBenchmarkSchema, createConfigurationSchema, createTestCaseSchema } from './validation';
 import { generateRefreshToken, validateRefreshToken, getRefreshTokenKey, RefreshToken } from './auth';
 
+/**
+ * Constant-time string comparison to prevent timing attacks
+ * Uses crypto.timingSafeEqual when available, falls back to manual comparison
+ */
+function timingSafeEqualStrings(a: string, b: string): boolean {
+  if (a.length !== b.length) {
+    // Still do a comparison to maintain constant time for length mismatch
+    // but return false immediately since lengths differ
+    let result = 0;
+    for (let i = 0; i < Math.max(a.length, b.length); i++) {
+      result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+    }
+    return result === 0 && a.length === b.length;
+  }
+
+  if (typeof globalThis.crypto !== 'undefined' && globalThis.crypto.subtle) {
+    try {
+      const encoder = new TextEncoder();
+      const aBytes = encoder.encode(a);
+      const bBytes = encoder.encode(b);
+      // timingSafeEqual requires both ArrayBuffer views to have the same byte length
+      // We already checked length above, so this is safe
+      return globalThis.crypto.subtle.timingSafeEqual(aBytes, bBytes);
+    } catch {
+      // Fall back to manual comparison if timingSafeEqual fails
+    }
+  }
+
+  // Fallback: constant-time manual comparison
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
+
 export interface Env {
   // D1 Database binding
   DB: D1Database;
@@ -186,8 +222,7 @@ async function handleDeprecatedApiRequest(
   }
 }
 
-// Rate limit store (in-memory for single instance, use KV for distributed)
-const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+// Rate limit configuration (KV-based for distributed deployments)
 const RATE_LIMIT_WINDOW = 60; // seconds
 const RATE_LIMIT_MAX = 100; // requests per window
 
@@ -250,7 +285,7 @@ async function checkAuth(request: Request, env: Env): Promise<Response | null> {
   const keyHeader = request.headers.get('X-API-Key');
   const token = authHeader?.replace('Bearer ', '') || keyHeader;
 
-  if (!token || token !== apiKey) {
+  if (!token || !timingSafeEqualStrings(token, apiKey)) {
     const { ip, userAgent } = getClientInfo(request);
     await auditLog(env, {
       type: 'auth_failure',
@@ -293,39 +328,52 @@ async function checkRateLimit(request: Request, env: Env): Promise<Response | nu
   const now = Date.now();
   const key = `ratelimit:${clientIP}`;
 
-  const current = rateLimitMap.get(key);
-  if (!current || now > current.resetTime) {
-    rateLimitMap.set(key, { count: 1, resetTime: now + (RATE_LIMIT_WINDOW * 1000) });
+  try {
+    // Get current rate limit state from KV
+    const stored = await env.CACHE.get(key, 'json') as { count: number; resetTime: number } | null;
+
+    if (!stored || now > stored.resetTime) {
+      // New window - reset counter
+      const newState = { count: 1, resetTime: now + (RATE_LIMIT_WINDOW * 1000) };
+      await env.CACHE.put(key, JSON.stringify(newState), { expirationTtl: RATE_LIMIT_WINDOW });
+      return null;
+    }
+
+    if (stored.count >= RATE_LIMIT_MAX) {
+      const { ip, userAgent } = getClientInfo(request);
+      await auditLog(env, {
+        type: 'rate_limit',
+        endpoint: new URL(request.url).pathname,
+        ip,
+        userAgent,
+        details: `Rate limit exceeded: ${stored.count}/${RATE_LIMIT_MAX} requests`
+      });
+      return new Response(
+        JSON.stringify({ error: 'Rate limit exceeded', retryAfter: Math.ceil((stored.resetTime - now) / 1000) }),
+        {
+          status: 429,
+          headers: {
+            'Content-Type': 'application/json',
+            'Retry-After': String(Math.ceil((stored.resetTime - now) / 1000)),
+            'X-RateLimit-Limit': String(RATE_LIMIT_MAX),
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': String(stored.resetTime),
+            ...getSecurityHeaders(),
+          }
+        }
+      );
+    }
+
+    // Increment counter - note: there is a race condition here in distributed
+    // environments but acceptable for rate limiting purposes
+    stored.count++;
+    await env.CACHE.put(key, JSON.stringify(stored), { expirationTtl: RATE_LIMIT_WINDOW });
+    return null;
+  } catch (error) {
+    // If KV fails, allow the request (fail open) but log the error
+    console.error('Rate limit KV error:', error);
     return null;
   }
-
-  if (current.count >= RATE_LIMIT_MAX) {
-    const { ip, userAgent } = getClientInfo(request);
-    await auditLog(env, {
-      type: 'rate_limit',
-      endpoint: new URL(request.url).pathname,
-      ip,
-      userAgent,
-      details: `Rate limit exceeded: ${current.count}/${RATE_LIMIT_MAX} requests`
-    });
-    return new Response(
-      JSON.stringify({ error: 'Rate limit exceeded', retryAfter: Math.ceil((current.resetTime - now) / 1000) }),
-      {
-        status: 429,
-        headers: {
-          'Content-Type': 'application/json',
-          'Retry-After': String(Math.ceil((current.resetTime - now) / 1000)),
-          'X-RateLimit-Limit': String(RATE_LIMIT_MAX),
-          'X-RateLimit-Remaining': '0',
-          'X-RateLimit-Reset': String(current.resetTime),
-          ...getSecurityHeaders(),
-        }
-      }
-    );
-  }
-
-  current.count++;
-  return null;
 }
 
 async function healthCheck(env: Env, corsHeaders: Record<string, string>): Promise<Response> {
@@ -676,13 +724,31 @@ async function batchInsertBenchmarkResults(
 ): Promise<void> {
   if (results.length === 0) return;
 
-  const values = results.map(r =>
-    `('${r.id}', '${r.benchmark_id}', '${r.test_case_id}', '${r.test_name}', '${r.organization_id}', ${r.started_at}, ${r.completed_at}, '${r.status}', ${r.duration_ms}, ${r.tokens_used}, ${r.passed ? 1 : 0})`
-  ).join(',');
+  // Build parameterized query to prevent SQL injection
+  const placeholders = results.map(() => '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').join(',');
+  const query = `INSERT INTO benchmark_results (id, benchmark_id, test_case_id, test_name, organization_id, started_at, completed_at, status, duration_ms, tokens_used, passed) VALUES ${placeholders}`;
+
+  // Flatten all values for binding - order must match placeholders
+  const binds: (string | number)[] = [];
+  for (const r of results) {
+    binds.push(
+      r.id,
+      r.benchmark_id,
+      r.test_case_id,
+      r.test_name,
+      r.organization_id,
+      r.started_at,
+      r.completed_at,
+      r.status,
+      r.duration_ms,
+      r.tokens_used,
+      r.passed ? 1 : 0
+    );
+  }
 
   const queryStart = Date.now();
-  await env.DB.prepare(`INSERT INTO benchmark_results (id, benchmark_id, test_case_id, test_name, organization_id, started_at, completed_at, status, duration_ms, tokens_used, passed) VALUES ${values}`).run();
-  logSpan('d1.query', { query_type: 'insert', table: 'benchmark_results' }, Date.now() - queryStart);
+  await env.DB.prepare(query).bind(...binds).run();
+  logSpan('d1.query', { query_type: 'insert', table: 'benchmark_results', row_count: results.length }, Date.now() - queryStart);
 }
 
 async function executeBenchmark(env: Env, benchmarkId: string, body: unknown, headers: Record<string, string>, organizationId: string): Promise<Response> {
