@@ -107,7 +107,7 @@ export default function StatusPage() {
     // Check Cloudflare services
     const cfStart = Date.now();
     try {
-      const response = await fetch('https://.cloudflare.com/cdn-cgi/status', {
+      const response = await fetch('https://www.cloudflare.com/cdn-cgi/status', {
         method: 'GET',
         cache: 'no-store'
       });
