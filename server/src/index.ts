@@ -531,6 +531,16 @@ async function handleApiRequest(
       response = await refreshToken(env, body, apiV1Headers);
       break;
 
+    // GDPR: User data export endpoint
+    case path.match(/^\/api\/v1\/users\/[^/]+\/export$/) && method === 'GET':
+      response = await exportUserData(env, path.split('/')[3], apiV1Headers);
+      break;
+
+    // GDPR: User data deletion endpoint
+    case path.match(/^\/api\/v1\/users\/[^/]+\/delete$/) && method === 'DELETE':
+      response = await deleteUser(env, path.split('/')[3], apiV1Headers);
+      break;
+
     default:
       response = new Response(
         JSON.stringify({ error: 'Not Found' }),
@@ -1101,6 +1111,138 @@ async function refreshToken(env: Env, body: unknown, headers: Record<string, str
     console.error('Token refresh error:', error);
     return new Response(
       JSON.stringify({ error: 'Failed to refresh token' }),
+      { status: 500, headers: { 'Content-Type': 'application/json', ...headers } }
+    );
+  }
+}
+
+// ============================================
+// GDPR: DATA PORTABILITY & DELETION ENDPOINTS
+// ============================================
+
+/**
+ * Export user data for GDPR Article 20 (Data Portability)
+ */
+async function exportUserData(env: Env, userId: string, headers: Record<string, string>): Promise<Response> {
+  try {
+    // Verify user exists
+    const userQueryStart = Date.now();
+    const user = await env.DB.prepare(
+      'SELECT id, email, name, role, created_at, metadata FROM users WHERE id = ?'
+    ).bind(userId).first();
+
+    if (!user) {
+      return new Response(
+        JSON.stringify({ error: 'User not found' }),
+        { status: 404, headers: { 'Content-Type': 'application/json', ...headers } }
+      );
+    }
+
+    // Get user's benchmarks
+    const benchmarksQueryStart = Date.now();
+    const benchmarks = await env.DB.prepare(
+      'SELECT * FROM benchmarks WHERE organization_id = (SELECT organization_id FROM users WHERE id = ?) LIMIT 100'
+    ).bind(userId).all();
+    logSpan('d1.query', { query_type: 'select', table: 'benchmarks', user_id: userId }, Date.now() - benchmarksQueryStart);
+
+    // Get user's configurations
+    const configurations = await env.DB.prepare(
+      'SELECT * FROM configurations WHERE organization_id = (SELECT organization_id FROM users WHERE id = ?) LIMIT 100'
+    ).bind(userId).all();
+
+    // Return exported data
+    const exportData = {
+      exported_at: new Date().toISOString(),
+      user,
+      benchmarks: benchmarks.results,
+      configurations: configurations.results,
+      data_portability_request: true,
+    };
+
+    return new Response(
+      JSON.stringify(exportData, null, 2),
+      {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Disposition': `attachment; filename="user-data-${userId}.json"`,
+          ...headers
+        }
+      }
+    );
+  } catch (error) {
+    console.error('User data export error:', error);
+    return new Response(
+      JSON.stringify({ error: 'Failed to export user data' }),
+      { status: 500, headers: { 'Content-Type': 'application/json', ...headers } }
+    );
+  }
+}
+
+/**
+ * Delete user data for GDPR Right to Erasure
+ */
+async function deleteUser(env: Env, userId: string, headers: Record<string, string>): Promise<Response> {
+  try {
+    // Verify user exists
+    const user = await env.DB.prepare(
+      'SELECT id, email FROM users WHERE id = ?'
+    ).bind(userId).first();
+
+    if (!user) {
+      return new Response(
+        JSON.stringify({ error: 'User not found' }),
+        { status: 404, headers: { 'Content-Type': 'application/json', ...headers } }
+      );
+    }
+
+    // Delete user's refresh tokens first (from KV)
+    if (env.REFRESH_TOKENS) {
+      // List and delete all tokens for this user
+      // Note: This is a simplified approach; production would use a user-token index
+      const tokenList = await env.REFRESH_TOKENS.list({ prefix: 'refresh:' });
+      for (const key of tokenList.keys) {
+        const tokenData = await env.REFRESH_TOKENS.get(key.name);
+        if (tokenData) {
+          const token = JSON.parse(tokenData);
+          if (token.userId === userId) {
+            await env.REFRESH_TOKENS.delete(key.name);
+          }
+        }
+      }
+    }
+
+    // Delete user's benchmarks and related results
+    await env.DB.prepare(
+      'DELETE FROM benchmark_results WHERE benchmark_id IN (SELECT id FROM benchmarks WHERE organization_id = (SELECT organization_id FROM users WHERE id = ?))'
+    ).bind(userId).run();
+
+    await env.DB.prepare(
+      'DELETE FROM benchmarks WHERE organization_id = (SELECT organization_id FROM users WHERE id = ?)'
+    ).bind(userId).run();
+
+    // Delete user's configurations
+    await env.DB.prepare(
+      'DELETE FROM configurations WHERE organization_id = (SELECT organization_id FROM users WHERE id = ?)'
+    ).bind(userId).run();
+
+    // Finally delete the user
+    await env.DB.prepare(
+      'DELETE FROM users WHERE id = ?'
+    ).bind(userId).run();
+
+    return new Response(
+      JSON.stringify({
+        message: 'User data deleted successfully',
+        deleted_at: new Date().toISOString(),
+        user_id: userId
+      }),
+      { status: 200, headers: { 'Content-Type': 'application/json', ...headers } }
+    );
+  } catch (error) {
+    console.error('User deletion error:', error);
+    return new Response(
+      JSON.stringify({ error: 'Failed to delete user data' }),
       { status: 500, headers: { 'Content-Type': 'application/json', ...headers } }
     );
   }
