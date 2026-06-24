@@ -111,6 +111,27 @@ export default function RootLayout({
                   navigator.serviceWorker.register('/sw.js').then(
                     function(registration) {
                       console.log('Service Worker registered with scope:', registration.scope);
+                      // Register for periodic background sync if supported
+                      if ('periodicSync' in registration) {
+                        navigator.permissions.query({name: 'periodic-background-sync'}).then(function(status) {
+                          if (status.state === 'granted') {
+                            registration.periodicSync.register('periodic-benchmark-sync', {
+                              minInterval: 60 * 60 * 1000 // 1 hour minimum
+                            }).then(function() {
+                              console.log('Periodic background sync registered');
+                            }).catch(function(err) {
+                              console.log('Periodic background sync registration failed:', err);
+                            });
+                          }
+                        });
+                      }
+                      // Listen for messages from service worker
+                      navigator.serviceWorker.addEventListener('message', function(event) {
+                        if (event.data && event.data.type === 'PERIODIC_SYNC_COMPLETE') {
+                          console.log('Background sync completed, refreshing data...');
+                          window.dispatchEvent(new CustomEvent('sw-data-updated', {detail: event.data}));
+                        }
+                      });
                     },
                     function(err) {
                       console.log('Service Worker registration failed:', err);

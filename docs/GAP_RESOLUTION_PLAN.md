@@ -187,7 +187,7 @@
 - [ ] F13: i18n implementation (next-intl)
 - [ ] F14: Interactive onboarding tour
 - [ ] F15: API status page
-- [ ] F16: Periodic background sync for PWA
+- [x] F16: Periodic background sync for PWA
 - [ ] F17: Service worker update notifications
 - [x] F18: aria-labels on all icon-only buttons
 

@@ -353,6 +353,18 @@ self.addEventListener('sync', event => {
 });
 
 /**
+ * Periodic background sync handler
+ * Used for periodically fetching fresh benchmark results
+ */
+self.addEventListener('periodicsync', event => {
+  console.log('[SW] Periodic sync event:', event.tag);
+
+  if (event.tag === 'periodic-benchmark-sync') {
+    event.waitUntil(periodicSyncBenchmarks());
+  }
+});
+
+/**
  * Sync offline benchmark results
  */
 async function syncOfflineBenchmarks() {
@@ -380,6 +392,82 @@ async function syncOfflineBenchmarks() {
     }
   } catch (error) {
     console.error('[SW] Sync error:', error);
+  }
+};
+
+/**
+ * Periodic sync for fresh benchmark results
+ * Fetches latest results and updates cache
+ */
+async function periodicSyncBenchmarks() {
+  try {
+    console.log('[SW] Running periodic benchmark sync...');
+
+    // Refresh the results cache
+    const cache = await caches.open(CACHES.results);
+
+    // Try to fetch latest results from API
+    try {
+      const response = await fetch('/api/v1/results', {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+        cache: 'no-cache'
+      });
+
+      if (response.ok) {
+        // Update cache with fresh results
+        cache.put('/api/v1/results', response.clone());
+        console.log('[SW] Periodic sync: Updated results cache');
+      }
+    } catch (error) {
+      console.error('[SW] Periodic sync: Network fetch failed, using cache:', error);
+    }
+
+    // Notify clients that new data may be available
+    const clients = await self.clients.matchAll();
+    clients.forEach(client => {
+      client.postMessage({
+        type: 'PERIODIC_SYNC_COMPLETE',
+        timestamp: Date.now()
+      });
+    });
+
+    console.log('[SW] Periodic sync complete');
+  } catch (error) {
+    console.error('[SW] Periodic sync error:', error);
+  }
+}
+
+/**
+ * Register for periodic background sync
+ * Call this from the client to enable periodic data refresh
+ */
+async function registerPeriodicSync() {
+  if ('periodicSync' in self.registration) {
+    try {
+      // Request permission for periodic background sync
+      const status = await navigator.permissions.query({
+        name: 'periodic-background-sync',
+      });
+
+      if (status.state === 'granted') {
+        await self.registration.periodicSync.register('periodic-benchmark-sync', {
+          minInterval: 60 * 60 * 1000, // Minimum 1 hour between syncs
+          delay: 5000 // Initial delay of 5 seconds after registration
+        });
+        console.log('[SW] Periodic background sync registered');
+        return true;
+      } else {
+        console.log('[SW] Periodic background sync permission not granted:', status.state);
+        return false;
+      }
+    } catch (error) {
+      console.error('[SW] Failed to register periodic sync:', error);
+      return false;
+    }
+  } else {
+    console.log('[SW] Periodic background sync not supported');
+    return false;
   }
 }
 
