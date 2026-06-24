@@ -12,7 +12,10 @@ import {
   ClaudeMessage,
   DEFAULT_CLAUDE_CONFIG,
   BenchmarkMetrics,
-  BenchmarkResult
+  BenchmarkResult,
+  CircuitBreaker,
+  CircuitBreakerState,
+  DEFAULT_CIRCUIT_BREAKER_CONFIG
 } from './client';
 
 export class VanillaClaudeClient {

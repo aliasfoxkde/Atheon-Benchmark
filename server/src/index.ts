@@ -41,14 +41,18 @@ export default {
         corsHeaders['Access-Control-Allow-Origin'] = origin;
       }
 
+      // Combine CORS headers with security headers
+      const securityHeaders = getSecurityHeaders();
+      const responseHeaders = { ...securityHeaders, ...corsHeaders };
+
       // Handle OPTIONS requests for CORS
       if (request.method === 'OPTIONS') {
-        return new Response(null, { headers: corsHeaders });
+        return new Response(null, { headers: responseHeaders });
       }
 
       // Health check endpoint (no auth required)
       if (path === '/health') {
-        return healthCheck(env, corsHeaders);
+        return healthCheck(env, responseHeaders);
       }
 
       // API routes (require authentication)
@@ -65,11 +69,11 @@ export default {
           return rateLimitError;
         }
 
-        return handleApiRequest(request, env, ctx, corsHeaders);
+        return handleApiRequest(request, env, ctx, responseHeaders);
       }
 
       // 404 for unknown routes
-      return new Response('Not Found', { status: 404, headers: corsHeaders });
+      return new Response('Not Found', { status: 404, headers: responseHeaders });
     } catch (error) {
       console.error('Error handling request:', error);
       return new Response(
@@ -78,7 +82,7 @@ export default {
           status: 500,
           headers: {
             'Content-Type': 'application/json',
-            ...corsHeaders
+            ...responseHeaders
           }
         }
       );
@@ -90,6 +94,16 @@ export default {
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 const RATE_LIMIT_WINDOW = 60; // seconds
 const RATE_LIMIT_MAX = 100; // requests per window
+
+function getSecurityHeaders(): Record<string, string> {
+  return {
+    'X-Frame-Options': 'DENY',
+    'X-Content-Type-Options': 'nosniff',
+    'X-XSS-Protection': '1; mode=block',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+    'Content-Security-Policy': "default-src 'none'; frame-ancestors 'none'",
+  };
+}
 
 async function checkAuth(request: Request, env: Env): Promise<Response | null> {
   // Skip auth in development
@@ -291,6 +305,15 @@ async function getBenchmarks(env: Env, url: URL, headers: Record<string, string>
   const status = url.searchParams.get('status');
   const offset = (page - 1) * limit;
 
+  // KV cache key based on query params (1 minute TTL)
+  const cacheKey = `benchmarks:page=${page}&limit=${limit}&status=${status || ''}`;
+  const cached = await env.CACHE.get(cacheKey);
+  if (cached) {
+    return new Response(cached, {
+      headers: { 'Content-Type': 'application/json', 'X-Cache-Hit': 'true', ...headers }
+    });
+  }
+
   let query = 'SELECT * FROM benchmarks';
   const params: any[] = [];
 
@@ -306,15 +329,20 @@ async function getBenchmarks(env: Env, url: URL, headers: Record<string, string>
     const results = await env.DB.prepare(query).bind(...params).all();
     const countResult = await env.DB.prepare('SELECT COUNT(*) as count FROM benchmarks').first<{ count: number }>();
 
+    const responseData = {
+      data: results.results,
+      total: countResult?.count || 0,
+      page,
+      limit,
+      has_more: (countResult?.count || 0) > page * limit
+    };
+
+    // Cache for 1 minute
+    await env.CACHE.put(cacheKey, JSON.stringify(responseData), { expirationTtl: 60 });
+
     return new Response(
-      JSON.stringify({
-        data: results.results,
-        total: countResult?.count || 0,
-        page,
-        limit,
-        has_more: (countResult?.count || 0) > page * limit
-      }),
-      { headers: { 'Content-Type': 'application/json', ...headers } }
+      JSON.stringify(responseData),
+      { headers: { 'Content-Type': 'application/json', 'X-Cache-Hit': 'false', ...headers } }
     );
   } catch (error) {
     throw new Error(`Failed to fetch benchmarks: ${error}`);
@@ -466,12 +494,27 @@ async function getResult(env: Env, id: string, headers: Record<string, string>):
 // ============================================
 
 async function getConfigurations(env: Env, headers: Record<string, string>): Promise<Response> {
+  const cacheKey = 'configs:list';
+
+  // Check KV cache (5 minute TTL)
+  const cached = await env.CACHE.get(cacheKey);
+  if (cached) {
+    return new Response(cached, {
+      headers: { 'Content-Type': 'application/json', 'X-Cache-Hit': 'true', ...headers }
+    });
+  }
+
   try {
     const results = await env.DB.prepare('SELECT * FROM configurations ORDER BY created_at DESC').all();
 
+    const responseData = JSON.stringify({ data: results.results });
+
+    // Cache for 5 minutes
+    await env.CACHE.put(cacheKey, responseData, { expirationTtl: 300 });
+
     return new Response(
-      JSON.stringify({ data: results.results }),
-      { headers: { 'Content-Type': 'application/json', ...headers } }
+      responseData,
+      { headers: { 'Content-Type': 'application/json', 'X-Cache-Hit': 'false', ...headers } }
     );
   } catch (error) {
     throw new Error(`Failed to fetch configurations: ${error}`);
