@@ -154,3 +154,41 @@
 - [ ] S10: Vulnerable dependencies (undici, ws, esbuild) - transitive via wrangler, miniflare, jest. Fix requires upstream Cloudflare updates
 
 **Phase 10 Status**: 9/10 complete, S10 pending upstream fix
+
+---
+
+## Phase 11: Additional Gap Analysis Fixes (2026-06-23)
+
+### High Priority
+- [x] P1: Add retry logic with exponential backoff to Claude API calls (dashboard/lib/claude/vanilla.ts)
+- [x] P2: Fix viewport WCAG compliance (dashboard/app/layout.tsx) - remove userScalable: false
+- [x] P3: Fix results table colSpan mismatch (dashboard/app/results/page.tsx) - 8 to 7 columns
+- [x] P4: Fix service worker registration (dashboard/app/layout.tsx) - use Script component with afterInteractive
+
+### Medium Priority
+- [x] P5: Add LICENSE file (MIT) to repository root
+- [x] P6: Implement GDPR right-to-deletion endpoint (DELETE /api/v1/users/{id}/delete)
+- [x] P7: Implement GDPR data export endpoint (GET /api/v1/users/{id}/export)
+- [x] P8: Implement executeBenchmark endpoint with validation instead of placeholder
+
+### Future Enhancements (Not Implemented)
+- [ ] F1: Full R2 storage layer implementation
+- [ ] F2: WebSocket support (vs SSE only)
+- [ ] F3: GraphQL API
+- [ ] F4: Python/Go SDK
+- [ ] F5: CSV/Parquet export
+- [ ] F6: PDF report generation
+- [ ] F7: Email notifications
+- [ ] F8: A/B testing framework
+- [ ] F9: Prompt versioning/management
+- [ ] F10: Multi-cloud support
+- [ ] F11: Real-time collaboration
+- [ ] F12: SSO/SAML authentication
+- [ ] F13: i18n implementation (next-intl)
+- [ ] F14: Interactive onboarding tour
+- [ ] F15: API status page
+- [ ] F16: Periodic background sync for PWA
+- [ ] F17: Service worker update notifications
+- [ ] F18: aria-labels on all icon-only buttons
+
+**Phase 11 Status**: 8/25 complete, 17 future enhancements marked for later
