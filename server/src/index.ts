@@ -95,6 +95,14 @@ const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 const RATE_LIMIT_WINDOW = 60; // seconds
 const RATE_LIMIT_MAX = 100; // requests per window
 
+function getClientInfo(request: Request): { ip: string; userAgent: string } {
+  const ip = request.headers.get('CF-Connecting-IP') ||
+             request.headers.get('X-Forwarded-For')?.split(',')[0] ||
+             'unknown';
+  const userAgent = request.headers.get('User-Agent') || 'unknown';
+  return { ip, userAgent };
+}
+
 function getSecurityHeaders(): Record<string, string> {
   return {
     'X-Frame-Options': 'DENY',
@@ -103,6 +111,26 @@ function getSecurityHeaders(): Record<string, string> {
     'Referrer-Policy': 'strict-origin-when-cross-origin',
     'Content-Security-Policy': "default-src 'none'; frame-ancestors 'none'",
   };
+}
+
+// Audit event types
+type AuditEventType = 'auth_failure' | 'rate_limit' | 'unauthorized' | 'api_error';
+
+interface AuditEvent {
+  type: AuditEventType;
+  endpoint: string;
+  ip: string;
+  userAgent: string;
+  details?: string;
+}
+
+async function auditLog(env: Env, event: AuditEvent): Promise<void> {
+  const entry = {
+    ...event,
+    timestamp: new Date().toISOString(),
+  };
+  const key = `audit:${Date.now()}:${Math.random()}`;
+  await env.CACHE.put(key, JSON.stringify(entry), { expirationTtl: 86400 * 30 }); // 30 days
 }
 
 async function checkAuth(request: Request, env: Env): Promise<Response | null> {
@@ -125,6 +153,14 @@ async function checkAuth(request: Request, env: Env): Promise<Response | null> {
   const token = authHeader?.replace('Bearer ', '') || keyHeader;
 
   if (!token || token !== apiKey) {
+    const { ip, userAgent } = getClientInfo(request);
+    await auditLog(env, {
+      type: 'auth_failure',
+      endpoint: new URL(request.url).pathname,
+      ip,
+      userAgent,
+      details: 'Invalid or missing API key'
+    });
     return new Response(
       JSON.stringify({ error: 'Unauthorized' }),
       { status: 401, headers: { 'Content-Type': 'application/json', ...getSecurityHeaders() } }
@@ -148,6 +184,14 @@ async function checkRateLimit(request: Request, env: Env): Promise<Response | nu
   }
 
   if (current.count >= RATE_LIMIT_MAX) {
+    const { ip, userAgent } = getClientInfo(request);
+    await auditLog(env, {
+      type: 'rate_limit',
+      endpoint: new URL(request.url).pathname,
+      ip,
+      userAgent,
+      details: `Rate limit exceeded: ${current.count}/${RATE_LIMIT_MAX} requests`
+    });
     return new Response(
       JSON.stringify({ error: 'Rate limit exceeded', retryAfter: Math.ceil((current.resetTime - now) / 1000) }),
       {
@@ -247,43 +291,56 @@ async function handleApiRequest(
   }
 
   // Route handling
+  let response: Response;
   switch (true) {
     // Benchmark endpoints
     case path === '/api/benchmarks' && method === 'GET':
-      return getBenchmarks(env, url, corsHeaders);
+      response = await getBenchmarks(env, url, corsHeaders);
+      break;
     case path === '/api/benchmarks' && method === 'POST':
-      return createBenchmark(env, body, corsHeaders);
+      response = await createBenchmark(env, body, corsHeaders);
+      break;
     case path.match(/^\/api\/benchmarks\/[^/]+$/) && method === 'GET':
-      return getBenchmark(env, path.split('/').pop()!, corsHeaders);
+      response = await getBenchmark(env, path.split('/').pop()!, corsHeaders);
+      break;
     case path.match(/^\/api\/benchmarks\/[^/]+$/) && method === 'DELETE':
-      return deleteBenchmark(env, path.split('/').pop()!, corsHeaders);
+      response = await deleteBenchmark(env, path.split('/').pop()!, corsHeaders);
+      break;
 
     // Benchmark execution endpoint
     case path.match(/^\/api\/benchmarks\/[^/]+\/execute$/) && method === 'POST':
-      return executeBenchmark(env, path.split('/')[3], body, corsHeaders);
+      response = await executeBenchmark(env, path.split('/')[3], body, corsHeaders);
+      break;
 
     // Results endpoints
     case path === '/api/results' && method === 'GET':
-      return getResults(env, url, corsHeaders);
+      response = await getResults(env, url, corsHeaders);
+      break;
     case path.match(/^\/api\/results\/[^/]+$/) && method === 'GET':
-      return getResult(env, path.split('/').pop()!, corsHeaders);
+      response = await getResult(env, path.split('/').pop()!, corsHeaders);
+      break;
 
     // Configuration endpoints
     case path === '/api/configurations' && method === 'GET':
-      return getConfigurations(env, corsHeaders);
+      response = await getConfigurations(env, corsHeaders);
+      break;
     case path === '/api/configurations' && method === 'POST':
-      return createConfiguration(env, body, corsHeaders);
+      response = await createConfiguration(env, body, corsHeaders);
+      break;
     case path.match(/^\/api\/configurations\/[^/]+$/) && method === 'GET':
-      return getConfiguration(env, path.split('/').pop()!, corsHeaders);
+      response = await getConfiguration(env, path.split('/').pop()!, corsHeaders);
+      break;
 
     // Test cases endpoints
     case path === '/api/test-cases' && method === 'GET':
-      return getTestCases(env, url, corsHeaders);
+      response = await getTestCases(env, url, corsHeaders);
+      break;
     case path === '/api/test-cases' && method === 'POST':
-      return createTestCase(env, body, corsHeaders);
+      response = await createTestCase(env, body, corsHeaders);
+      break;
 
     default:
-      return new Response(
+      response = new Response(
         JSON.stringify({ error: 'Not Found' }),
         {
           status: 404,
@@ -294,6 +351,20 @@ async function handleApiRequest(
         }
       );
   }
+
+  // Audit log 401/403 responses
+  if (response.status === 401 || response.status === 403) {
+    const { ip, userAgent } = getClientInfo(request);
+    await auditLog(env, {
+      type: response.status === 401 ? 'unauthorized' : 'unauthorized',
+      endpoint: path,
+      ip,
+      userAgent,
+      details: `HTTP ${response.status} response`
+    });
+  }
+
+  return response;
 }
 
 // ============================================
