@@ -5,6 +5,7 @@
 
 import { Env } from './types';
 import { validateBody, createBenchmarkSchema, createConfigurationSchema, createTestCaseSchema } from './validation';
+import { generateRefreshToken, validateRefreshToken, getRefreshTokenKey, RefreshToken } from './auth';
 
 export interface Env {
   // D1 Database binding
@@ -16,10 +17,14 @@ export interface Env {
   // KV Cache binding
   CACHE: KVNamespace;
 
+  // KV namespace for refresh tokens
+  REFRESH_TOKENS?: KVNamespace;
+
   // Environment variables
   ENVIRONMENT: string;
   APP_NAME: string;
   APP_VERSION: string;
+  DEFAULT_ORGANIZATION?: string;
 }
 
 // OpenTelemetry-compatible structured logging
@@ -437,6 +442,11 @@ async function handleApiRequest(
       break;
     case path === '/api/v1/test-cases' && method === 'POST':
       response = await createTestCase(env, body, apiV1Headers);
+      break;
+
+    // Auth endpoints
+    case path === '/api/v1/auth/refresh' && method === 'POST':
+      response = await refreshToken(env, body, apiV1Headers);
       break;
 
     default:
@@ -912,5 +922,83 @@ async function createTestCase(env: Env, body: unknown, headers: Record<string, s
     );
   } catch (error) {
     throw new Error(`Failed to create test case: ${error}`);
+  }
+}
+
+// ============================================
+// AUTH ENDPOINTS
+// ============================================
+
+async function refreshToken(env: Env, body: unknown, headers: Record<string, string>): Promise<Response> {
+  // Exchange refresh token for new access token
+  // Implement token rotation (invalidate old token)
+  const { refreshToken: tokenId } = body as { refreshToken?: string };
+
+  if (!tokenId) {
+    return new Response(
+      JSON.stringify({ error: 'Refresh token is required' }),
+      { status: 400, headers: { 'Content-Type': 'application/json', ...headers } }
+    );
+  }
+
+  // Check if REFRESH_TOKENS KV namespace is configured
+  if (!env.REFRESH_TOKENS) {
+    return new Response(
+      JSON.stringify({ error: 'Refresh token system not configured' }),
+      { status: 503, headers: { 'Content-Type': 'application/json', ...headers } }
+    );
+  }
+
+  try {
+    // Retrieve stored refresh token
+    const tokenKey = getRefreshTokenKey(tokenId);
+    const tokenData = await env.REFRESH_TOKENS.get(tokenKey);
+
+    if (!tokenData) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid or expired refresh token' }),
+        { status: 401, headers: { 'Content-Type': 'application/json', ...headers } }
+      );
+    }
+
+    const token: RefreshToken = JSON.parse(tokenData);
+
+    // Validate token is not expired
+    if (!validateRefreshToken(token)) {
+      // Delete expired token
+      await env.REFRESH_TOKENS.delete(tokenKey);
+      return new Response(
+        JSON.stringify({ error: 'Refresh token expired' }),
+        { status: 401, headers: { 'Content-Type': 'application/json', ...headers } }
+      );
+    }
+
+    // Token rotation: invalidate old token and issue new one
+    await env.REFRESH_TOKENS.delete(tokenKey);
+
+    // Generate new refresh token
+    const newRefreshToken = generateRefreshToken(token.userId, token.organizationId);
+
+    // Store new refresh token
+    await env.REFRESH_TOKENS.put(
+      getRefreshTokenKey(newRefreshToken.tokenId),
+      JSON.stringify(newRefreshToken),
+      { expirationTtl: 7 * 24 * 60 * 60 } // 7 days
+    );
+
+    // Return new tokens (access token would be generated in a full implementation)
+    return new Response(
+      JSON.stringify({
+        message: 'Token refreshed successfully',
+        expiresAt: newRefreshToken.expiresAt,
+      }),
+      { status: 200, headers: { 'Content-Type': 'application/json', ...headers } }
+    );
+  } catch (error) {
+    console.error('Token refresh error:', error);
+    return new Response(
+      JSON.stringify({ error: 'Failed to refresh token' }),
+      { status: 500, headers: { 'Content-Type': 'application/json', ...headers } }
+    );
   }
 }

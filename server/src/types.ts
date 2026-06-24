@@ -12,12 +12,16 @@ export interface Env {
   // KV Cache binding
   CACHE: KVNamespace;
 
+  // KV namespace for refresh tokens
+  REFRESH_TOKENS?: KVNamespace;
+
   // Environment variables
   ENVIRONMENT: string;
   APP_NAME: string;
   APP_VERSION: string;
   API_KEY?: string;
   ALLOWED_ORIGINS?: string;
+  DEFAULT_ORGANIZATION?: string;
 }
 
 export interface ExecutionContext {

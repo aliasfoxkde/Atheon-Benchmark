@@ -5,6 +5,16 @@
 PRAGMA foreign_keys = ON;
 
 -- ============================================
+-- ORGANIZATIONS TABLE
+-- ============================================
+CREATE TABLE IF NOT EXISTS organizations (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  plan TEXT DEFAULT 'free',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ============================================
 -- BENCHMARKS TABLE
 -- ============================================
 CREATE TABLE IF NOT EXISTS benchmarks (
@@ -12,6 +22,7 @@ CREATE TABLE IF NOT EXISTS benchmarks (
   name TEXT NOT NULL,
   description TEXT,
   configuration_id TEXT NOT NULL,
+  organization_id TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   started_at DATETIME,
   completed_at DATETIME,
@@ -23,7 +34,8 @@ CREATE TABLE IF NOT EXISTS benchmarks (
   atheon_version TEXT,
   mcp_enabled BOOLEAN DEFAULT FALSE,
   metadata JSON, -- Additional metadata as JSON
-  FOREIGN KEY (configuration_id) REFERENCES configurations(id) ON DELETE CASCADE
+  FOREIGN KEY (configuration_id) REFERENCES configurations(id) ON DELETE CASCADE,
+  FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE SET NULL
 );
 
 -- ============================================
@@ -33,12 +45,14 @@ CREATE TABLE IF NOT EXISTS configurations (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL UNIQUE,
   description TEXT,
+  organization_id TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   created_by TEXT, -- User or system that created the configuration
   is_public BOOLEAN DEFAULT FALSE,
   config JSON NOT NULL, -- Configuration details as JSON
-  tags TEXT -- Comma-separated tags
+  tags TEXT, -- Comma-separated tags
+  FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE SET NULL
 );
 
 -- ============================================
@@ -49,6 +63,7 @@ CREATE TABLE IF NOT EXISTS benchmark_results (
   benchmark_id TEXT NOT NULL,
   test_case_id TEXT NOT NULL,
   test_name TEXT NOT NULL,
+  organization_id TEXT,
   started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   completed_at DATETIME,
   status TEXT NOT NULL DEFAULT 'running', -- running, completed, failed
@@ -63,7 +78,8 @@ CREATE TABLE IF NOT EXISTS benchmark_results (
   passed BOOLEAN, -- Whether the test passed
   error_message TEXT,
   metadata JSON,
-  FOREIGN KEY (benchmark_id) REFERENCES benchmarks(id) ON DELETE CASCADE
+  FOREIGN KEY (benchmark_id) REFERENCES benchmarks(id) ON DELETE CASCADE,
+  FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE SET NULL
 );
 
 -- ============================================
