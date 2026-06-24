@@ -36,6 +36,34 @@ function logSpan(operation: string, attrs: Record<string, string | number>, dura
   console.log(JSON.stringify(span));
 }
 
+// Deprecation headers for API v1
+const DEPRECATION_HEADERS = {
+  'Deprecation': 'true',
+  'Sunset': 'Mon, 01 Jan 2027 00:00:00 GMT',
+  'X-API-Version': 'v1-deprecated'
+};
+
+function getApiV1Headers(baseHeaders: Record<string, string>): Record<string, string> {
+  return { ...baseHeaders, 'X-API-Version': 'v1' };
+}
+
+function createDeprecationRedirect(newPath: string): Response {
+  return new Response(
+    JSON.stringify({
+      warning: 'This endpoint is deprecated. Use ' + newPath,
+      redirect: newPath
+    }),
+    {
+      status: 301,
+      headers: {
+        'Content-Type': 'application/json',
+        'Location': newPath,
+        ...DEPRECATION_HEADERS
+      }
+    }
+  );
+}
+
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     try {
@@ -69,8 +97,13 @@ export default {
         return healthCheck(env, responseHeaders);
       }
 
-      // API routes (require authentication)
-      if (path.startsWith('/api/')) {
+      // Handle deprecated /api/ routes (redirect to /api/v1/)
+      if (path.startsWith('/api/') && !path.startsWith('/api/v1/')) {
+        return handleDeprecatedApiRequest(request, env, responseHeaders);
+      }
+
+      // API v1 routes (require authentication)
+      if (path.startsWith('/api/v1/')) {
         // Check API key authentication
         const authError = await checkAuth(request, env);
         if (authError) {
@@ -105,6 +138,48 @@ export default {
     }
   },
 };
+
+// Handle deprecated /api/ routes - redirect to /api/v1/
+async function handleDeprecatedApiRequest(
+  request: Request,
+  env: Env,
+  corsHeaders: Record<string, string>
+): Promise<Response> {
+  const path = new URL(request.url).pathname;
+
+  // Redirect deprecated routes to /api/v1/ equivalents
+  switch (true) {
+    case path === '/api/benchmarks' && request.method === 'GET':
+      return createDeprecationRedirect('/api/v1/benchmarks');
+    case path === '/api/benchmarks' && request.method === 'POST':
+      return createDeprecationRedirect('/api/v1/benchmarks');
+    case path.match(/^\/api\/benchmarks\/[^/]+$/) && request.method === 'GET':
+      return createDeprecationRedirect('/api/v1/benchmarks/' + path.split('/')[3]);
+    case path.match(/^\/api\/benchmarks\/[^/]+$/) && request.method === 'DELETE':
+      return createDeprecationRedirect('/api/v1/benchmarks/' + path.split('/')[3]);
+    case path.match(/^\/api\/benchmarks\/[^/]+\/execute$/) && request.method === 'POST':
+      return createDeprecationRedirect('/api/v1/benchmarks/' + path.split('/')[3] + '/execute');
+    case path === '/api/results' && request.method === 'GET':
+      return createDeprecationRedirect('/api/v1/results');
+    case path.match(/^\/api\/results\/[^/]+$/) && request.method === 'GET':
+      return createDeprecationRedirect('/api/v1/results/' + path.split('/')[3]);
+    case path === '/api/configurations' && request.method === 'GET':
+      return createDeprecationRedirect('/api/v1/configurations');
+    case path === '/api/configurations' && request.method === 'POST':
+      return createDeprecationRedirect('/api/v1/configurations');
+    case path.match(/^\/api\/configurations\/[^/]+$/) && request.method === 'GET':
+      return createDeprecationRedirect('/api/v1/configurations/' + path.split('/')[3]);
+    case path === '/api/test-cases' && request.method === 'GET':
+      return createDeprecationRedirect('/api/v1/test-cases');
+    case path === '/api/test-cases' && request.method === 'POST':
+      return createDeprecationRedirect('/api/v1/test-cases');
+    default:
+      return new Response(
+        JSON.stringify({ error: 'Not Found' }),
+        { status: 404, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      );
+  }
+}
 
 // Rate limit store (in-memory for single instance, use KV for distributed)
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
@@ -272,6 +347,9 @@ async function handleApiRequest(
   const method = request.method;
   const { ip } = getClientInfo(request);
 
+  // Add API version header to all v1 responses
+  const apiV1Headers = getApiV1Headers(corsHeaders);
+
   logSpan('api.request', { method, path, ip });
 
   // Parse and validate body for POST/PUT requests
@@ -294,20 +372,20 @@ async function handleApiRequest(
 
     // Validate body based on endpoint
     const pathLower = path.toLowerCase();
-    if (pathLower === '/api/benchmarks' && method === 'POST') {
+    if (pathLower === '/api/v1/benchmarks' && method === 'POST') {
       const result = validateBody(createBenchmarkSchema, body);
       if (!result.success) {
-        return new Response(JSON.stringify({ error: result.error }), { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+        return new Response(JSON.stringify({ error: result.error }), { status: 400, headers: { 'Content-Type': 'application/json', ...apiV1Headers } });
       }
-    } else if (pathLower === '/api/configurations' && method === 'POST') {
+    } else if (pathLower === '/api/v1/configurations' && method === 'POST') {
       const result = validateBody(createConfigurationSchema, body);
       if (!result.success) {
-        return new Response(JSON.stringify({ error: result.error }), { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+        return new Response(JSON.stringify({ error: result.error }), { status: 400, headers: { 'Content-Type': 'application/json', ...apiV1Headers } });
       }
-    } else if (pathLower === '/api/test-cases' && method === 'POST') {
+    } else if (pathLower === '/api/v1/test-cases' && method === 'POST') {
       const result = validateBody(createTestCaseSchema, body);
       if (!result.success) {
-        return new Response(JSON.stringify({ error: result.error }), { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+        return new Response(JSON.stringify({ error: result.error }), { status: 400, headers: { 'Content-Type': 'application/json', ...apiV1Headers } });
       }
     }
   }
@@ -316,49 +394,49 @@ async function handleApiRequest(
   let response: Response;
   switch (true) {
     // Benchmark endpoints
-    case path === '/api/benchmarks' && method === 'GET':
-      response = await getBenchmarks(env, url, corsHeaders);
+    case path === '/api/v1/benchmarks' && method === 'GET':
+      response = await getBenchmarks(env, url, apiV1Headers);
       break;
-    case path === '/api/benchmarks' && method === 'POST':
-      response = await createBenchmark(env, body, corsHeaders);
+    case path === '/api/v1/benchmarks' && method === 'POST':
+      response = await createBenchmark(env, body, apiV1Headers);
       break;
-    case path.match(/^\/api\/benchmarks\/[^/]+$/) && method === 'GET':
-      response = await getBenchmark(env, path.split('/').pop()!, corsHeaders);
+    case path.match(/^\/api\/v1\/benchmarks\/[^/]+$/) && method === 'GET':
+      response = await getBenchmark(env, path.split('/').pop()!, apiV1Headers);
       break;
-    case path.match(/^\/api\/benchmarks\/[^/]+$/) && method === 'DELETE':
-      response = await deleteBenchmark(env, path.split('/').pop()!, corsHeaders);
+    case path.match(/^\/api\/v1\/benchmarks\/[^/]+$/) && method === 'DELETE':
+      response = await deleteBenchmark(env, path.split('/').pop()!, apiV1Headers);
       break;
 
     // Benchmark execution endpoint
-    case path.match(/^\/api\/benchmarks\/[^/]+\/execute$/) && method === 'POST':
-      response = await executeBenchmark(env, path.split('/')[3], body, corsHeaders);
+    case path.match(/^\/api\/v1\/benchmarks\/[^/]+\/execute$/) && method === 'POST':
+      response = await executeBenchmark(env, path.split('/')[3], body, apiV1Headers);
       break;
 
     // Results endpoints
-    case path === '/api/results' && method === 'GET':
-      response = await getResults(env, url, corsHeaders);
+    case path === '/api/v1/results' && method === 'GET':
+      response = await getResults(env, url, apiV1Headers);
       break;
-    case path.match(/^\/api\/results\/[^/]+$/) && method === 'GET':
-      response = await getResult(env, path.split('/').pop()!, corsHeaders);
+    case path.match(/^\/api\/v1\/results\/[^/]+$/) && method === 'GET':
+      response = await getResult(env, path.split('/').pop()!, apiV1Headers);
       break;
 
     // Configuration endpoints
-    case path === '/api/configurations' && method === 'GET':
-      response = await getConfigurations(env, corsHeaders);
+    case path === '/api/v1/configurations' && method === 'GET':
+      response = await getConfigurations(env, apiV1Headers);
       break;
-    case path === '/api/configurations' && method === 'POST':
-      response = await createConfiguration(env, body, corsHeaders);
+    case path === '/api/v1/configurations' && method === 'POST':
+      response = await createConfiguration(env, body, apiV1Headers);
       break;
-    case path.match(/^\/api\/configurations\/[^/]+$/) && method === 'GET':
-      response = await getConfiguration(env, path.split('/').pop()!, corsHeaders);
+    case path.match(/^\/api\/v1\/configurations\/[^/]+$/) && method === 'GET':
+      response = await getConfiguration(env, path.split('/').pop()!, apiV1Headers);
       break;
 
     // Test cases endpoints
-    case path === '/api/test-cases' && method === 'GET':
-      response = await getTestCases(env, url, corsHeaders);
+    case path === '/api/v1/test-cases' && method === 'GET':
+      response = await getTestCases(env, url, apiV1Headers);
       break;
-    case path === '/api/test-cases' && method === 'POST':
-      response = await createTestCase(env, body, corsHeaders);
+    case path === '/api/v1/test-cases' && method === 'POST':
+      response = await createTestCase(env, body, apiV1Headers);
       break;
 
     default:
@@ -368,7 +446,7 @@ async function handleApiRequest(
           status: 404,
           headers: {
             'Content-Type': 'application/json',
-            ...corsHeaders
+            ...apiV1Headers
           }
         }
       );
