@@ -22,6 +22,20 @@ export interface Env {
   APP_VERSION: string;
 }
 
+// OpenTelemetry-compatible structured logging
+function logSpan(operation: string, attrs: Record<string, string | number>, duration?: number) {
+  const span = {
+    trace: {
+      operation_name: operation,
+      service_name: 'atheon-benchmark-worker',
+      start_time_ms: Date.now() - (duration || 0),
+      duration_ms: duration || 0,
+      attributes: attrs,
+    }
+  };
+  console.log(JSON.stringify(span));
+}
+
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     try {
@@ -75,6 +89,8 @@ export default {
       // 404 for unknown routes
       return new Response('Not Found', { status: 404, headers: responseHeaders });
     } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logSpan('error', { error: err.message, path: new URL(request.url).pathname });
       console.error('Error handling request:', error);
       return new Response(
         JSON.stringify({ error: 'Internal Server Error' }),
@@ -130,7 +146,9 @@ async function auditLog(env: Env, event: AuditEvent): Promise<void> {
     timestamp: new Date().toISOString(),
   };
   const key = `audit:${Date.now()}:${Math.random()}`;
+  const cachePutStart = Date.now();
   await env.CACHE.put(key, JSON.stringify(entry), { expirationTtl: 86400 * 30 }); // 30 days
+  logSpan('kv.operation', { operation: 'put', key: 'audit' }, Date.now() - cachePutStart);
 }
 
 async function checkAuth(request: Request, env: Env): Promise<Response | null> {
@@ -248,9 +266,13 @@ async function handleApiRequest(
   ctx: ExecutionContext,
   corsHeaders: Record<string, string>
 ): Promise<Response> {
+  const start = Date.now();
   const url = new URL(request.url);
   const path = url.pathname;
   const method = request.method;
+  const { ip } = getClientInfo(request);
+
+  logSpan('api.request', { method, path, ip });
 
   // Parse and validate body for POST/PUT requests
   let body: unknown = null;
@@ -385,7 +407,9 @@ async function invalidateBenchmarksCache(env: Env): Promise<void> {
     ];
     // Invalidate with a short TTL to force refresh
     for (const key of knownKeys) {
+      const deleteStart = Date.now();
       await env.CACHE.delete(key);
+      logSpan('kv.operation', { operation: 'delete', key }, Date.now() - deleteStart);
     }
   } catch (error) {
     // Log but don't fail the request if cache invalidation fails
@@ -401,8 +425,10 @@ async function getBenchmarks(env: Env, url: URL, headers: Record<string, string>
 
   // KV cache key based on query params (1 minute TTL)
   const cacheKey = `benchmarks:page=${page}&limit=${limit}&status=${status || ''}`;
+  const cacheGetStart = Date.now();
   const cached = await env.CACHE.get(cacheKey);
   if (cached) {
+    logSpan('kv.operation', { operation: 'get', key: cacheKey }, Date.now() - cacheGetStart);
     return new Response(cached, {
       headers: { 'Content-Type': 'application/json', 'X-Cache-Hit': 'true', ...headers }
     });
@@ -420,8 +446,10 @@ async function getBenchmarks(env: Env, url: URL, headers: Record<string, string>
   params.push(limit, offset);
 
   try {
+    const queryStart = Date.now();
     const results = await env.DB.prepare(query).bind(...params).all();
     const countResult = await env.DB.prepare('SELECT COUNT(*) as count FROM benchmarks').first<{ count: number }>();
+    logSpan('d1.query', { query_type: 'select', table: 'benchmarks' }, Date.now() - queryStart);
 
     const responseData = {
       data: results.results,
@@ -432,7 +460,9 @@ async function getBenchmarks(env: Env, url: URL, headers: Record<string, string>
     };
 
     // Cache for 1 minute
+    const cachePutStart = Date.now();
     await env.CACHE.put(cacheKey, JSON.stringify(responseData), { expirationTtl: 60 });
+    logSpan('kv.operation', { operation: 'put', key: cacheKey }, Date.now() - cachePutStart);
 
     return new Response(
       JSON.stringify(responseData),
@@ -458,10 +488,12 @@ async function createBenchmark(env: Env, body: unknown, headers: Record<string, 
   }
 
   try {
+    const queryStart = Date.now();
     await env.DB.prepare(`
       INSERT INTO benchmarks (id, name, description, configuration_id, metadata)
       VALUES (?, ?, ?, ?, ?)
     `).bind(id, name, description || '', configuration_id || 'default-config', JSON.stringify(config || {})).run();
+    logSpan('d1.query', { query_type: 'insert', table: 'benchmarks' }, Date.now() - queryStart);
 
     // Invalidate benchmarks list cache
     await invalidateBenchmarksCache(env);
@@ -480,7 +512,9 @@ async function createBenchmark(env: Env, body: unknown, headers: Record<string, 
 
 async function getBenchmark(env: Env, id: string, headers: Record<string, string>): Promise<Response> {
   try {
+    const queryStart = Date.now();
     const result = await env.DB.prepare('SELECT * FROM benchmarks WHERE id = ?').bind(id).first();
+    logSpan('d1.query', { query_type: 'select', table: 'benchmarks' }, Date.now() - queryStart);
 
     if (!result) {
       return new Response(
@@ -503,7 +537,9 @@ async function getBenchmark(env: Env, id: string, headers: Record<string, string
 
 async function deleteBenchmark(env: Env, id: string, headers: Record<string, string>): Promise<Response> {
   try {
+    const queryStart = Date.now();
     await env.DB.prepare('DELETE FROM benchmarks WHERE id = ?').bind(id).run();
+    logSpan('d1.query', { query_type: 'delete', table: 'benchmarks' }, Date.now() - queryStart);
     // Invalidate benchmarks cache
     await invalidateBenchmarksCache(env);
     return new Response(null, { status: 204, headers });
@@ -534,7 +570,9 @@ async function batchInsertBenchmarkResults(
     `('${r.id}', '${r.benchmark_id}', '${r.test_case_id}', '${r.test_name}', ${r.started_at}, ${r.completed_at}, '${r.status}', ${r.duration_ms}, ${r.tokens_used}, ${r.passed ? 1 : 0})`
   ).join(',');
 
+  const queryStart = Date.now();
   await env.DB.prepare(`INSERT INTO benchmark_results VALUES ${values}`).run();
+  logSpan('d1.query', { query_type: 'insert', table: 'benchmark_results' }, Date.now() - queryStart);
 }
 
 async function executeBenchmark(env: Env, benchmarkId: string, body: unknown, headers: Record<string, string>): Promise<Response> {
@@ -575,7 +613,9 @@ async function getResults(env: Env, url: URL, headers: Record<string, string>): 
   params.push(limit, offset);
 
   try {
+    const queryStart = Date.now();
     const results = await env.DB.prepare(query).bind(...params).all();
+    logSpan('d1.query', { query_type: 'select', table: 'benchmark_results' }, Date.now() - queryStart);
 
     return new Response(
       JSON.stringify({
@@ -592,7 +632,9 @@ async function getResults(env: Env, url: URL, headers: Record<string, string>): 
 
 async function getResult(env: Env, id: string, headers: Record<string, string>): Promise<Response> {
   try {
+    const queryStart = Date.now();
     const result = await env.DB.prepare('SELECT * FROM benchmark_results WHERE id = ?').bind(id).first();
+    logSpan('d1.query', { query_type: 'select', table: 'benchmark_results' }, Date.now() - queryStart);
 
     if (!result) {
       return new Response(
@@ -621,20 +663,26 @@ async function getConfigurations(env: Env, headers: Record<string, string>): Pro
   const cacheKey = 'configs:list';
 
   // Check KV cache (5 minute TTL)
+  const cacheGetStart = Date.now();
   const cached = await env.CACHE.get(cacheKey);
   if (cached) {
+    logSpan('kv.operation', { operation: 'get', key: cacheKey }, Date.now() - cacheGetStart);
     return new Response(cached, {
       headers: { 'Content-Type': 'application/json', 'X-Cache-Hit': 'true', ...headers }
     });
   }
 
   try {
+    const queryStart = Date.now();
     const results = await env.DB.prepare('SELECT * FROM configurations ORDER BY created_at DESC').all();
+    logSpan('d1.query', { query_type: 'select', table: 'configurations' }, Date.now() - queryStart);
 
     const responseData = JSON.stringify({ data: results.results });
 
     // Cache for 5 minutes
+    const cachePutStart = Date.now();
     await env.CACHE.put(cacheKey, responseData, { expirationTtl: 300 });
+    logSpan('kv.operation', { operation: 'put', key: cacheKey }, Date.now() - cachePutStart);
 
     return new Response(
       responseData,
@@ -660,13 +708,17 @@ async function createConfiguration(env: Env, body: unknown, headers: Record<stri
   }
 
   try {
+    const queryStart = Date.now();
     await env.DB.prepare(`
       INSERT INTO configurations (id, name, description, is_public, config)
       VALUES (?, ?, ?, ?, ?)
     `).bind(id, name, description || '', is_public || false, JSON.stringify(config)).run();
+    logSpan('d1.query', { query_type: 'insert', table: 'configurations' }, Date.now() - queryStart);
 
     // Invalidate configurations cache
+    const deleteStart = Date.now();
     await env.CACHE.delete('configs:list');
+    logSpan('kv.operation', { operation: 'delete', key: 'configs:list' }, Date.now() - deleteStart);
 
     return new Response(
       JSON.stringify({ id, name, description, is_public, config }),
@@ -682,7 +734,9 @@ async function createConfiguration(env: Env, body: unknown, headers: Record<stri
 
 async function getConfiguration(env: Env, id: string, headers: Record<string, string>): Promise<Response> {
   try {
+    const queryStart = Date.now();
     const result = await env.DB.prepare('SELECT * FROM configurations WHERE id = ?').bind(id).first();
+    logSpan('d1.query', { query_type: 'select', table: 'configurations' }, Date.now() - queryStart);
 
     if (!result) {
       return new Response(
@@ -727,7 +781,9 @@ async function getTestCases(env: Env, url: URL, headers: Record<string, string>)
   query += ' ORDER BY created_at DESC';
 
   try {
+    const queryStart = Date.now();
     const results = await env.DB.prepare(query).bind(...params).all();
+    logSpan('d1.query', { query_type: 'select', table: 'test_cases' }, Date.now() - queryStart);
 
     return new Response(
       JSON.stringify({ data: results.results }),
@@ -753,6 +809,7 @@ async function createTestCase(env: Env, body: unknown, headers: Record<string, s
   }
 
   try {
+    const queryStart = Date.now();
     await env.DB.prepare(`
       INSERT INTO test_cases (id, name, description, category, difficulty, input_prompt, expected_output, validation_rules)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -766,6 +823,7 @@ async function createTestCase(env: Env, body: unknown, headers: Record<string, s
       expected_output || '',
       JSON.stringify(validation_rules || {})
     ).run();
+    logSpan('d1.query', { query_type: 'insert', table: 'test_cases' }, Date.now() - queryStart);
 
     return new Response(
       JSON.stringify({ id, name, description, category, difficulty }),
