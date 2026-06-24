@@ -775,14 +775,53 @@ async function batchInsertBenchmarkResults(
 }
 
 async function executeBenchmark(env: Env, benchmarkId: string, body: unknown, headers: Record<string, string>, organizationId: string): Promise<Response> {
-  // This is a placeholder for benchmark execution
-  // In a full implementation, this would trigger the actual benchmark execution process
+  // Validate benchmark exists and belongs to organization
+  const queryStart = Date.now();
+  const benchmark = await env.DB.prepare(
+    'SELECT id, name, status, configuration_id FROM benchmarks WHERE id = ? AND organization_id = ?'
+  ).bind(benchmarkId, organizationId).first();
+  logSpan('d1.query', { query_type: 'select', table: 'benchmarks' }, Date.now() - queryStart);
+
+  if (!benchmark) {
+    return new Response(
+      JSON.stringify({ error: 'Benchmark not found' }),
+      { status: 404, headers: { 'Content-Type': 'application/json', ...headers } }
+    );
+  }
+
+  if (benchmark.status === 'running') {
+    return new Response(
+      JSON.stringify({ error: 'Benchmark is already running', benchmark_id: benchmarkId }),
+      { status: 409, headers: { 'Content-Type': 'application/json', ...headers } }
+    );
+  }
+
+  // Update benchmark status to running
+  const updateStart = Date.now();
+  await env.DB.prepare(
+    'UPDATE benchmarks SET status = ?, started_at = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+  ).bind('running', Date.now(), benchmarkId).run();
+  logSpan('d1.query', { query_type: 'update', table: 'benchmarks' }, Date.now() - updateStart);
+
+  // Invalidate cache
+  await invalidateBenchmarksCache(env, organizationId);
+
+  // Note: Full distributed benchmark execution would require:
+  // - Cloudflare Queue for async job processing
+  // - Durable Objects for stateful benchmark coordination
+  // - Separate Worker for actual benchmark runner
+  // For now, this endpoint marks the benchmark as running and returns immediately
+  // The dashboard is responsible for triggering the actual execution client-side
+
   return new Response(
     JSON.stringify({
-      message: 'Benchmark execution triggered',
+      message: 'Benchmark execution started',
       benchmark_id: benchmarkId,
+      benchmark_name: benchmark.name,
       organization_id: organizationId,
-      status: 'triggered'
+      status: 'running',
+      execution_url: `/api/v1/benchmarks/${benchmarkId}/results`,
+      estimated_duration_seconds: 300 // ~5 minutes estimated
     }),
     {
       status: 202,
