@@ -54,6 +54,21 @@ export const viewport: Viewport = {
   ],
 };
 
+// Theme initialization script - runs BEFORE React hydration to prevent FOUC
+const themeInitScript = `
+(function() {
+  var theme = localStorage.getItem('theme');
+  var resolved = 'light';
+  if (theme === 'dark') {
+    resolved = 'dark';
+  } else if (theme === 'system' || !theme) {
+    resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  document.documentElement.classList.remove('light', 'dark');
+  document.documentElement.classList.add(resolved);
+})();
+`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -64,6 +79,9 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body className="min-h-full flex flex-col bg-white dark:bg-black text-zinc-900 dark:text-zinc-50 transition-colors duration-200">
         <ThemeProvider>
           <div className="flex flex-col min-h-screen">

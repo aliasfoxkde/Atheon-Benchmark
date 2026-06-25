@@ -1,6 +1,10 @@
 /**
  * Multi-Cloud Provider Abstraction
  * Unified interface for deploying to multiple cloud platforms
+ *
+ * DEPRECATED: This module contains stub implementations only.
+ * AWSClient, GCPClient, AzureClient return mocked data.
+ * Not safe for production use. Delete if not implementing real SDK integration.
  */
 
 export type CloudProvider = 'cloudflare' | 'aws' | 'gcp' | 'azure' | 'local';
