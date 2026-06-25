@@ -29,24 +29,26 @@
 ## Keyboard Shortcuts (Completed)
 - [x] Add keyboard shortcuts hook
 - [x] Add shortcuts help modal
-- [x] Implement 'r' to refresh, 'f' for filters, '?' for help, 'h' for home
+- [x] Implement 'r' to refresh, 'f' for filters, '?' for help, 'h' for home, 'c' to copy URL
 
-## Real-time Data (In Progress)
-- [ ] Add auto-refresh polling to results page (60s interval)
-- [ ] Add "new results available" toast notification
+## Real-time Data (Completed)
+- [x] Add auto-refresh polling to results page (60s interval)
+- [x] Add "new results available" toast notification
 
-## System Comparison (Pending)
-- [ ] Add side-by-side comparison feature for 2+ systems
-- [ ] Visual diff highlighting winner/loser for each metric
+## System Comparison (Completed)
+- [x] Add side-by-side comparison modal for 2+ systems
+- [x] Visual diff highlighting winner/loser for each metric
+- [x] Rank display with trophy for best
 
-## Shareable URLs (Pending)
-- [ ] Generate URLs with encoded comparison state
-- [ ] Add copy-to-clipboard button
+## Shareable URLs (Completed)
+- [x] Generate URLs with encoded comparison state
+- [x] Add copy-to-clipboard button
+- [x] Support 'c' keyboard shortcut to copy
 
-## Benchmark Submission (Pending)
+## Future Improvements (Backlog)
 - [ ] Create UI flow for submitting benchmark results
 - [ ] GitHub PR creation integration for result submission
-
-## Documentation (Pending)
 - [ ] Add API documentation page
 - [ ] Update README with new features
+- [ ] Add more benchmark test types
+- [ ] Implement benchmark scheduling/automation
