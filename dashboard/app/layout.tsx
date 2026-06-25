@@ -58,15 +58,21 @@ export const viewport: Viewport = {
 // Theme initialization script - runs BEFORE React hydration to prevent FOUC
 const themeInitScript = `
 (function() {
-  var theme = localStorage.getItem('theme');
-  var resolved = 'light';
+  var stored = localStorage.getItem('theme');
+  var theme = stored && ['light', 'dark', 'system'].includes(stored) ? stored : 'system';
+  var resolved;
   if (theme === 'dark') {
     resolved = 'dark';
-  } else if (theme === 'system' || !theme) {
+  } else if (theme === 'light') {
+    resolved = 'light';
+  } else {
     resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   }
-  document.documentElement.classList.remove('light', 'dark');
-  document.documentElement.classList.add(resolved);
+  var html = document.documentElement;
+  html.classList.remove('light', 'dark');
+  html.classList.add(resolved);
+  // Also set a data attribute for CSS selectors
+  html.setAttribute('data-theme', resolved);
 })();
 `;
 
