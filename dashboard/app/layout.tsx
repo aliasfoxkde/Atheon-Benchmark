@@ -83,11 +83,15 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body className="min-h-full flex flex-col bg-white dark:bg-black text-zinc-900 dark:text-zinc-50 transition-colors duration-200">
+        {/* Skip to main content link for keyboard accessibility */}
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-white focus:rounded-lg focus:outline-none">
+          Skip to main content
+        </a>
         <ThemeProvider>
           <div className="flex flex-col min-h-screen">
             <header className="sticky top-0 z-50 w-full border-b border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-black/80 backdrop-blur-sm">
               <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3" aria-label="Atheon Benchmark Dashboard">
                   <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
                     <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -101,7 +105,7 @@ export default function RootLayout({
                 <ThemeToggle />
               </div>
             </header>
-            <main className="flex-1">
+            <main id="main-content" className="flex-1">
               <ErrorBoundaryWrapper>
                 {children}
               </ErrorBoundaryWrapper>
@@ -112,8 +116,8 @@ export default function RootLayout({
               <div className="container mx-auto px-4 text-center text-sm text-zinc-600 dark:text-zinc-400">
                 <p>© 2026 Atheon Benchmark. Built with ❤️ for the AI community.</p>
                 <p className="mt-2">
-                  Powered by <a href="https://github.com/HoraDomu/Atheon" target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline">Atheon</a> •
-                  <a href="https://github.com/HoraDomu/Atheon" target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline ml-2">GitHub</a>
+                  Powered by <a href="https://github.com/HoraDomu/Atheon" target="_blank" rel="noopener noreferrer" aria-label="Atheon project on GitHub" className="text-blue-600 dark:text-blue-400 hover:underline">Atheon</a> •
+                  <a href="https://github.com/HoraDomu/Atheon" target="_blank" rel="noopener noreferrer" aria-label="View source code on GitHub" className="text-blue-600 dark:text-blue-400 hover:underline ml-2">GitHub</a>
                 </p>
               </div>
             </footer>
