@@ -8,6 +8,7 @@ import { PerformanceMonitor } from "@/components/performance-monitor";
 import { HealthMonitor } from "@/components/health-monitor";
 import { ErrorBoundaryWrapper } from "@/components/error-boundary";
 import { MobileNav } from "@/components/mobile-nav";
+import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -118,6 +119,7 @@ export default function RootLayout({
               </ErrorBoundaryWrapper>
             </main>
             <MobileNav />
+            <PWAInstallPrompt />
             <PerformanceMonitor />
             <HealthMonitor />
             <footer className="border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 py-6 hidden md:block">
