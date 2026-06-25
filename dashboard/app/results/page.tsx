@@ -32,6 +32,24 @@ export default function ResultsPage() {
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const [cacheStats, setCacheStats] = useState<{total_systems: number, is_cached: boolean, last_updated: number | null}>({total_systems: 0, is_cached: false, last_updated: null});
 
+  const filteredResults = Object.keys(filter).length > 0 ? filterResults(results, filter) : results;
+  const statistics = getResultsStatistics(filteredResults);
+  const systemComparisons = compareSystems(filteredResults);
+
+  const toggleSystemSelection = (systemId: string) => {
+    const newSelection = new Set(selectedSystems);
+    if (newSelection.has(systemId)) {
+      newSelection.delete(systemId);
+    } else {
+      newSelection.add(systemId);
+    }
+    setSelectedSystems(newSelection);
+  };
+
+  const clearSelection = () => {
+    setSelectedSystems(new Set());
+  };
+
   const loadResults = async () => {
     try {
       setLoading(true);
@@ -51,7 +69,7 @@ export default function ResultsPage() {
           console.log('[Results] Loaded from static file');
           return;
         }
-      } catch (staticError) {
+      } catch {
         console.log('[Results] Static file not available, trying GitHub API...');
       }
 
@@ -72,66 +90,9 @@ export default function ResultsPage() {
     }
   };
 
-  const filteredResults = Object.keys(filter).length > 0 ? filterResults(results, filter) : results;
-  const statistics = getResultsStatistics(filteredResults);
-  const systemComparisons = compareSystems(filteredResults);
-
-  const toggleSystemSelection = (systemId: string) => {
-    const newSelection = new Set(selectedSystems);
-    if (newSelection.has(systemId)) {
-      newSelection.delete(systemId);
-    } else {
-      newSelection.add(systemId);
-    }
-    setSelectedSystems(newSelection);
-  };
-
-  const clearSelection = () => {
-    setSelectedSystems(new Set());
-  };
-
   // Load results on mount
   useEffect(() => {
-    const doLoad = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        // Try to load from static file first (for deployed sites)
-        try {
-          const response = await fetch('/benchmark-results.json');
-          if (response.ok) {
-            const data = await response.json();
-            setResults(data);
-            setCacheStats({
-              total_systems: data.length,
-              is_cached: true,
-              last_updated: Date.now()
-            });
-            console.log('[Results] Loaded from static file');
-            return;
-          }
-        } catch (staticError) {
-          console.log('[Results] Static file not available, trying GitHub API...');
-        }
-
-        // Fallback to GitHub API for local development
-        const fetcher = createCachedGitHubResultsFetcher(DEFAULT_GITHUB_CONFIG);
-        const data = await fetcher.fetchAllResults();
-
-        // Update cache statistics
-        const stats = fetcher.getCachedStatistics();
-        setCacheStats(stats);
-
-        setResults(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load results');
-        console.error('[Results] Failed to load results:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    doLoad();
+    loadResults();
   }, []);
 
   // Keyboard navigation
