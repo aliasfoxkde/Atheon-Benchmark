@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { LineChart, TrendingUp, TrendingDown, Minus, Clock } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, Clock, AlertTriangle } from 'lucide-react';
 
 interface BenchmarkHistoryEntry {
   timestamp: string;
@@ -25,10 +25,31 @@ interface BenchmarkTrendingProps {
   systemId: string;
 }
 
+// Normal CDF for statistical analysis
+function normalCDF(x: number): number {
+  const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741;
+  const a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
+  const sign = x < 0 ? -1 : 1;
+  x = Math.abs(x) / Math.sqrt(2);
+  const t = 1 / (1 + p * x);
+  const y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+  return 0.5 * (1 + sign * y);
+}
+
+// Calculate standard deviation
+function stdDev(values: number[]): number {
+  if (values.length < 2) return 0;
+  const mean = values.reduce((a, b) => a + b, 0) / values.length;
+  const sqDiffs = values.map(v => Math.pow(v - mean, 2));
+  return Math.sqrt(sqDiffs.reduce((a, b) => a + b, 0) / (values.length - 1));
+}
+
 export function BenchmarkTrending({ currentMetrics, systemId }: BenchmarkTrendingProps) {
   const [history, setHistory] = useState<BenchmarkHistoryEntry[]>([]);
   const [trend, setTrend] = useState<'up' | 'down' | 'stable'>('stable');
   const [percentChange, setPercentChange] = useState(0);
+  const [isAnomaly, setIsAnomaly] = useState(false);
+  const [anomalySeverity, setAnomalySeverity] = useState<'warning' | 'critical' | null>(null);
 
   // Load history from localStorage
   useEffect(() => {
@@ -70,6 +91,30 @@ export function BenchmarkTrending({ currentMetrics, systemId }: BenchmarkTrendin
       }
     }
 
+    // Anomaly detection using rolling statistics
+    if (newHistory.length >= 5) {
+      const recent = newHistory.slice(0, -1); // Exclude current run
+      const values = recent.map(h => h.ns_per_op);
+      const mean = values.reduce((a, b) => a + b, 0) / values.length;
+      const sigma = stdDev(values);
+      const current = currentMetrics.ns_per_op;
+
+      if (sigma > 0) {
+        const zScore = Math.abs((current - mean) / sigma);
+        // Z-score > 2σ = warning, > 3σ = critical (99.7% confidence)
+        if (zScore > 3) {
+          setIsAnomaly(true);
+          setAnomalySeverity('critical');
+        } else if (zScore > 2) {
+          setIsAnomaly(true);
+          setAnomalySeverity('warning');
+        } else {
+          setIsAnomaly(false);
+          setAnomalySeverity(null);
+        }
+      }
+    }
+
     // Persist to localStorage
     localStorage.setItem(`benchmark-history-${systemId}`, JSON.stringify(newHistory));
   }, [currentMetrics]);
@@ -103,6 +148,10 @@ export function BenchmarkTrending({ currentMetrics, systemId }: BenchmarkTrendin
     }
   };
 
+  const getAnomalyColor = () => {
+    return anomalySeverity === 'critical' ? 'text-red-500' : 'text-yellow-500';
+  };
+
   return (
     <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4">
       <div className="flex items-center justify-between mb-4">
@@ -110,9 +159,17 @@ export function BenchmarkTrending({ currentMetrics, systemId }: BenchmarkTrendin
           <Clock className="w-4 h-4" />
           Performance Trend
         </h3>
-        <div className={`flex items-center gap-1 text-sm ${getTrendColor()}`}>
-          {getTrendIcon()}
-          <span>{Math.abs(percentChange).toFixed(1)}%</span>
+        <div className="flex items-center gap-2">
+          {isAnomaly && (
+            <div className={`flex items-center gap-1 text-xs ${getAnomalyColor()}`} title="Performance anomaly detected">
+              <AlertTriangle className="w-3 h-3" />
+              <span>{anomalySeverity === 'critical' ? 'Critical' : 'Warning'}</span>
+            </div>
+          )}
+          <div className={`flex items-center gap-1 text-sm ${getTrendColor()}`}>
+            {getTrendIcon()}
+            <span>{Math.abs(percentChange).toFixed(1)}%</span>
+          </div>
         </div>
       </div>
 
@@ -123,11 +180,15 @@ export function BenchmarkTrending({ currentMetrics, systemId }: BenchmarkTrendin
           const minNs = Math.min(...history.slice(-10).map(e => e.ns_per_op));
           const range = maxNs - minNs || 1;
           const height = ((entry.ns_per_op - minNs) / range) * 100;
+          const isCurrent = idx === history.slice(-10).length - 1 && isAnomaly;
+          const barColor = isCurrent
+            ? anomalySeverity === 'critical' ? 'bg-red-500' : 'bg-yellow-500'
+            : 'bg-blue-500 dark:bg-blue-400';
 
           return (
             <div
               key={idx}
-              className="flex-1 bg-blue-500 dark:bg-blue-400 rounded-t"
+              className={`flex-1 ${barColor} rounded-t`}
               style={{ height: `${Math.max(height, 5)}%` }}
               title={`${formatNumber(entry.ns_per_op)} ns/op`}
             />
@@ -162,6 +223,16 @@ export function BenchmarkTrending({ currentMetrics, systemId }: BenchmarkTrendin
           <p className="font-semibold text-zinc-900 dark:text-zinc-100">{history.length}</p>
         </div>
       </div>
+
+      {/* Anomaly explanation */}
+      {isAnomaly && (
+        <div className={`mt-3 pt-3 border-t ${anomalySeverity === 'critical' ? 'border-red-200 dark:border-red-800' : 'border-yellow-200 dark:border-yellow-800'}`}>
+          <p className="text-xs text-zinc-500">
+            Current performance deviates {anomalySeverity === 'critical' ? 'significantly' : 'moderately'} from baseline.
+            Current: {formatNumber(currentMetrics.ns_per_op)} ns/op
+          </p>
+        </div>
+      )}
     </div>
   );
 }

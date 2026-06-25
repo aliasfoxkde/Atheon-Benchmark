@@ -59,10 +59,16 @@
 ## Improvements Identified (Future Work)
 - [ ] Add real Claude API integration (currently placeholder)
 - [ ] Implement CI/CD nightly benchmarking
-- [ ] Add webhook-driven results aggregation
-- [ ] Add anomaly detection for performance regressions
+- [x] Add webhook-driven results aggregation
+- [x] Add anomaly detection for performance regressions
 - [ ] Wire up WebSocket collaboration features (currently dead code)
-- [ ] Add pattern quality scoring with labeled corpus
+- [x] Add pattern quality scoring with labeled corpus
+
+## Completed (2026-06-25 Session 3)
+- [x] Add statistical anomaly detection to benchmark trending (z-score >2σ warning, >3σ critical)
+- [x] Add webhook API for receiving benchmark results (/api/webhooks/results)
+- [x] Add webhook registration API (/api/webhooks/register)
+- [x] Add pattern quality scoring with labeled corpus (precision, recall, F1 scores)
 
 ## Completed (2026-06-25 Session 2)
 - [x] Add PWA install prompt component
