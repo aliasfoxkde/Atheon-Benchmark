@@ -52,3 +52,10 @@
 - [ ] Update README with new features
 - [ ] Add more benchmark test types
 - [ ] Implement benchmark scheduling/automation
+
+## Benchmark Features (Completed 2026-06-25)
+- [x] Add benchmark trending over time
+- [x] Add pattern category breakdown in results
+- [x] Add version comparison (v1 vs v2)
+- [x] Add memory usage tracking per benchmark run
+- [x] Add CSV/JSON export for benchmark results
