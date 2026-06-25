@@ -1,0 +1,36 @@
+{
+  "nav": {
+    "home": "Accueil",
+    "benchmark": "Benchmark",
+    "results": "Résultats",
+    "status": "Statut"
+  },
+  "home": {
+    "title": "Atheon Benchmark",
+    "subtitle": "Plateforme de Benchmark IA Communautaire",
+    "description": "Système complet de benchmark comparant les performances de Claude avec et sans l'intégration Atheon MCP"
+  },
+  "benchmark": {
+    "title": "Performance",
+    "speed": "Vitesse",
+    "throughput": "Débit",
+    "cpu": "CPU",
+    "findings": "Résultats",
+    "nsPerOp": "nanosecondes par opération",
+    "filesPerSec": "fichiers par seconde",
+    "memory": "Mémoire",
+    "allocations": "Allocations"
+  },
+  "results": {
+    "title": "Résultats",
+    "noResults": "Aucun résultat disponible",
+    "system": "Système",
+    "date": "Date"
+  },
+  "install": {
+    "title": "Installer l'App",
+    "description": "Ajouter à l'écran d'accueil pour un accès plus rapide",
+    "install": "Installer",
+    "notNow": "Pas maintenant"
+  }
+}
