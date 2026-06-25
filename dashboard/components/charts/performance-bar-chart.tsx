@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -31,13 +32,45 @@ interface PerformanceBarChartProps {
 }
 
 export function PerformanceBarChart({ systems, title }: PerformanceBarChartProps) {
+  const [isDark, setIsDark] = useState(false);
+  const mediaQuery: MediaQueryList | undefined = typeof window !== 'undefined'
+    ? window.matchMedia('(prefers-color-scheme: dark)')
+    : undefined;
+
+  useEffect(() => {
+    const checkTheme = () => {
+      const dark = document.documentElement.classList.contains('dark') ||
+        (mediaQuery?.matches ?? false);
+      setIsDark(dark);
+    };
+
+    checkTheme();
+
+    const observer = new MutationObserver(checkTheme);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+
+    mediaQuery?.addEventListener('change', checkTheme);
+
+    return () => {
+      observer.disconnect();
+      mediaQuery?.removeEventListener('change', checkTheme);
+    };
+  }, [mediaQuery]);
+
+  const textColor = isDark ? 'rgb(212, 212, 212)' : 'rgb(115, 115, 115)';
+  const gridColor = isDark ? 'rgba(212, 212, 212, 0.1)' : 'rgba(115, 115, 115, 0.1)';
+  const tooltipBg = isDark ? 'rgba(38, 38, 38, 0.95)' : 'rgba(0, 0, 0, 0.8)';
+
   const data = {
     labels: systems.map((s) => s.name),
     datasets: [
       {
         label: 'Performance Score',
         data: systems.map((s) => s.performance),
-        backgroundColor: systems.map((s) => s.color + '80'),
+        backgroundColor: systems.map((s) => s.color + 'cc'),
         borderColor: systems.map((s) => s.color),
         borderWidth: 2,
         borderRadius: 8,
@@ -54,13 +87,15 @@ export function PerformanceBarChart({ systems, title }: PerformanceBarChartProps
         display: false,
       },
       tooltip: {
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        backgroundColor: tooltipBg,
         padding: 12,
         titleFont: { size: 14 },
         bodyFont: { size: 13 },
         cornerRadius: 8,
+        titleColor: isDark ? '#fafafa' : '#ffffff',
+        bodyColor: isDark ? '#d4d4d4' : '#e4e4e7',
         callbacks: {
-          label: (context) => `Score: ${context.parsed.y?.toFixed(2) || 'N/A'}`,
+          label: (context) => `Score: ${context.parsed.y?.toFixed(2) || 'N/A'}%`,
         },
       },
     },
@@ -70,7 +105,7 @@ export function PerformanceBarChart({ systems, title }: PerformanceBarChartProps
           display: false,
         },
         ticks: {
-          color: 'rgb(180, 180, 180)',
+          color: textColor,
           font: {
             size: 11,
           },
@@ -80,14 +115,16 @@ export function PerformanceBarChart({ systems, title }: PerformanceBarChartProps
       },
       y: {
         beginAtZero: true,
+        max: 100,
         grid: {
-          color: 'rgba(180, 180, 180, 0.2)',
+          color: gridColor,
         },
         ticks: {
-          color: 'rgb(180, 180, 180)',
+          color: textColor,
           font: {
             size: 11,
           },
+          callback: (value) => `${value}%`,
         },
       },
     },

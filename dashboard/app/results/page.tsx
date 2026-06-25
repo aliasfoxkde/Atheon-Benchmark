@@ -5,7 +5,9 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState, useCallback } from 'react';
+import Link from 'next/link';
+import { useSearchParams, useRouter } from 'next/navigation';
 import {
   createCachedGitHubResultsFetcher,
   DEFAULT_GITHUB_CONFIG,
@@ -17,12 +19,17 @@ import {
   type ResultsFilter,
 } from '@/lib/github/cache';
 import { exportAndDownloadResults } from '@/lib/utils';
-import { Search, TrendingUp, Clock, Server, Cpu, HardDrive, Filter, Download, RefreshCw, Calendar, BarChart3, LineChart, Activity } from 'lucide-react';
+import { Search, TrendingUp, Clock, Server, Cpu, HardDrive, Filter, Download, RefreshCw, Calendar, BarChart3, LineChart, Activity, Keyboard, GitCompare, Share2, Check } from 'lucide-react';
 import { SpiderChart } from '@/components/charts/spider-chart';
 import { PerformanceBarChart } from '@/components/charts/performance-bar-chart';
 import { TrendLineChart } from '@/components/charts/trend-line-chart';
+import { KeyboardShortcutsModal } from '@/components/keyboard-shortcuts-modal';
+import { SystemComparisonModal } from '@/components/system-comparison-modal';
+import { useKeyboardShortcuts, type KeyboardShortcut } from '@/hooks/use-keyboard-shortcuts';
 
-export default function ResultsPage() {
+function ResultsPageContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [results, setResults] = useState<BenchmarkReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,10 +38,67 @@ export default function ResultsPage() {
   const [selectedSystems, setSelectedSystems] = useState<Set<string>>(new Set());
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const [cacheStats, setCacheStats] = useState<{total_systems: number, is_cached: boolean, last_updated: number | null}>({total_systems: 0, is_cached: false, last_updated: null});
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showRefreshToast, setShowRefreshToast] = useState(false);
+  const [showComparison, setShowComparison] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  // Initialize from URL params on mount
+  useEffect(() => {
+    const systemsParam = searchParams.get('systems');
+    const osParam = searchParams.get('os');
+    const archParam = searchParams.get('arch');
+    const hostnameParam = searchParams.get('hostname');
+
+    if (systemsParam) {
+      const systemIds = systemsParam.split(',').filter(Boolean);
+      setSelectedSystems(new Set(systemIds));
+    }
+    if (osParam || archParam || hostnameParam) {
+      setFilter({
+        os: osParam || undefined,
+        arch: archParam || undefined,
+        hostname: hostnameParam || undefined,
+      });
+      setShowFilters(true);
+    }
+  }, [searchParams]);
+
+  // Update URL when selections change
+  const updateURL = useCallback(() => {
+    const params = new URLSearchParams();
+
+    if (selectedSystems.size > 0) {
+      params.set('systems', Array.from(selectedSystems).join(','));
+    }
+    if (filter.os) params.set('os', filter.os);
+    if (filter.arch) params.set('arch', filter.arch);
+    if (filter.hostname) params.set('hostname', filter.hostname);
+
+    const newURL = params.toString() ? `?${params.toString()}` : '/results';
+    router.replace(newURL, { scroll: false });
+  }, [selectedSystems, filter, router]);
+
+  useEffect(() => {
+    if (!loading && results.length > 0) {
+      updateURL();
+    }
+  }, [selectedSystems, filter, loading, results.length, updateURL]);
+
+  // Copy shareable URL
+  const copyShareURL = useCallback(() => {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }, []);
 
   const filteredResults = Object.keys(filter).length > 0 ? filterResults(results, filter) : results;
   const statistics = getResultsStatistics(filteredResults);
   const systemComparisons = compareSystems(filteredResults);
+
+  const selectedSystemData = filteredResults.filter(r => selectedSystems.has(r.system_id));
 
   const toggleSystemSelection = (systemId: string) => {
     const newSelection = new Set(selectedSystems);
@@ -95,6 +159,16 @@ export default function ResultsPage() {
     loadResults();
   }, []);
 
+  // Auto-refresh polling every 60 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      console.log('[Results] Auto-refreshing data...');
+      loadResults();
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -122,6 +196,53 @@ export default function ResultsPage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [focusedIndex, filteredResults]);
 
+  // Keyboard shortcuts
+  const shortcuts: KeyboardShortcut[] = [
+    {
+      key: 'r',
+      description: 'Refresh data',
+      action: () => {
+        loadResults();
+        setShowRefreshToast(true);
+        setTimeout(() => setShowRefreshToast(false), 2000);
+      },
+    },
+    {
+      key: 'f',
+      description: 'Toggle filters',
+      action: () => setShowFilters((prev) => !prev),
+    },
+    {
+      key: '?',
+      description: 'Show keyboard shortcuts',
+      action: () => setShowShortcuts(true),
+    },
+    {
+      key: 'Escape',
+      description: 'Close modal / Clear selection',
+      action: () => {
+        setShowShortcuts(false);
+        setFocusedIndex(-1);
+        clearSelection();
+      },
+    },
+    {
+      key: 'h',
+      description: 'Go to Home',
+      action: () => window.location.href = '/',
+    },
+    {
+      key: 'c',
+      description: 'Copy shareable URL',
+      action: () => {
+        if (selectedSystems.size > 0) {
+          copyShareURL();
+        }
+      },
+    },
+  ];
+
+  useKeyboardShortcuts(shortcuts, true);
 
   if (loading) {
     return (
@@ -432,11 +553,28 @@ export default function ResultsPage() {
           </div>
           <div className="flex gap-3">
             <button
+              onClick={copyShareURL}
+              className="px-3 py-1 text-sm bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg transition-colors border border-zinc-300 dark:border-zinc-700 flex items-center gap-1"
+              title="Copy shareable URL"
+            >
+              {copied ? <Check className="w-3 h-3" /> : <Share2 className="w-3 h-3" />}
+              {copied ? 'Copied!' : 'Share'}
+            </button>
+            <button
               onClick={clearSelection}
               className="px-3 py-1 text-sm bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg transition-colors border border-zinc-300 dark:border-zinc-700"
             >
               Clear Selection
             </button>
+            {selectedSystems.size >= 2 && (
+              <button
+                onClick={() => setShowComparison(true)}
+                className="px-3 py-1 text-sm bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors flex items-center gap-1"
+              >
+                <GitCompare className="w-3 h-3" />
+                Compare
+              </button>
+            )}
             <button
               onClick={() => {
                 const selectedResults = filteredResults.filter(r => selectedSystems.has(r.system_id));
@@ -658,12 +796,62 @@ export default function ResultsPage() {
             <div className="text-sm text-zinc-700 dark:text-zinc-300">
               Showing <span className="font-semibold">{filteredResults.length}</span> systems
             </div>
-            <div className="text-xs text-zinc-500 dark:text-zinc-400">
-              Data from GitHub repository
+            <div className="flex items-center gap-4">
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                Data from GitHub repository
+              </span>
+              <button
+                onClick={() => setShowShortcuts(true)}
+                className="p-1.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+                title="Keyboard shortcuts"
+                aria-label="Show keyboard shortcuts"
+              >
+                <Keyboard className="w-4 h-4" />
+              </button>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Keyboard Shortcuts Modal */}
+      <KeyboardShortcutsModal
+        isOpen={showShortcuts}
+        onClose={() => setShowShortcuts(false)}
+      />
+
+      {/* Refresh Toast */}
+      {showRefreshToast && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-lg shadow-lg text-sm font-medium animate-fade-in">
+          🔄 Refreshing data...
+        </div>
+      )}
+
+      {/* System Comparison Modal */}
+      <SystemComparisonModal
+        systems={selectedSystemData}
+        isOpen={showComparison}
+        onClose={() => setShowComparison(false)}
+      />
     </div>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <div className="flex flex-col items-center justify-center py-20">
+      <div className="relative">
+        <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        <div className="absolute inset-0 w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full animate-spin delay-75"></div>
+      </div>
+      <p className="mt-6 text-lg text-zinc-600 dark:text-zinc-400 font-medium">Loading benchmark results...</p>
+    </div>
+  );
+}
+
+export default function ResultsPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <ResultsPageContent />
+    </Suspense>
   );
 }

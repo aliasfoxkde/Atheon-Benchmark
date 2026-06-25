@@ -7,6 +7,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { PerformanceMonitor } from "@/components/performance-monitor";
 import { HealthMonitor } from "@/components/health-monitor";
 import { ErrorBoundaryWrapper } from "@/components/error-boundary";
+import { MobileNav } from "@/components/mobile-nav";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -105,14 +106,15 @@ export default function RootLayout({
                 <ThemeToggle />
               </div>
             </header>
-            <main id="main-content" className="flex-1">
+            <main id="main-content" className="flex-1 pb-16 md:pb-0">
               <ErrorBoundaryWrapper>
                 {children}
               </ErrorBoundaryWrapper>
             </main>
+            <MobileNav />
             <PerformanceMonitor />
             <HealthMonitor />
-            <footer className="border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 py-6">
+            <footer className="border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 py-6 hidden md:block">
               <div className="container mx-auto px-4 text-center text-sm text-zinc-600 dark:text-zinc-400">
                 <p>© 2026 Atheon Benchmark. Built with ❤️ for the AI community.</p>
                 <p className="mt-2">

@@ -1,14 +1,11 @@
 {
-  "total_systems": 5,
-  "last_updated": "2026-06-24T08:20:10.000Z",
+  "total_systems": 1,
+  "last_updated": "2026-06-25T19:34:52.123Z",
   "systems_by_os": {
-    "macOS 14.5": 1,
-    "Ubuntu 24.04 LTS": 2,
-    "macOS 15.0": 1,
-    "Windows 11 Pro": 1
+    "linux/amd64": 1
   },
   "date_range": {
-    "oldest": "2026-06-20T10:30:00.000Z",
-    "newest": "2026-06-24T08:20:10.000Z"
+    "oldest": "2026-06-19T10:14:48-05:00",
+    "newest": "2026-06-19T10:14:48-05:00"
   }
 }

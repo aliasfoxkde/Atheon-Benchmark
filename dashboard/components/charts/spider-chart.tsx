@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Chart as ChartJS,
   RadialLinearScale,
@@ -9,7 +9,6 @@ import {
   Filler,
   Tooltip,
   Legend,
-  type ChartConfiguration,
   type ChartOptions,
 } from 'chart.js';
 import { Radar } from 'react-chartjs-2';
@@ -34,17 +33,49 @@ interface SpiderChartProps {
 }
 
 export function SpiderChart({ systems, labels, title }: SpiderChartProps) {
+  const [isDark, setIsDark] = useState(false);
+  const mediaQuery: MediaQueryList | undefined = typeof window !== 'undefined'
+    ? window.matchMedia('(prefers-color-scheme: dark)')
+    : undefined;
+
+  useEffect(() => {
+    const checkTheme = () => {
+      const dark = document.documentElement.classList.contains('dark') ||
+        (mediaQuery?.matches ?? false);
+      setIsDark(dark);
+    };
+
+    checkTheme();
+
+    const observer = new MutationObserver(checkTheme);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+
+    mediaQuery?.addEventListener('change', checkTheme);
+
+    return () => {
+      observer.disconnect();
+      mediaQuery?.removeEventListener('change', checkTheme);
+    };
+  }, [mediaQuery]);
+
+  const textColor = isDark ? 'rgb(212, 212, 212)' : 'rgb(115, 115, 115)';
+  const gridColor = isDark ? 'rgba(212, 212, 212, 0.15)' : 'rgba(115, 115, 115, 0.15)';
+  const tooltipBg = isDark ? 'rgba(38, 38, 38, 0.95)' : 'rgba(0, 0, 0, 0.8)';
+
   const data = {
     labels,
     datasets: systems.map((system) => ({
       label: system.name,
       data: system.data,
-      backgroundColor: system.color + '20', // Add transparency
+      backgroundColor: system.color + '25',
       borderColor: system.color,
       borderWidth: 2,
       pointBackgroundColor: system.color,
-      pointBorderColor: '#fff',
-      pointHoverBackgroundColor: '#fff',
+      pointBorderColor: isDark ? '#27272a' : '#fff',
+      pointHoverBackgroundColor: isDark ? '#27272a' : '#fff',
       pointHoverBorderColor: system.color,
     })),
   };
@@ -56,42 +87,48 @@ export function SpiderChart({ systems, labels, title }: SpiderChartProps) {
       legend: {
         position: 'top' as const,
         labels: {
-          color: 'rgb(180, 180, 180)',
+          color: textColor,
           font: {
             size: 12,
           },
           padding: 15,
+          usePointStyle: true,
+          pointStyle: 'circle',
         },
       },
       tooltip: {
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        backgroundColor: tooltipBg,
         padding: 12,
         titleFont: { size: 14 },
         bodyFont: { size: 13 },
         cornerRadius: 8,
+        titleColor: isDark ? '#fafafa' : '#ffffff',
+        bodyColor: isDark ? '#d4d4d4' : '#e4e4e7',
       },
     },
     scales: {
       r: {
         angleLines: {
-          color: 'rgba(180, 180, 180, 0.3)',
+          color: gridColor,
         },
         grid: {
-          color: 'rgba(180, 180, 180, 0.3)',
+          color: gridColor,
         },
         pointLabels: {
-          color: 'rgb(180, 180, 180)',
+          color: textColor,
           font: {
             size: 11,
           },
         },
         ticks: {
-          color: 'rgb(180, 180, 180)',
+          color: textColor,
           backdropColor: 'transparent',
           font: {
             size: 10,
           },
         },
+        suggestedMin: 0,
+        suggestedMax: 100,
       },
     },
   };
