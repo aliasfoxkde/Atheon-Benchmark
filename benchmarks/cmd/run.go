@@ -24,6 +24,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -137,7 +138,7 @@ type Summary struct {
 
 func main() {
 	// Parse flags
-	_ = flag.String("dir", "./testdata", "Directory to scan") // kept for documentation
+	scanDir := flag.String("dir", "", "Directory to scan (if empty, generates test data)")
 	output := flag.String("output", "benchmark_results.json", "Output file for results")
 	warmup := flag.Int("warmup", 3, "Warmup iterations")
 	iterations := flag.Int("iterations", 10, "Benchmark iterations")
@@ -167,19 +168,28 @@ func main() {
 		NumThread: runtime.GOMAXPROCS(0),
 	}
 
-	// Setup test data
-	testDataDir := setupTestData(*size)
+	// Use provided directory or generate test data
+	var testDataDir string
+	if *scanDir != "" {
+		testDataDir = *scanDir
+		fmt.Printf("Scanning directory: %s\n", testDataDir)
+	} else {
+		testDataDir = setupTestData(*size)
+		fmt.Printf("Using generated test data (size: %s): %s\n", *size, testDataDir)
+	}
 
 	// Force GC and clear cache before benchmarking
 	runtime.GC()
 	debug.FreeOSMemory()
 
-	// Note: Atheon core auto-initializes via init(), no explicit Init() needed
+	// Create context for cancellation
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	// Run warmup iterations
 	fmt.Printf("Running %d warmup iterations...\n", *warmup)
 	for i := 0; i < *warmup; i++ {
-		runSingleScan(testDataDir)
+		runSingleScan(ctx, testDataDir)
 	}
 
 	// Force GC again before actual benchmark
@@ -196,7 +206,7 @@ func main() {
 	startTime := time.Now()
 
 	for i := 0; i < *iterations; i++ {
-		r := runSingleScanWithMetrics(testDataDir)
+		r := runSingleScanWithMetrics(ctx, testDataDir)
 		results[i] = r
 		totalFindings += r.Findings
 		totalBytes += r.BytesScanned
@@ -251,13 +261,13 @@ func main() {
 }
 
 // runSingleScan runs a single scan without metrics collection
-func runSingleScan(dir string) int {
-	findingsList, _, _ := core.ScanDir(dir)
+func runSingleScan(ctx context.Context, dir string) int {
+	findingsList, _, _ := core.ScanDir(ctx, dir)
 	return len(findingsList)
 }
 
 // runSingleScanWithMetrics runs a scan with full metrics collection
-func runSingleScanWithMetrics(dir string) TestResult {
+func runSingleScanWithMetrics(ctx context.Context, dir string) TestResult {
 	// Force GC to get clean baseline
 	runtime.GC()
 	var memBefore, memAfter runtime.MemStats
@@ -265,7 +275,7 @@ func runSingleScanWithMetrics(dir string) TestResult {
 
 	// Run scan with timing
 	start := time.Now()
-	findingsList, stats, _ := core.ScanDir(dir)
+	findingsList, stats, _ := core.ScanDir(ctx, dir)
 	duration := time.Since(start)
 
 	runtime.ReadMemStats(&memAfter)
