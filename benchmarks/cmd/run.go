@@ -1,3 +1,6 @@
+//go:build !external
+// +build !external
+
 // Package cmd provides the Atheon benchmark runner.
 //
 // Benchmark Runner - Real Performance Measurement Tool
