@@ -1,8 +1,8 @@
 package performance
 
 import (
+	"context"
 	"testing"
-	"time"
 
 	"github.com/aliasfoxkde/Atheon/core"
 )
@@ -12,10 +12,11 @@ func BenchmarkPatternMatchingSmall(b *testing.B) {
 	// Setup test data
 	testContent := "This is a test file with API_KEY=sk-1234567890abcdef content"
 	core.SetActiveCategories([]string{"secrets"})
+	ctx := context.Background()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		core.ScanString(testContent, "benchmark_test")
+		core.ScanString(ctx, testContent, "benchmark_test")
 	}
 }
 
@@ -27,10 +28,11 @@ func BenchmarkPatternMatchingMedium(b *testing.B) {
 		testContent += "Line with potential secret: password=secret" + string(rune(i%10)) + "\n"
 	}
 	core.SetActiveCategories([]string{"secrets"})
+	ctx := context.Background()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		core.ScanString(testContent, "benchmark_test")
+		core.ScanString(ctx, testContent, "benchmark_test")
 	}
 }
 
@@ -38,16 +40,18 @@ func BenchmarkPatternMatchingMedium(b *testing.B) {
 func BenchmarkMultiPatternScanning(b *testing.B) {
 	testContent := "File with multiple patterns: API_KEY=sk-1234567890abcdef and 4111111111111111 and export AWS_ACCESS_KEY_ID=AKIA1234567890ABCDEFGHI"
 	core.SetActiveCategories(nil) // All categories
+	ctx := context.Background()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		core.ScanString(testContent, "benchmark_test")
+		core.ScanString(ctx, testContent, "benchmark_test")
 	}
 }
 
 // BenchmarkCategoryFiltering tests category filtering performance
 func BenchmarkCategoryFiltering(b *testing.B) {
 	testContent := "Mixed content with API_KEY=sk-1234567890abcdef and 4111111111111111"
+	ctx := context.Background()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -57,7 +61,7 @@ func BenchmarkCategoryFiltering(b *testing.B) {
 		} else {
 			core.SetActiveCategories([]string{"pii"})
 		}
-		core.ScanString(testContent, "benchmark_test")
+		core.ScanString(ctx, testContent, "benchmark_test")
 	}
 }
 
@@ -67,9 +71,10 @@ func BenchmarkMemoryAllocation(b *testing.B) {
 
 	testContent := "Test content with secret: API_KEY=sk-1234567890abcdef"
 	core.SetActiveCategories([]string{"secrets"})
+	ctx := context.Background()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		core.ScanString(testContent, "benchmark_test")
+		core.ScanString(ctx, testContent, "benchmark_test")
 	}
 }

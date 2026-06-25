@@ -381,6 +381,8 @@ func calculateSummary(results []TestResult, totalFindings int) Summary {
 	var totalNs int64
 	var minNs, maxNs int64 = results[0].DurationNs, results[0].DurationNs
 	var totalAllocBytes int64
+	var totalAllocs int64
+	var successfulRuns int
 
 	for _, r := range results {
 		totalNs += r.DurationNs
@@ -391,6 +393,10 @@ func calculateSummary(results []TestResult, totalFindings int) Summary {
 			maxNs = r.DurationNs
 		}
 		totalAllocBytes += r.MemoryUsed
+		totalAllocs += r.Allocs
+		if r.Findings >= 0 {
+			successfulRuns++
+		}
 	}
 
 	meanNs := float64(totalNs) / float64(len(results))
@@ -406,22 +412,19 @@ func calculateSummary(results []TestResult, totalFindings int) Summary {
 		stdDev = sumSq / float64(len(results)-1)
 	}
 
-	successRate := 100.0
-	if totalFindings > 0 {
-		// Consider success if we found patterns (expected behavior)
-		successRate = 100.0
-	}
+	// Success rate based on runs that completed without errors
+	successRate := float64(successfulRuns) / float64(len(results)) * 100.0
 
 	return Summary{
-		MeanNsPerOp:           meanNs,
-		StdDevNsPerOp:         stdDev,
-		MinNsPerOp:            minNs,
-		MaxNsPerOp:            maxNs,
-		MeanAllocedBytesPerOp: float64(totalAllocBytes) / float64(len(results)),
-		MeanAllocationsPerOp:  float64(len(results)) / float64(len(results)),
-		MeanPeakRSSBytes:      float64(totalAllocBytes) / float64(len(results)),
-		TotalFindings:         totalFindings,
-		SuccessRate:           successRate,
+		MeanNsPerOp:            meanNs,
+		StdDevNsPerOp:          stdDev,
+		MinNsPerOp:             minNs,
+		MaxNsPerOp:             maxNs,
+		MeanAllocedBytesPerOp:  float64(totalAllocBytes) / float64(len(results)),
+		MeanAllocationsPerOp:   float64(totalAllocs) / float64(len(results)),
+		MeanPeakRSSBytes:       float64(totalAllocBytes) / float64(len(results)),
+		TotalFindings:          totalFindings,
+		SuccessRate:            successRate,
 	}
 }
 
