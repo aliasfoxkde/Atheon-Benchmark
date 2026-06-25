@@ -1,1 +1,265 @@
-[]
+[
+  {
+    "system_id": "claude-vanilla-baseline-001",
+    "system_info": {
+      "hostname": "bench-runner-01",
+      "cpu": "Apple M2 Pro",
+      "ram": "32GB",
+      "os": "macOS 14.5",
+      "arch": "arm64",
+      "go_version": "1.22.0",
+      "timestamp": "2026-06-20T10:30:00Z"
+    },
+    "benchmarks": [
+      {
+        "id": "bench-001",
+        "name": "Code Generation - Basic",
+        "duration_ms": 2450,
+        "tokens_used": 1842,
+        "passed": true,
+        "output": "Generated Fibonacci implementation in Go with proper error handling",
+        "timestamp": "2026-06-20T10:30:01Z"
+      },
+      {
+        "id": "bench-002",
+        "name": "Security Scan - API Analysis",
+        "duration_ms": 3120,
+        "tokens_used": 2156,
+        "passed": true,
+        "output": "Found 2 low-severity issues: hardcoded timeout values",
+        "timestamp": "2026-06-20T10:30:05Z"
+      },
+      {
+        "id": "bench-003",
+        "name": "Pattern Matching - Secrets",
+        "duration_ms": 1890,
+        "tokens_used": 1245,
+        "passed": false,
+        "output": "Detected potential API key pattern in config file",
+        "timestamp": "2026-06-20T10:30:08Z"
+      }
+    ],
+    "summary": {
+      "total_tests": 3,
+      "passed": 2,
+      "failed": 1,
+      "avg_duration_ms": 2487,
+      "total_tokens": 5243
+    },
+    "submitted_at": "2026-06-20T10:30:15Z"
+  },
+  {
+    "system_id": "claude-mcp-enabled-001",
+    "system_info": {
+      "hostname": "bench-runner-02",
+      "cpu": "Intel i9-13900K",
+      "ram": "64GB",
+      "os": "Ubuntu 24.04 LTS",
+      "arch": "x86_64",
+      "go_version": "1.22.0",
+      "timestamp": "2026-06-21T14:15:00Z"
+    },
+    "benchmarks": [
+      {
+        "id": "bench-101",
+        "name": "Code Generation - Basic",
+        "duration_ms": 2120,
+        "tokens_used": 1654,
+        "passed": true,
+        "output": "Generated balanced BST implementation with iterative traversal",
+        "timestamp": "2026-06-21T14:15:01Z"
+      },
+      {
+        "id": "bench-102",
+        "name": "Security Scan - API Analysis",
+        "duration_ms": 2890,
+        "tokens_used": 2034,
+        "passed": true,
+        "output": "No critical issues found. Code follows best practices.",
+        "timestamp": "2026-06-21T14:15:04Z"
+      },
+      {
+        "id": "bench-103",
+        "name": "Pattern Matching - Secrets",
+        "duration_ms": 1650,
+        "tokens_used": 1123,
+        "passed": true,
+        "output": "Clean scan - no secrets detected",
+        "timestamp": "2026-06-21T14:15:06Z"
+      },
+      {
+        "id": "bench-104",
+        "name": "Complex Algorithm - Dijkstra",
+        "duration_ms": 4200,
+        "tokens_used": 2890,
+        "passed": true,
+        "output": "Implemented shortest path with O(V log V) complexity",
+        "timestamp": "2026-06-21T14:15:10Z"
+      }
+    ],
+    "summary": {
+      "total_tests": 4,
+      "passed": 4,
+      "failed": 0,
+      "avg_duration_ms": 2715,
+      "total_tokens": 7701
+    },
+    "submitted_at": "2026-06-21T14:15:20Z"
+  },
+  {
+    "system_id": "claude-atheon-integrated-001",
+    "system_info": {
+      "hostname": "bench-runner-03",
+      "cpu": "AMD Ryzen 9 7950X",
+      "ram": "128GB",
+      "os": "Ubuntu 24.04 LTS",
+      "arch": "x86_64",
+      "go_version": "1.22.0",
+      "timestamp": "2026-06-22T09:00:00Z"
+    },
+    "benchmarks": [
+      {
+        "id": "bench-201",
+        "name": "Code Generation - Basic",
+        "duration_ms": 1980,
+        "tokens_used": 1523,
+        "passed": true,
+        "output": "Generated concurrent worker pool with proper channel management",
+        "timestamp": "2026-06-22T09:00:01Z"
+      },
+      {
+        "id": "bench-202",
+        "name": "Security Scan - Full Stack",
+        "duration_ms": 3450,
+        "tokens_used": 2567,
+        "passed": true,
+        "output": "Atheon quality gates passed. Found 1 medium severity: SQL concatenation risk",
+        "timestamp": "2026-06-22T09:00:05Z"
+      },
+      {
+        "id": "bench-203",
+        "name": "Pattern Matching - Secrets Detection",
+        "duration_ms": 2100,
+        "tokens_used": 1432,
+        "passed": true,
+        "output": "Atheon detected and masked 3 potential API keys before processing",
+        "timestamp": "2026-06-22T09:00:08Z"
+      },
+      {
+        "id": "bench-204",
+        "name": "Code Quality - Comprehensive",
+        "duration_ms": 4120,
+        "tokens_used": 3120,
+        "passed": true,
+        "output": "Quality score: 94/100. Minor: 2 functions lack documentation",
+        "timestamp": "2026-06-22T09:00:12Z"
+      },
+      {
+        "id": "bench-205",
+        "name": "Hard Pattern Matching - Regex",
+        "duration_ms": 2890,
+        "tokens_used": 1876,
+        "passed": true,
+        "output": "Detected complex email validation regex with potential ReDoS",
+        "timestamp": "2026-06-22T09:00:15Z"
+      }
+    ],
+    "summary": {
+      "total_tests": 5,
+      "passed": 5,
+      "failed": 0,
+      "avg_duration_ms": 2908,
+      "total_tokens": 10518
+    },
+    "submitted_at": "2026-06-22T09:00:25Z"
+  },
+  {
+    "system_id": "claude-atheon-integrated-002",
+    "system_info": {
+      "hostname": "bench-runner-04",
+      "cpu": "Apple M3 Max",
+      "ram": "64GB",
+      "os": "macOS 15.0",
+      "arch": "arm64",
+      "go_version": "1.22.0",
+      "timestamp": "2026-06-23T16:45:00Z"
+    },
+    "benchmarks": [
+      {
+        "id": "bench-301",
+        "name": "Code Generation - Concurrency",
+        "duration_ms": 2850,
+        "tokens_used": 2234,
+        "passed": true,
+        "output": "Generated semaphore-based rate limiter with context support",
+        "timestamp": "2026-06-23T16:45:01Z"
+      },
+      {
+        "id": "bench-302",
+        "name": "Security Scan - Authentication",
+        "duration_ms": 3980,
+        "tokens_used": 2890,
+        "passed": false,
+        "output": "Atheon blocked: Hardcoded credentials detected in auth handler",
+        "timestamp": "2026-06-23T16:45:05Z"
+      },
+      {
+        "id": "bench-303",
+        "name": "Pattern Matching - Infrastructure",
+        "duration_ms": 2340,
+        "tokens_used": 1654,
+        "passed": true,
+        "output": "Detected Terraform config with public S3 bucket policy",
+        "timestamp": "2026-06-23T16:45:08Z"
+      }
+    ],
+    "summary": {
+      "total_tests": 3,
+      "passed": 2,
+      "failed": 1,
+      "avg_duration_ms": 3057,
+      "total_tokens": 6778
+    },
+    "submitted_at": "2026-06-23T16:45:15Z"
+  },
+  {
+    "system_id": "claude-vanilla-baseline-002",
+    "system_info": {
+      "hostname": "bench-runner-05",
+      "cpu": "Intel i7-13700K",
+      "ram": "32GB",
+      "os": "Windows 11 Pro",
+      "arch": "x86_64",
+      "go_version": "1.22.0",
+      "timestamp": "2026-06-24T08:20:00Z"
+    },
+    "benchmarks": [
+      {
+        "id": "bench-401",
+        "name": "Code Generation - REST API",
+        "duration_ms": 3120,
+        "tokens_used": 2567,
+        "passed": true,
+        "output": "Generated RESTful handler with middleware chain",
+        "timestamp": "2026-06-24T08:20:01Z"
+      },
+      {
+        "id": "bench-402",
+        "name": "Algorithm - Sort Comparison",
+        "duration_ms": 1890,
+        "tokens_used": 1234,
+        "passed": true,
+        "output": "Implemented quicksort with three-way partitioning",
+        "timestamp": "2026-06-24T08:20:04Z"
+      }
+    ],
+    "summary": {
+      "total_tests": 2,
+      "passed": 2,
+      "failed": 0,
+      "avg_duration_ms": 2505,
+      "total_tokens": 3801
+    },
+    "submitted_at": "2026-06-24T08:20:10Z"
+  }
+]
