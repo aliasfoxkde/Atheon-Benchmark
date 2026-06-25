@@ -62,6 +62,9 @@
 - [ ] Add webhook-driven results aggregation
 - [ ] Add anomaly detection for performance regressions
 - [ ] Wire up WebSocket collaboration features (currently dead code)
-- [ ] Add PWA install prompt
-- [ ] Implement i18n additional locales
 - [ ] Add pattern quality scoring with labeled corpus
+
+## Completed (2026-06-25 Session 2)
+- [x] Add PWA install prompt component
+- [x] Add Spanish locale (es.json)
+- [x] Add French locale (fr.json)
