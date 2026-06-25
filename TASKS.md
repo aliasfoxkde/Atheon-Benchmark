@@ -44,3 +44,24 @@
 - Pattern loading from bundle implemented (185 patterns)
 - Security input validation added to calculate tool
 - MCP integration tests enhanced
+
+## Benchmark System Fixes (2026-06-25)
+- [x] Fix statistical bugs in run.go (MeanAllocationsPerOp, successRate)
+- [x] Add context.Context to pattern_matching.go benchmarks
+- [x] Add SetBundleDownloadURL to Atheon core for test mocking
+- [x] Add external benchmark comparison tool (gitleaks, trufflehog, semgrep)
+- [x] Add benchmark trending component with sparkline visualization
+- [x] Add pattern category breakdown component
+- [x] Add version comparison component
+- [x] Add CSV/JSON export functionality
+- [x] Create test data files (Go, Python, TypeScript, JSON, YAML, Shell)
+
+## Improvements Identified (Future Work)
+- [ ] Add real Claude API integration (currently placeholder)
+- [ ] Implement CI/CD nightly benchmarking
+- [ ] Add webhook-driven results aggregation
+- [ ] Add anomaly detection for performance regressions
+- [ ] Wire up WebSocket collaboration features (currently dead code)
+- [ ] Add PWA install prompt
+- [ ] Implement i18n additional locales
+- [ ] Add pattern quality scoring with labeled corpus
