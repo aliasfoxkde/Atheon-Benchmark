@@ -107,6 +107,8 @@ export interface CircuitBreakerConfig {
   failureThreshold?: number;  // Number of failures before opening (default: 5)
   resetTimeout?: number;      // Time in ms before trying half-open (default: 60000)
   monitorWindow?: number;     // Time window for counting failures in ms (default: 30000)
+  onStateChange?: (state: CircuitBreakerState, prevState: CircuitBreakerState) => void;
+  onRecovered?: () => void;
 }
 
 export interface CircuitBreakerStats {
@@ -124,12 +126,15 @@ export class CircuitBreaker {
   private lastSuccessTime: number | null = null;
   private consecutiveSuccesses: number = 0;
   private config: Required<CircuitBreakerConfig>;
+  private previousState: CircuitBreakerState = CircuitBreakerState.CLOSED;
 
   constructor(config: CircuitBreakerConfig = {}) {
     this.config = {
       failureThreshold: config.failureThreshold ?? 5,
       resetTimeout: config.resetTimeout ?? 60000,
       monitorWindow: config.monitorWindow ?? 30000,
+      onStateChange: config.onStateChange,
+      onRecovered: config.onRecovered,
     };
   }
 
@@ -155,9 +160,18 @@ export class CircuitBreaker {
   }
 
   private transitionTo(state: CircuitBreakerState): void {
+    const prevState = this.state;
     this.state = state;
+    this.previousState = prevState;
+
     if (state === CircuitBreakerState.HALF_OPEN) {
       this.consecutiveSuccesses = 0;
+      console.log(`[CircuitBreaker] Transitioning to HALF_OPEN - testing recovery`);
+    }
+
+    // Notify listeners of state change
+    if (this.config.onStateChange && prevState !== state) {
+      this.config.onStateChange(state, prevState);
     }
   }
 
@@ -174,6 +188,11 @@ export class CircuitBreaker {
         this.transitionTo(CircuitBreakerState.CLOSED);
         this.failureCount = 0;
         this.consecutiveSuccesses = 0;
+        // Notify that circuit has recovered
+        if (this.config.onRecovered) {
+          console.log(`[CircuitBreaker] Circuit recovered after ${this.consecutiveSuccesses} successful calls`);
+          this.config.onRecovered();
+        }
       }
     } else if (this.state === CircuitBreakerState.CLOSED) {
       // Reset failure count on success in closed state
