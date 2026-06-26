@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PieChart, Shield, Lock, Key, Database, Globe, Mail, CreditCard, AlertTriangle } from 'lucide-react';
 
 interface PatternCategory {
