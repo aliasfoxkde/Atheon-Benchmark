@@ -43,10 +43,29 @@ export class WebSocketManager {
   private clients: Map<string, WSClient> = new Map();
   private rooms: Map<string, Room> = new Map();
   private heartbeatInterval: NodeJS.Timeout | null = null;
+  private clientCount = 0;
 
   constructor() {
-    // Start heartbeat to detect dead connections
-    this.heartbeatInterval = setInterval(() => this.checkDeadConnections(), 30000);
+    // Heartbeat will start when first client connects
+  }
+
+  /**
+   * Start heartbeat interval if not running
+   */
+  private startHeartbeat(): void {
+    if (!this.heartbeatInterval) {
+      this.heartbeatInterval = setInterval(() => this.checkDeadConnections(), 30000);
+    }
+  }
+
+  /**
+   * Stop heartbeat interval if no clients connected
+   */
+  private stopHeartbeatIfIdle(): void {
+    if (this.clientCount === 0 && this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+      this.heartbeatInterval = null;
+    }
   }
 
   /**
@@ -70,6 +89,8 @@ export class WebSocketManager {
     };
 
     this.clients.set(clientId, client);
+    this.clientCount++;
+    this.startHeartbeat();
 
     // Handle incoming messages
     ws.addEventListener('message', async (event) => {
@@ -176,6 +197,8 @@ export class WebSocketManager {
     });
 
     this.clients.delete(clientId);
+    this.clientCount--;
+    this.stopHeartbeatIfIdle();
     console.log(`[WS] Client ${clientId} disconnected`);
   }
 
