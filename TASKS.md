@@ -69,6 +69,14 @@
 - [x] Add pattern quality scoring with labeled corpus (precision, recall, F1 scores)
 - [x] Deploy to Cloudflare Pages (https://106dbad7.atheon-benchmark-dashboard.pages.dev)
 
+## Completed (2026-06-25 Session 4)
+- [x] Enhance anomaly detection with per-metric z-score analysis (ns_per_op, files_per_sec, bytes_per_sec, cpu_percent)
+- [x] Add configurable anomaly thresholds via settings panel
+- [x] Add per-metric anomaly badges with deviation percentages
+- [x] Fix React import issue in pattern-breakdown.tsx (933 tests passing)
+- [x] Fix wrangler pages deploy command for v4 API compatibility
+- [x] Deploy to Cloudflare Pages (https://9f9f82ea.atheon-benchmark-dashboard.pages.dev)
+
 ## Completed (2026-06-25 Session 2)
 - [x] Add PWA install prompt component
 - [x] Add Spanish locale (es.json)
