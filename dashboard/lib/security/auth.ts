@@ -24,6 +24,8 @@ export interface RateLimitInfo {
 export class SecurityManager {
   private config: AuthConfig;
   private rateLimitMap: Map<string, RateLimitInfo> = new Map();
+  private lastCleanup = 0;
+  private readonly CLEANUP_INTERVAL = 1000; // Cleanup every 1000 requests
 
   constructor(config: Partial<AuthConfig> = {}) {
     this.config = {
@@ -78,6 +80,18 @@ export class SecurityManager {
 
     const now = Date.now();
     const window = this.config.rateLimit.window * 1000;
+
+    // Periodic cleanup of expired entries to prevent memory leak
+    this.lastCleanup++;
+    if (this.lastCleanup >= this.CLEANUP_INTERVAL) {
+      this.lastCleanup = 0;
+      for (const [key, info] of this.rateLimitMap.entries()) {
+        if (now > info.resetTime) {
+          this.rateLimitMap.delete(key);
+        }
+      }
+    }
+
     const limitInfo = this.rateLimitMap.get(identifier);
 
     // Reset if window expired

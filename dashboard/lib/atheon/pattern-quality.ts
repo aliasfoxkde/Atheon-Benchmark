@@ -466,15 +466,10 @@ export function evaluatePatternQuality(
     ? 2 * (overallPrecision * overallRecall) / (overallPrecision + overallRecall)
     : 0;
 
-  // Calculate accuracy
-  const totalNegatives = corpus.reduce((sum, c) => {
-    const lines = c.content.split('\n').length;
-    const falsePositives = allComparisons.find(comp => {
-      // This is a simplification
-      return false;
-    });
-    return sum + lines * patterns.length; // Rough estimate
-  }, 0);
+  // Calculate accuracy: proportion of correct detections among all detection attempts
+  // accuracy = TP / (TP + FP + FN) - ignores TN since they're not meaningful for pattern detection
+  const totalDetectionAttempts = totalTP + totalFP + totalFN;
+  const accuracy = totalDetectionAttempts > 0 ? totalTP / totalDetectionAttempts : 0;
 
   return {
     overall_precision: overallPrecision,
@@ -484,9 +479,7 @@ export function evaluatePatternQuality(
     corpus_size: corpus.length,
     total_expected_findings: totalExpectedFindings,
     total_detected_findings: totalDetectedFindings,
-    accuracy: totalExpectedFindings + totalDetectedFindings > 0
-      ? totalTP / (totalExpectedFindings + totalDetectedFindings)
-      : 0,
+    accuracy,
   };
 }
 

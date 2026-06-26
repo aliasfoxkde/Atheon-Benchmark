@@ -223,6 +223,24 @@ line three`;
       expect(result.total_expected_findings).toBeGreaterThanOrEqual(0);
       expect(result.total_detected_findings).toBeGreaterThanOrEqual(0);
     });
+
+    it('should calculate accuracy correctly as TP/(TP+FP+FN)', () => {
+      const result = evaluatePatternQuality(TEST_PATTERNS, PATTERN_CORPUS);
+
+      // Accuracy should be a valid probability
+      expect(result.accuracy).toBeGreaterThanOrEqual(0);
+      expect(result.accuracy).toBeLessThanOrEqual(1);
+
+      // Calculate expected accuracy: TP / (TP + FP + FN)
+      const totalTP = result.pattern_scores.reduce((sum, ps) => sum + ps.true_positives, 0);
+      const totalFP = result.pattern_scores.reduce((sum, ps) => sum + ps.false_positives, 0);
+      const totalFN = result.pattern_scores.reduce((sum, ps) => sum + ps.false_negatives, 0);
+      const expectedAccuracy = totalTP + totalFP + totalFN > 0
+        ? totalTP / (totalTP + totalFP + totalFN)
+        : 0;
+
+      expect(result.accuracy).toBeCloseTo(expectedAccuracy, 5);
+    });
   });
 
   describe('getPatternsNeedingImprovement', () => {

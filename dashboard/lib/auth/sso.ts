@@ -498,16 +498,39 @@ export class SSOManager {
   }
 
   /**
-   * Handle OAuth callback
+   * Begin OAuth authentication flow
+   * Generates and stores state for CSRF protection, returns authorization URL
    */
-  async handleCallback(code: string): Promise<UserProfile> {
+  beginAuth(): string {
     if (!this.currentProvider) {
       throw new Error('No SSO provider configured');
+    }
+    const state = this.generateState();
+    this.storeState(state);
+    return this.getAuthorizationUrl(state);
+  }
+
+  /**
+   * Handle OAuth callback
+   * @param code - Authorization code from provider
+   * @param state - State parameter from callback (required for CSRF validation)
+   */
+  async handleCallback(code: string, state: string): Promise<UserProfile> {
+    if (!this.currentProvider) {
+      throw new Error('No SSO provider configured');
+    }
+
+    // Validate state to prevent CSRF attacks
+    if (!this.validateState(state)) {
+      throw new Error('OAuth state validation failed - possible CSRF attack');
     }
 
     const provider = this.providers.get(this.currentProvider)!;
     const tokens = await provider.exchangeCode(code);
     const profile = await provider.getUserProfile(tokens.accessToken);
+
+    // Clear state after successful validation
+    this.clearState();
 
     // Store tokens
     this.storeTokens(this.currentProvider, tokens);
@@ -522,6 +545,41 @@ export class SSOManager {
     const array = new Uint8Array(32);
     crypto.getRandomValues(array);
     return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+  }
+
+  /**
+   * Store OAuth state for CSRF validation
+   */
+  private storeState(state: string): void {
+    if (typeof window === 'undefined') return;
+    const stateKey = `atheon-sso-state-${this.currentProvider}`;
+    sessionStorage.setItem(stateKey, state);
+  }
+
+  /**
+   * Validate OAuth state to prevent CSRF attacks
+   */
+  private validateState(state: string): boolean {
+    if (typeof window === 'undefined') return false;
+    const stateKey = `atheon-sso-state-${this.currentProvider}`;
+    const storedState = sessionStorage.getItem(stateKey);
+    if (!storedState) return false;
+    // Constant-time comparison to prevent timing attacks
+    if (storedState.length !== state.length) return false;
+    let result = 0;
+    for (let i = 0; i < storedState.length; i++) {
+      result |= storedState.charCodeAt(i) ^ state.charCodeAt(i);
+    }
+    return result === 0;
+  }
+
+  /**
+   * Clear stored OAuth state
+   */
+  private clearState(): void {
+    if (typeof window === 'undefined') return;
+    const stateKey = `atheon-sso-state-${this.currentProvider}`;
+    sessionStorage.removeItem(stateKey);
   }
 
   /**
