@@ -9,6 +9,7 @@ import { HealthMonitor } from "@/components/health-monitor";
 import { ErrorBoundaryWrapper } from "@/components/error-boundary";
 import { MobileNav } from "@/components/mobile-nav";
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
+import { KeyboardShortcutsProvider } from "@/components/keyboard-shortcuts-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -96,6 +97,7 @@ export default function RootLayout({
           Skip to main content
         </a>
         <ThemeProvider>
+          <KeyboardShortcutsProvider>
           <div className="flex flex-col min-h-screen">
             <header className="sticky top-0 z-50 w-full border-b border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-black/80 backdrop-blur-sm">
               <div className="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -132,6 +134,7 @@ export default function RootLayout({
               </div>
             </footer>
           </div>
+          </KeyboardShortcutsProvider>
         </ThemeProvider>
         <Script
           id="service-worker-registration"
