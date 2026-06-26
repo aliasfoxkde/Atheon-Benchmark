@@ -60,21 +60,24 @@ fi
 
 echo -e "${YELLOW}🌐 Deploying to Cloudflare Pages...${NC}"
 
+# Determine branch based on environment
+if [ "$ENVIRONMENT" = "production" ]; then
+    BRANCH="production"
+else
+    BRANCH="preview"
+fi
+
 # Deploy using wrangler
 if [ -n "$CLOUDFLARE_ACCOUNT_ID" ]; then
     # Use wrangler with account ID
     wrangler pages deploy "$STATIC_DIR" \
         --project-name="$PROJECT_NAME" \
-        --compatibility-date="2024-01-01" \
-        --compatibility-flags="nodejs_compat" \
-        --env="$ENVIRONMENT"
+        --branch="$BRANCH"
 else
     # Use wrangler without account ID (will prompt for login)
     wrangler pages deploy "$STATIC_DIR" \
         --project-name="$PROJECT_NAME" \
-        --compatibility-date="2024-01-01" \
-        --compatibility-flags="nodejs_compat" \
-        --env="$ENVIRONMENT"
+        --branch="$BRANCH"
 fi
 
 echo -e "${GREEN}✅ Deployment complete!${NC}"
