@@ -7,6 +7,7 @@ import { GitHubResultsFetcher, type BenchmarkReport } from './results';
 
 const CACHE_VERSION = 'v1';
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const MAX_CACHE_SIZE = 100; // Maximum number of cache entries // 5 minutes
 const METADATA_CACHE_DURATION = 60 * 60 * 1000; // 1 hour for metadata
 
 interface CacheEntry {

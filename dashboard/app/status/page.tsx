@@ -159,35 +159,9 @@ export default function StatusPage() {
     }
 
     // Check local API endpoints
-    const apiEndpoints = [
-      { name: 'Benchmark Results API', url: '/api/v1/results', method: 'GET' },
-      { name: 'System Info API', url: '/api/v1/systems', method: 'GET' },
-      { name: 'Health Check API', url: '/api/health', method: 'GET' },
-    ];
-
-    for (const endpoint of apiEndpoints) {
-      const epStart = Date.now();
-      try {
-        const response = await fetch(endpoint.url, {
-          method: endpoint.method,
-          cache: 'no-store'
-        });
-        const epLatency = Date.now() - epStart;
-
-        endpointChecks.push({
-          ...endpoint,
-          status: response.ok ? 'healthy' : response.status >= 500 ? 'degraded' : 'unhealthy',
-          latency: epLatency,
-          lastChecked: new Date()
-        });
-      } catch (error) {
-        endpointChecks.push({
-          ...endpoint,
-          status: 'unhealthy',
-          lastChecked: new Date()
-        });
-      }
-    }
+    // Note: API endpoints are not available in static export mode
+    // These would be available in a full deployment with Cloudflare Workers
+    const apiEndpoints: ApiEndpoint[] = [];
 
     // Check browser APIs
     const browserChecks: ServiceStatus[] = [];
