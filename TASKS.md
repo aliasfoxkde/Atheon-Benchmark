@@ -110,10 +110,11 @@
 - [ ] Hidden GraphQL resolver surface (requires server-side env)
 - [ ] Storage tier abstraction half-built (bindD1() required)
 - [ ] WebSocket auth gap (no token in connection)
+- [x] WebSocket heartbeat timer leak on disconnect - fixed with start/stop heartbeat
 
 ### P2 UX Issues - IDENTIFIED
 - [ ] i18n locale coverage incomplete (es, fr, de, ja, zh ~13 keys each)
-- [ ] No empty-state copy in results/anomaly/version-compare
+- [x] No empty-state copy in results/anomaly/version-compare - EmptyState components added
 - [ ] Accessibility: no keyboard nav for command palette
 - [ ] Error boundary page-level only, not per-component
 - [ ] Dark-mode flash on load (FOUC)
@@ -142,5 +143,6 @@
 - P0 correctness: accuracy calc + memory leak fixed
 - P1 performance: regex compilation optimized
 - P1 observability: request ID propagation added
-- 22+ issues identified across P1-P3, 7 deferred to Workers
-- Deployed: https://37176446.atheon-benchmark-dashboard.pages.dev
+- P2 UX: EmptyState components added, WebSocket timer leak fixed
+- 18+ issues identified across P1-P3, 7 deferred to Workers
+- Deployed: https://2e6c72bc.atheon-benchmark-dashboard.pages.dev
