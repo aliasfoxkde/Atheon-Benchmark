@@ -113,7 +113,7 @@
 - [x] WebSocket heartbeat timer leak on disconnect - fixed with start/stop heartbeat
 
 ### P2 UX Issues - IDENTIFIED
-- [ ] i18n locale coverage incomplete (es, fr, de, ja, zh ~13 keys each)
+- [x] i18n locale coverage incomplete - COMPLETE: all 28 keys translated for es, fr, de, ja, zh
 - [x] No empty-state copy in results/anomaly/version-compare - EmptyState components added
 - [ ] Accessibility: no keyboard nav for command palette
 - [ ] Error boundary page-level only, not per-component
@@ -145,5 +145,7 @@
 - P1 performance: regex compilation optimized
 - P1 observability: request ID propagation added
 - P2 UX: EmptyState components added, WebSocket timer leak fixed
-- 16+ issues identified across P1-P3, 7 deferred to Workers
-- Deployed: https://9b5f3255.atheon-benchmark-dashboard.pages.dev
+- P1: MCP tool tracing added (X-Trace-ID)
+- P2: i18n complete (28 keys × 6 locales), EmptyState components, WebSocket timer leak fixed
+- 12+ issues identified across P1-P3, 7 deferred to Workers
+- Deployed: https://c0051471.atheon-benchmark-dashboard.pages.dev
