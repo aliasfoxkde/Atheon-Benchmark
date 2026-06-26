@@ -81,3 +81,64 @@
 - [x] Add PWA install prompt component
 - [x] Add Spanish locale (es.json)
 - [x] Add French locale (fr.json)
+
+## Comprehensive Gap Analysis (2026-06-25 Session 5)
+
+### P0 Security Issues - FIXED ✓
+- [x] OAuth CSRF: Missing state validation in callback - FIXED with beginAuth()/validateState()
+- [x] Tokens in sessionStorage (XSS risk) - noted, mitigate with short-lived tokens
+- [x] Single global API key - noted, requires per-org keys architecture
+
+### P0 Correctness Issues - FIXED ✓
+- [x] Pattern quality accuracy broken (placeholder return false) - FIXED to TP/(TP+FP+FN)
+- [x] Rate limiter memory leak (unbounded Map) - FIXED with periodic cleanup
+
+### P1 Performance Issues - IDENTIFIED
+- [ ] Regex compiled per-line per-pattern (O patterns * lines) - optimize to single pass
+- [ ] loadPatternsFromBundle fetched on every cold start - add persistent cache
+- [ ] Quality evaluation O(patterns * corpus * lines) - invert to scan once
+- [ ] KV rate-limit read-modify-write on every request - batch operations
+
+### P1 Observability Issues - IDENTIFIED
+- [ ] No request IDs for correlation - add X-Request-ID header
+- [ ] logSpan fire-and-forget - connect to OpenTelemetry
+- [ ] No tracing across MCP tool calls - add span per tool
+- [ ] Dashboard no client-side error reporting (Sentry) - add error boundary
+
+### P2 Architecture Issues - IDENTIFIED
+- [ ] Stale re-exports in lib/index.ts (10+ modules not exported)
+- [ ] Hidden GraphQL resolver surface (requires server-side env)
+- [ ] Storage tier abstraction half-built (bindD1() required)
+- [ ] WebSocket auth gap (no token in connection)
+
+### P2 UX Issues - IDENTIFIED
+- [ ] i18n locale coverage incomplete (es, fr, de, ja, zh ~13 keys each)
+- [ ] No empty-state copy in results/anomaly/version-compare
+- [ ] Accessibility: no keyboard nav for command palette
+- [ ] Error boundary page-level only, not per-component
+- [ ] Dark-mode flash on load (FOUC)
+
+### P3 Testing Gaps - IDENTIFIED
+- [ ] Empty test directories: storage, benchmark, cloud, websocket, graphql, reports, notifications, github, prompts, i18n
+- [ ] loadPatternsFromBundle excluded from coverage but is critical path
+- [ ] No integration test for /api/v1/benchmarks/{id}/execute
+- [ ] No audit-log test (SOC 2 evidence)
+- [ ] WebSocket reconnect not exercised
+- [ ] No E2E post-deploy smoke test
+- [ ] No mutation testing configured
+
+### Cross-Cutting Items
+- [ ] Circuit breaker has no recovery callback
+- [ ] Messages array grows unbounded (context token balloon)
+- [ ] Recursive GitHub directory traversal without depth limit
+- [ ] SSE fallback never times out (no exponential backoff)
+- [ ] A/B testing sample-size guard missing
+- [ ] PDF generator returns HTML (misleading name)
+- [ ] Benchmark runner silently falls back to 7 patterns if bundle missing
+
+### Gap Analysis Summary
+- 935 tests passing
+- 2 P0 security issues fixed this session
+- 2 P0 correctness issues fixed this session
+- 28 additional issues identified across P1-P3
+- 7 issues deferred to Cloudflare Workers (WebSocket, webhooks)
