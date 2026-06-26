@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -36,18 +37,50 @@ interface TrendLineChartProps {
 }
 
 export function TrendLineChart({ data, labels, title }: TrendLineChartProps) {
+  const [isDark, setIsDark] = useState(false);
+  const mediaQuery: MediaQueryList | undefined = typeof window !== 'undefined'
+    ? window.matchMedia('(prefers-color-scheme: dark)')
+    : undefined;
+
+  useEffect(() => {
+    const checkTheme = () => {
+      const dark = document.documentElement.classList.contains('dark') ||
+        (mediaQuery?.matches ?? false);
+      setIsDark(dark);
+    };
+
+    checkTheme();
+
+    const observer = new MutationObserver(checkTheme);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+
+    mediaQuery?.addEventListener('change', checkTheme);
+
+    return () => {
+      observer.disconnect();
+      mediaQuery?.removeEventListener('change', checkTheme);
+    };
+  }, [mediaQuery]);
+
+  const textColor = isDark ? 'rgb(212, 212, 212)' : 'rgb(115, 115, 115)';
+  const gridColor = isDark ? 'rgba(212, 212, 212, 0.1)' : 'rgba(115, 115, 115, 0.1)';
+  const tooltipBg = isDark ? 'rgba(38, 38, 38, 0.95)' : 'rgba(0, 0, 0, 0.8)';
+
   const datasets = data.map((dataset) => ({
     label: dataset.label,
     data: dataset.values,
     borderColor: dataset.color,
-    backgroundColor: dataset.color + '20',
+    backgroundColor: dataset.color + '25',
     borderWidth: 3,
     tension: 0.4,
     fill: true,
     pointRadius: 4,
     pointHoverRadius: 6,
     pointBackgroundColor: dataset.color,
-    pointBorderColor: '#fff',
+    pointBorderColor: isDark ? '#27272a' : '#fff',
     pointBorderWidth: 2,
   }));
 
@@ -63,7 +96,7 @@ export function TrendLineChart({ data, labels, title }: TrendLineChartProps) {
       legend: {
         position: 'top' as const,
         labels: {
-          color: 'rgb(180, 180, 180)',
+          color: textColor,
           font: {
             size: 12,
           },
@@ -72,13 +105,15 @@ export function TrendLineChart({ data, labels, title }: TrendLineChartProps) {
         },
       },
       tooltip: {
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        backgroundColor: tooltipBg,
         padding: 12,
         titleFont: { size: 14 },
         bodyFont: { size: 13 },
         cornerRadius: 8,
         mode: 'index' as const,
         intersect: false,
+        titleColor: isDark ? '#fafafa' : '#ffffff',
+        bodyColor: isDark ? '#d4d4d4' : '#e4e4e7',
       },
     },
     scales: {
@@ -87,7 +122,7 @@ export function TrendLineChart({ data, labels, title }: TrendLineChartProps) {
           display: false,
         },
         ticks: {
-          color: 'rgb(180, 180, 180)',
+          color: textColor,
           font: {
             size: 11,
           },
@@ -96,10 +131,10 @@ export function TrendLineChart({ data, labels, title }: TrendLineChartProps) {
       y: {
         beginAtZero: true,
         grid: {
-          color: 'rgba(180, 180, 180, 0.2)',
+          color: gridColor,
         },
         ticks: {
-          color: 'rgb(180, 180, 180)',
+          color: textColor,
           font: {
             size: 11,
           },

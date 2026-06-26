@@ -353,6 +353,18 @@ self.addEventListener('sync', event => {
 });
 
 /**
+ * Periodic background sync handler
+ * Used for periodically fetching fresh benchmark results
+ */
+self.addEventListener('periodicsync', event => {
+  console.log('[SW] Periodic sync event:', event.tag);
+
+  if (event.tag === 'periodic-benchmark-sync') {
+    event.waitUntil(periodicSyncBenchmarks());
+  }
+});
+
+/**
  * Sync offline benchmark results
  */
 async function syncOfflineBenchmarks() {
@@ -380,6 +392,82 @@ async function syncOfflineBenchmarks() {
     }
   } catch (error) {
     console.error('[SW] Sync error:', error);
+  }
+};
+
+/**
+ * Periodic sync for fresh benchmark results
+ * Fetches latest results and updates cache
+ */
+async function periodicSyncBenchmarks() {
+  try {
+    console.log('[SW] Running periodic benchmark sync...');
+
+    // Refresh the results cache
+    const cache = await caches.open(CACHES.results);
+
+    // Try to fetch latest results from API
+    try {
+      const response = await fetch('/api/v1/results', {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+        cache: 'no-cache'
+      });
+
+      if (response.ok) {
+        // Update cache with fresh results
+        cache.put('/api/v1/results', response.clone());
+        console.log('[SW] Periodic sync: Updated results cache');
+      }
+    } catch (error) {
+      console.error('[SW] Periodic sync: Network fetch failed, using cache:', error);
+    }
+
+    // Notify clients that new data may be available
+    const clients = await self.clients.matchAll();
+    clients.forEach(client => {
+      client.postMessage({
+        type: 'PERIODIC_SYNC_COMPLETE',
+        timestamp: Date.now()
+      });
+    });
+
+    console.log('[SW] Periodic sync complete');
+  } catch (error) {
+    console.error('[SW] Periodic sync error:', error);
+  }
+}
+
+/**
+ * Register for periodic background sync
+ * Call this from the client to enable periodic data refresh
+ */
+async function registerPeriodicSync() {
+  if ('periodicSync' in self.registration) {
+    try {
+      // Request permission for periodic background sync
+      const status = await navigator.permissions.query({
+        name: 'periodic-background-sync',
+      });
+
+      if (status.state === 'granted') {
+        await self.registration.periodicSync.register('periodic-benchmark-sync', {
+          minInterval: 60 * 60 * 1000, // Minimum 1 hour between syncs
+          delay: 5000 // Initial delay of 5 seconds after registration
+        });
+        console.log('[SW] Periodic background sync registered');
+        return true;
+      } else {
+        console.log('[SW] Periodic background sync permission not granted:', status.state);
+        return false;
+      }
+    } catch (error) {
+      console.error('[SW] Failed to register periodic sync:', error);
+      return false;
+    }
+  } else {
+    console.log('[SW] Periodic background sync not supported');
+    return false;
   }
 }
 
@@ -431,6 +519,101 @@ self.addEventListener('message', event => {
   if (data && data.type === 'GET_VERSION') {
     event.ports[0].postMessage({ version: CACHE_VERSION });
   }
+
+  if (data && data.type === 'CHECK_FOR_UPDATE') {
+    event.waitUntil(checkForSWUpdate());
+  }
+
+  if (data && data.type === 'TRIGGER_UPDATE') {
+    event.waitUntil(triggerUpdateNotification());
+  }
+});
+
+/**
+ * Check for service worker updates
+ * Called by the client to manually check for updates
+ */
+async function checkForSWUpdate() {
+  try {
+    const registration = await navigator.serviceWorker.getRegistration();
+
+    if (registration && registration.waiting) {
+      // There's a new version waiting
+      registration.waiting.postMessage({
+        type: 'UPDATE_AVAILABLE',
+        version: CACHE_VERSION
+      });
+      return { updateAvailable: true, version: CACHE_VERSION };
+    }
+
+    // Check for updates
+    if (registration) {
+      await registration.update();
+    }
+
+    return { updateAvailable: false };
+  } catch (error) {
+    console.error('[SW] Update check failed:', error);
+    return { updateAvailable: false, error: error.message };
+  }
+}
+
+/**
+ * Trigger update notification to all clients
+ * Called when update is detected and user should be prompted
+ */
+async function triggerUpdateNotification() {
+  const clients = await self.clients.matchAll();
+
+  clients.forEach(client => {
+    client.postMessage({
+      type: 'SW_UPDATE_AVAILABLE',
+      version: CACHE_VERSION,
+      timestamp: Date.now()
+    });
+  });
+
+  // Show notification if permitted
+  if (self.registration && self.registration.showNotification) {
+    const notification = await self.registration.showNotification('Atheon Benchmark Update Available', {
+      body: 'A new version is available. Click to update.',
+      icon: '/icons/icon.svg',
+      badge: '/icons/badge.svg',
+      tag: 'sw-update',
+      data: {
+        type: 'sw-update',
+        url: '/'
+      },
+      actions: [
+        { action: 'update', title: 'Update Now' },
+        { action: 'later', title: 'Later' }
+      ]
+    });
+
+    return notification;
+  }
+
+  return null;
+}
+
+/**
+ * Handle notification click for update
+ */
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+
+  if (event.action === 'update' || !event.action) {
+    // User chose to update
+    if (event.notification.data && event.notification.data.url) {
+      clients.openWindow(event.notification.data.url);
+    }
+
+    // Trigger skip waiting to activate new SW
+    if (registration && registration.waiting) {
+      registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+    }
+  }
+  // If 'later', just close the notification
 });
 
 /**

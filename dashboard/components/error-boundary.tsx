@@ -1,6 +1,12 @@
 /**
  * Error Boundary Component
  * Catches React errors and displays a fallback UI
+ *
+ * Sentry Integration:
+ * Install: npm install @sentry/react
+ * Add to layout or instrument manually with:
+ *   import * as Sentry from '@sentry/react';
+ *   Sentry.captureException(error, { extra: errorInfo });
  */
 
 'use client';
@@ -9,11 +15,17 @@ import { Component, ReactNode } from 'react';
 
 interface Props {
   children: ReactNode;
+  /**
+   * Optional Sentry integration flag
+   * When Sentry is installed and configured, set this to true to enable error reporting
+   */
+  enableSentry?: boolean;
 }
 
 interface State {
   hasError: boolean;
   error?: Error;
+  errorInfo?: React.ErrorInfo;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
@@ -28,6 +40,16 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
+    this.setState({ errorInfo });
+
+    // Sentry integration point - uncomment when @sentry/react is installed:
+    // if (this.props.enableSentry && typeof window !== 'undefined') {
+    //   import('@sentry/react').then((Sentry) => {
+    //     Sentry.captureException(error, {
+    //       contexts: { react: { componentStack: errorInfo.componentStack } }
+    //     });
+    //   }).catch(() => {/* Sentry not available */});
+    // }
   }
 
   render() {

@@ -122,8 +122,9 @@ const FALLBACK_ATHEON_PATTERNS: AtheonPattern[] = [
 let cachedPatterns: AtheonPattern[] | null = null;
 let patternsLoadPromise: Promise<AtheonPattern[]> | null = null;
 
-// Default bundle path fallback when env var is not set
-const DEFAULT_ATHEON_BUNDLE_PATH = '/nas/Temp/repos/Atheon/core/patterns.bundle';
+// Default bundle path - uses environment variable or sensible default
+const DEFAULT_ATHEON_BUNDLE_PATH = process.env.ATHEON_BUNDLE_PATH ||
+  (process.env.HOME ? `${process.env.HOME}/.atheon/patterns.bundle` : './patterns.bundle');
 
 /**
  * Convert bundle pattern to AtheonPattern format
@@ -359,12 +360,18 @@ export class AtheonClaudeClient extends MCPClaudeClient {
       return true;
     });
 
+    // Pre-compile regex patterns once to avoid O(patterns * lines) compilations
+    const compiledPatterns = enabledPatterns.map(pattern => ({
+      pattern,
+      regex: new RegExp(pattern.pattern, 'gi')
+    }));
+
     // Scan each line
     for (let lineNum = 0; lineNum < lines.length; lineNum++) {
       const line = lines[lineNum];
 
-      for (const pattern of enabledPatterns) {
-        const regex = new RegExp(pattern.pattern, 'gi');
+      for (const { pattern, regex } of compiledPatterns) {
+        regex.lastIndex = 0; // Reset regex state for 'g' flag
         let match;
 
         while ((match = regex.exec(line)) !== null) {

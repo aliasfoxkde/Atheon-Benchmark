@@ -12,12 +12,16 @@ import {
   ClaudeMessage,
   DEFAULT_CLAUDE_CONFIG,
   BenchmarkMetrics,
-  BenchmarkResult
+  BenchmarkResult,
+  CircuitBreaker,
+  CircuitBreakerState,
+  DEFAULT_CIRCUIT_BREAKER_CONFIG
 } from './client';
 
 export class VanillaClaudeClient {
   private config: Required<ClaudeClientConfig>;
   private baseURL: string;
+  private circuitBreaker: CircuitBreaker;
 
   constructor(config: Partial<ClaudeClientConfig> = {}) {
     this.config = {
@@ -35,6 +39,21 @@ export class VanillaClaudeClient {
     }
 
     this.baseURL = this.config.baseURL;
+    this.circuitBreaker = new CircuitBreaker(DEFAULT_CIRCUIT_BREAKER_CONFIG);
+  }
+
+  /**
+   * Get circuit breaker statistics
+   */
+  getCircuitBreakerStats() {
+    return this.circuitBreaker.getStats();
+  }
+
+  /**
+   * Get current circuit breaker state
+   */
+  getCircuitBreakerState(): CircuitBreakerState {
+    return this.circuitBreaker.getState();
   }
 
   /**
@@ -151,50 +170,105 @@ export class VanillaClaudeClient {
   }
 
   /**
-   * Make HTTP request to Claude API
+   * Make HTTP request to Claude API with retry logic
    */
   protected async makeRequest(request: ClaudeAPIRequest): Promise<ClaudeAPIResponse> {
+    // Check circuit breaker before making request
+    if (!this.circuitBreaker.canExecute()) {
+      return this.circuitBreaker.getFallbackResponse(request);
+    }
+
     // Simulation mode if no API key
     if (!this.config.apiKey) {
       return this.simulateResponse(request);
     }
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.config.timeout);
+    // Retry configuration
+    const MAX_RETRIES = 3;
+    const BASE_DELAY_MS = 1000;
+    const MAX_DELAY_MS = 10000;
+    const RETRYABLE_STATUS_CODES = [429, 500, 502, 503, 504];
 
-    try {
-      const response = await fetch(`${this.baseURL}/v1/messages`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': this.config.apiKey,
-          'anthropic-version': '2023-06-01',
-        },
-        body: JSON.stringify(request),
-        signal: controller.signal,
-      });
+    let lastError: Error | null = null;
 
-      clearTimeout(timeoutId);
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), this.config.timeout);
 
-      if (!response.ok) {
-        const errorData: ClaudeAPIError = await response.json();
-        throw new Error(errorData.error?.message || `HTTP ${response.status}: ${response.statusText}`);
-      }
+      try {
+        const response = await fetch(`${this.baseURL}/v1/messages`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': this.config.apiKey,
+            'anthropic-version': '2023-06-01',
+          },
+          body: JSON.stringify(request),
+          signal: controller.signal,
+        });
 
-      return await response.json();
+        clearTimeout(timeoutId);
 
-    } catch (error) {
-      clearTimeout(timeoutId);
-
-      if (error instanceof Error) {
-        if (error.name === 'AbortError') {
-          throw new Error('Request timeout exceeded');
+        if (response.ok) {
+          this.circuitBreaker.recordSuccess();
+          return await response.json();
         }
-        throw error;
-      }
 
-      throw new Error('Unknown error occurred');
+        // Handle rate limiting specifically
+        if (response.status === 429) {
+          const retryAfter = response.headers.get('Retry-After');
+          const delay = retryAfter ? parseInt(retryAfter) * 1000 : Math.min(BASE_DELAY_MS * Math.pow(2, attempt), MAX_DELAY_MS);
+          console.warn(`Rate limited, retrying in ${delay}ms (attempt ${attempt + 1}/${MAX_RETRIES + 1})`);
+          await this.delay(delay);
+          continue;
+        }
+
+        // Retry on server errors
+        if (RETRYABLE_STATUS_CODES.includes(response.status)) {
+          const delay = Math.min(BASE_DELAY_MS * Math.pow(2, attempt), MAX_DELAY_MS);
+          console.warn(`Server error ${response.status}, retrying in ${delay}ms (attempt ${attempt + 1}/${MAX_RETRIES + 1})`);
+          await this.delay(delay);
+          continue;
+        }
+
+        // Non-retryable error
+        const errorData: ClaudeAPIError = await response.json().catch(() => ({ error: { message: `HTTP ${response.status}` } }));
+        throw new Error(errorData.error?.message || `HTTP ${response.status}: ${response.statusText}`);
+
+      } catch (error) {
+        clearTimeout(timeoutId);
+
+        if (error instanceof Error) {
+          if (error.name === 'AbortError') {
+            throw new Error('Request timeout exceeded');
+          }
+
+          // Retry on network errors
+          if (attempt < MAX_RETRIES) {
+            const delay = Math.min(BASE_DELAY_MS * Math.pow(2, attempt), MAX_DELAY_MS);
+            console.warn(`Network error: ${error.message}, retrying in ${delay}ms (attempt ${attempt + 1}/${MAX_RETRIES + 1})`);
+            await this.delay(delay);
+            lastError = error;
+            continue;
+          }
+
+          this.circuitBreaker.recordFailure();
+          throw error;
+        }
+
+        throw new Error('Unknown error occurred');
+      }
     }
+
+    this.circuitBreaker.recordFailure();
+    throw lastError || new Error('Max retries exceeded');
+  }
+
+  /**
+   * Delay helper for retry backoff
+   */
+  private delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   /**

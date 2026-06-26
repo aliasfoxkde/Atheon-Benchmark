@@ -96,48 +96,34 @@
       ]
     }
   ],
-  "features": [
-    "fullscreen",
-    "standalone",
-    "minimal-ui"
-  ],
+  "features": ["fullscreen", "standalone", "minimal-ui"],
   "prefer_related_applications": false,
-  "display_override": {
-    "standalone": {
+  "display_override": [
+    {
       "display": "standalone",
       "orientation": "portrait"
     },
-    "minimal-ui": {
+    {
       "display": "minimal-ui",
       "orientation": "portrait"
     }
+  ],
+  "launch_handler": {
+    "client_mode": "navigate-existing"
   },
   "protocol_handlers": [
     {
       "protocol": "atheon",
-      "label": "Atheon Benchmark",
-      "url": "/benchmark"
+      "url": "/benchmark?url=%s"
     }
   ],
-  "edge_side_panel": {
-    "prefer_related_applications": false
-  },
-  "launch_handler": {
-    "client_mode": ["navigate-existing", "auto"]
-  },
-  "share_target": [
-    {
-      "action": "share",
-      "url": "/benchmark",
-      "text": "Run Atheon Benchmark",
-      "title": "Atheon Benchmark"
-    },
-    {
-      "action": "share",
-      "url": "/results",
-      "text": "View Benchmark Results",
-      "title": "Benchmark Results"
+  "share_target": {
+    "action": "/share",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
     }
-  ],
-  "description": "AI Benchmark System"
+  }
 }

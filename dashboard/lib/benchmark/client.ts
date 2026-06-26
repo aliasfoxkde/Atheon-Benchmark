@@ -37,6 +37,22 @@ export interface BenchmarkResult {
     total_tokens: number;
   };
   errors: string[];
+  metrics: BenchmarkMetrics;
+}
+
+export interface BenchmarkMetrics {
+  ns_per_op: number;
+  bytes_per_sec: number;
+  files_per_sec: number;
+  ops_per_sec: number;
+  allocated_bytes_per_op: number;
+  allocations_per_op: number;
+  peak_rss_bytes: number;
+  cpu_percent: number;
+  findings_count: number;
+  files_scanned: number;
+  bytes_scanned: number;
+  successRate: number;
 }
 
 export class BenchmarkClient {

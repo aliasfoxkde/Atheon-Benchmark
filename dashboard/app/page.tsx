@@ -1,3 +1,7 @@
+'use client';
+
+import { OnboardingTour } from '@/components/onboarding-tour';
+
 export default function Home() {
   return (
     <div className="flex flex-col items-center justify-center py-20 px-8">
@@ -112,6 +116,9 @@ export default function Home() {
             </div>
           </div>
         </div>
+
+        {/* Onboarding Tour for first-time visitors */}
+        <OnboardingTour />
       </div>
     </div>
   );

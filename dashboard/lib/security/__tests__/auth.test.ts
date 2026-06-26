@@ -181,6 +181,28 @@ describe('SecurityManager', () => {
       expect(result1.allowed).toBe(false);
       expect(result2.allowed).toBe(true);
     });
+
+    it('should clean up expired entries to prevent memory leak', async () => {
+      const m = new SecurityManager({
+        enabled: true,
+        rateLimit: { requests: 1, window: 1 } // 1 second window
+      });
+
+      // Exhaust cleanup interval to trigger cleanup
+      for (let i = 0; i < 1005; i++) {
+        m.checkRateLimit(`client-${i}`);
+      }
+
+      // Wait for window to expire
+      await new Promise<void>((resolve) => setTimeout(resolve, 1100));
+
+      // Make a request to trigger cleanup
+      m.checkRateLimit('client-new');
+
+      // The old entries should be cleaned up
+      const afterReset = m.checkRateLimit('client-500');
+      expect(afterReset.allowed).toBe(true);
+    });
   });
 
   describe('getClientIdentifier', () => {
@@ -337,8 +359,8 @@ describe('createSecurityManager', () => {
 });
 
 describe('DEFAULT_SECURITY_CONFIG', () => {
-  it('should be disabled by default', () => {
-    expect(DEFAULT_SECURITY_CONFIG.enabled).toBe(false);
+  it('should be enabled by default', () => {
+    expect(DEFAULT_SECURITY_CONFIG.enabled).toBe(true);
   });
 
   it('should have rate limit config', () => {

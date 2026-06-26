@@ -24,6 +24,8 @@ export interface RateLimitInfo {
 export class SecurityManager {
   private config: AuthConfig;
   private rateLimitMap: Map<string, RateLimitInfo> = new Map();
+  private lastCleanup = 0;
+  private readonly CLEANUP_INTERVAL = 1000; // Cleanup every 1000 requests
 
   constructor(config: Partial<AuthConfig> = {}) {
     this.config = {
@@ -33,7 +35,7 @@ export class SecurityManager {
         requests: 100,
         window: 60, // 100 requests per minute
       },
-      allowedOrigins: config.allowedOrigins || ['http://localhost:3000', 'http://0.0.0.0:3000'],
+      allowedOrigins: config.allowedOrigins || process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
     };
   }
 
@@ -78,6 +80,18 @@ export class SecurityManager {
 
     const now = Date.now();
     const window = this.config.rateLimit.window * 1000;
+
+    // Periodic cleanup of expired entries to prevent memory leak
+    this.lastCleanup++;
+    if (this.lastCleanup >= this.CLEANUP_INTERVAL) {
+      this.lastCleanup = 0;
+      for (const [key, info] of this.rateLimitMap.entries()) {
+        if (now > info.resetTime) {
+          this.rateLimitMap.delete(key);
+        }
+      }
+    }
+
     const limitInfo = this.rateLimitMap.get(identifier);
 
     // Reset if window expired
@@ -121,6 +135,8 @@ export class SecurityManager {
 
   /**
    * Validate CORS origin
+   * SECURITY: Uses anchored regex to prevent bypass via crafted origins like
+   * 'evil.com.https://legitimate.com' which could match '*.legitimate.com'
    */
   validateOrigin(origin: string | null): boolean {
     if (!origin) return true; // Allow same-origin requests
@@ -129,9 +145,23 @@ export class SecurityManager {
       return true; // Allow all origins if not configured
     }
 
-    return this.config.allowedOrigins.some(allowed =>
-      origin === allowed || origin.match(allowed.replace('*', '.*'))
-    );
+    return this.config.allowedOrigins.some(allowed => {
+      // Exact match (most common case)
+      if (origin === allowed) return true;
+
+      // For wildcard patterns, use anchored regex to prevent bypass
+      if (allowed.includes('*')) {
+        // Escape regex special characters except *, then anchor the match
+        const pattern = '^' + allowed.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace('*', '.*') + '$';
+        try {
+          return new RegExp(pattern).test(origin);
+        } catch {
+          return false;
+        }
+      }
+
+      return false;
+    });
   }
 
   /**
@@ -201,14 +231,10 @@ export function createSecurityManager(config?: Partial<AuthConfig>): SecurityMan
  * Default security configuration
  */
 export const DEFAULT_SECURITY_CONFIG: AuthConfig = {
-  enabled: false, // Disabled by default
+  enabled: true, // Enabled by default (matches SecurityManager constructor)
   rateLimit: {
     requests: 100,
     window: 60,
   },
-  allowedOrigins: [
-    'http://localhost:3000',
-    'http://0.0.0.0:3000',
-    'http://192.168.*:3000',
-  ],
+  allowedOrigins: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
 };

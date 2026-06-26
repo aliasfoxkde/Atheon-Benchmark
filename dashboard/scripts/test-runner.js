@@ -115,7 +115,10 @@ async function main() {
 
   if (testType === 'coverage' || testType === 'all') {
     log('\n📊 Running Coverage Analysis...', colors.cyan);
-    runCommand('npm run test:coverage', 'Coverage Analysis');
+    const coveragePassed = runCommand('npm run test:coverage', 'Coverage Analysis');
+    results.suites.push({ name: 'Coverage Analysis', passed: coveragePassed });
+    results.total++;
+    if (coveragePassed) results.passed++; else results.failed++;
   }
 
   results.duration = Date.now() - startTime;

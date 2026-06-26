@@ -1,0 +1,39 @@
+{
+  "nav": {
+    "home": "Home",
+    "benchmark": "Benchmark",
+    "results": "Results",
+    "status": "Status",
+    "docs": "Documentation"
+  },
+  "home": {
+    "title": "Atheon Benchmark",
+    "subtitle": "Community AI Benchmark Platform",
+    "description": "Run benchmarks locally on your system, upload results to GitHub, and compare performance across different hardware configurations."
+  },
+  "benchmark": {
+    "title": "Run Benchmark",
+    "start": "Start Benchmark",
+    "running": "Running...",
+    "complete": "Complete"
+  },
+  "results": {
+    "title": "Benchmark Results",
+    "noResults": "No results available",
+    "download": "Download results"
+  },
+  "status": {
+    "title": "API Status",
+    "allOperational": "All Systems Operational",
+    "partialOutage": "Partial Outage",
+    "disruption": "Service Disruption"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "retry": "Retry",
+    "close": "Close",
+    "save": "Save",
+    "cancel": "Cancel"
+  }
+}

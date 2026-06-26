@@ -95,3 +95,180 @@ export const CLAUDE_MODELS = {
 } as const;
 
 export type ClaudeModel = keyof typeof CLAUDE_MODELS;
+
+// Circuit breaker states
+export enum CircuitBreakerState {
+  CLOSED = 'closed',      // Normal operation
+  OPEN = 'open',          // Failing, return fallback
+  HALF_OPEN = 'half_open' // Testing recovery
+}
+
+export interface CircuitBreakerConfig {
+  failureThreshold?: number;  // Number of failures before opening (default: 5)
+  resetTimeout?: number;      // Time in ms before trying half-open (default: 60000)
+  monitorWindow?: number;     // Time window for counting failures in ms (default: 30000)
+  onStateChange?: (state: CircuitBreakerState, prevState: CircuitBreakerState) => void;
+  onRecovered?: () => void;
+}
+
+export interface CircuitBreakerStats {
+  state: CircuitBreakerState;
+  failureCount: number;
+  lastFailureTime: number | null;
+  lastSuccessTime: number | null;
+  consecutiveSuccesses: number;
+}
+
+export class CircuitBreaker {
+  private state: CircuitBreakerState = CircuitBreakerState.CLOSED;
+  private failureCount: number = 0;
+  private lastFailureTime: number | null = null;
+  private lastSuccessTime: number | null = null;
+  private consecutiveSuccesses: number = 0;
+  private config: Required<CircuitBreakerConfig>;
+  private previousState: CircuitBreakerState = CircuitBreakerState.CLOSED;
+
+  constructor(config: CircuitBreakerConfig = {}) {
+    this.config = {
+      failureThreshold: config.failureThreshold ?? 5,
+      resetTimeout: config.resetTimeout ?? 60000,
+      monitorWindow: config.monitorWindow ?? 30000,
+      onStateChange: config.onStateChange ?? (() => {}),
+      onRecovered: config.onRecovered ?? (() => {}),
+    };
+  }
+
+  private get stats(): CircuitBreakerStats {
+    return {
+      state: this.state,
+      failureCount: this.failureCount,
+      lastFailureTime: this.lastFailureTime,
+      lastSuccessTime: this.lastSuccessTime,
+      consecutiveSuccesses: this.consecutiveSuccesses,
+    };
+  }
+
+  private isWindowExpired(): boolean {
+    if (!this.lastFailureTime) return false;
+    return Date.now() - this.lastFailureTime > this.config.monitorWindow;
+  }
+
+  private shouldAttemptReset(): boolean {
+    if (this.state !== CircuitBreakerState.OPEN) return false;
+    if (!this.lastFailureTime) return true;
+    return Date.now() - this.lastFailureTime >= this.config.resetTimeout;
+  }
+
+  private transitionTo(state: CircuitBreakerState): void {
+    const prevState = this.state;
+    this.state = state;
+    this.previousState = prevState;
+
+    if (state === CircuitBreakerState.HALF_OPEN) {
+      this.consecutiveSuccesses = 0;
+      console.log(`[CircuitBreaker] Transitioning to HALF_OPEN - testing recovery`);
+    }
+
+    // Notify listeners of state change
+    if (this.config.onStateChange && prevState !== state) {
+      this.config.onStateChange(state, prevState);
+    }
+  }
+
+  /**
+   * Record a successful call - closes circuit after enough successes in half-open
+   */
+  recordSuccess(): void {
+    this.lastSuccessTime = Date.now();
+
+    if (this.state === CircuitBreakerState.HALF_OPEN) {
+      this.consecutiveSuccesses++;
+      if (this.consecutiveSuccesses >= 3) {
+        // 3 consecutive successes in half-open closes the circuit
+        this.transitionTo(CircuitBreakerState.CLOSED);
+        this.failureCount = 0;
+        this.consecutiveSuccesses = 0;
+        // Notify that circuit has recovered
+        if (this.config.onRecovered) {
+          console.log(`[CircuitBreaker] Circuit recovered after ${this.consecutiveSuccesses} successful calls`);
+          this.config.onRecovered();
+        }
+      }
+    } else if (this.state === CircuitBreakerState.CLOSED) {
+      // Reset failure count on success in closed state
+      this.failureCount = 0;
+      this.consecutiveSuccesses++;
+    }
+  }
+
+  /**
+   * Record a failed call - opens circuit after threshold failures
+   */
+  recordFailure(): void {
+    this.failureCount++;
+    this.lastFailureTime = Date.now();
+    this.consecutiveSuccesses = 0;
+
+    if (this.state === CircuitBreakerState.HALF_OPEN) {
+      // Any failure in half-open opens the circuit again
+      this.transitionTo(CircuitBreakerState.OPEN);
+    } else if (this.state === CircuitBreakerState.CLOSED) {
+      if (this.failureCount >= this.config.failureThreshold || this.isWindowExpired()) {
+        this.transitionTo(CircuitBreakerState.OPEN);
+      }
+    }
+  }
+
+  /**
+   * Get current circuit state, attempting reset to half-open if needed
+   */
+  getState(): CircuitBreakerState {
+    if (this.state === CircuitBreakerState.OPEN && this.shouldAttemptReset()) {
+      this.transitionTo(CircuitBreakerState.HALF_OPEN);
+    }
+    return this.state;
+  }
+
+  /**
+   * Get circuit breaker statistics
+   */
+  getStats(): CircuitBreakerStats {
+    return this.stats;
+  }
+
+  /**
+   * Check if a call can be executed (circuit is not open)
+   */
+  canExecute(): boolean {
+    return this.getState() !== CircuitBreakerState.OPEN;
+  }
+
+  /**
+   * Get fallback response when circuit is open
+   */
+  getFallbackResponse(request: ClaudeAPIRequest): ClaudeAPIResponse {
+    return {
+      id: `fallback_${Date.now()}`,
+      type: 'message',
+      role: 'assistant',
+      content: [{
+        type: 'text',
+        text: '[Circuit breaker open - service temporarily unavailable. Please retry later.]'
+      }],
+      model: request.model,
+      stop_reason: 'end_turn',
+      stop_sequence: null,
+      usage: {
+        input_tokens: 0,
+        output_tokens: 0
+      }
+    };
+  }
+}
+
+// Default circuit breaker configuration
+export const DEFAULT_CIRCUIT_BREAKER_CONFIG: CircuitBreakerConfig = {
+  failureThreshold: 5,
+  resetTimeout: 60000,
+  monitorWindow: 30000,
+};

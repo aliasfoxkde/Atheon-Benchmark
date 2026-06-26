@@ -11,12 +11,36 @@ interface PerformanceMetrics {
   ttfb: number; // Time to First Byte
 }
 
+interface WebVitalsPayload {
+  url: string;
+  timestamp: number;
+  metrics: PerformanceMetrics;
+}
+
+const VITALS_ENDPOINT = '/api/vitals';
+
+/**
+ * Send web vitals to analytics endpoint
+ * Always-on collection for production monitoring
+ */
+async function sendToAnalytics(payload: WebVitalsPayload): Promise<void> {
+  try {
+    await fetch(VITALS_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  } catch {
+    // Silently fail - don't disrupt user experience for analytics
+  }
+}
+
 export function PerformanceMonitor() {
   const [metrics, setMetrics] = useState<PerformanceMetrics | null>(null);
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    // Only show in development or with Ctrl+Shift+P
+    // Toggle visibility with Ctrl+Shift+P
     const handleKeyPress = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.shiftKey && e.key === 'P') {
         setIsVisible((prev) => !prev);
@@ -82,9 +106,15 @@ export function PerformanceMonitor() {
         metricsMap.ttfb = Math.round(navTiming.responseStart - navTiming.requestStart);
       }
 
-      // Set metrics after collection period
+      // Set metrics after collection period and send to analytics
       const timeoutId = setTimeout(() => {
         setMetrics(metricsMap);
+        // Always send to analytics in production
+        sendToAnalytics({
+          url: window.location.pathname,
+          timestamp: Date.now(),
+          metrics: metricsMap,
+        });
       }, 3000);
 
       return () => {

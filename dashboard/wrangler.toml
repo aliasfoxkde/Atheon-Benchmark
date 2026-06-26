@@ -7,11 +7,6 @@ compatibility_flags = ["nodejs_compat"]
 main = "workers/index.ts"
 workers_dev = true
 
-# Routes configuration
-routes = [
-  { pattern = "https://your-domain.com/api/*", zone_name = "your-domain.com" }
-]
-
 # Build configuration
 [build]
 command = "npm run build:workers"
@@ -22,47 +17,22 @@ ENVIRONMENT = "development"
 APP_NAME = "Atheon Benchmark Dashboard"
 APP_VERSION = "1.0.0"
 
-# Production environment
-[env.production]
-name = "atheon-benchmark-dashboard-production"
-routes = [
-  { pattern = "https://atheon-benchmark.com/api/*", zone_name = "atheon-benchmark.com" }
-]
-
-[env.production.vars]
-ENVIRONMENT = "production"
-
-# Staging environment
-[env.staging]
-name = "atheon-benchmark-dashboard-staging"
-routes = [
-  { pattern = "https://staging.atheon-benchmark.com/api/*", zone_name = "atheon-benchmark.com" }
-]
-
-[env.staging.vars]
-ENVIRONMENT = "staging"
-
-# D1 Database binding
+# D1 Database binding (requires wrangler d1 create first)
 [[d1_databases]]
 binding = "DB"
 database_name = "atheon-benchmark-db"
-database_id = "your-d1-database-id"  # To be replaced with actual D1 database ID
+database_id = "${CLOUDFLARE_D1_DATABASE_ID}"  # Set via wrangler secret or environment
 
-# R2 Storage binding
+# R2 Storage binding (requires wrangler r2 object-store create first)
 [[r2_buckets]]
 binding = "STORAGE"
 bucket_name = "atheon-benchmark-storage"
 
-# KV Storage binding
+# KV Storage binding (requires wrangler kv:namespace create first)
 [[kv_namespaces]]
 binding = "CACHE"
-id = "your-kv-namespace-id"  # To be replaced with actual KV namespace ID
-preview_id = "your-kv-preview-id"  # To be replaced with actual KV preview ID
+id = "${CLOUDFLARE_KV_NAMESPACE_ID}"
 
 # Analytics configuration
 [analytics]
 enabled = true
-
-# Limits configuration
-[limits]
-cpu_ms = 50  # CPU time limit in milliseconds
