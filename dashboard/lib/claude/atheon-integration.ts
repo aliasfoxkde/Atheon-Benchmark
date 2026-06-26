@@ -360,12 +360,18 @@ export class AtheonClaudeClient extends MCPClaudeClient {
       return true;
     });
 
+    // Pre-compile regex patterns once to avoid O(patterns * lines) compilations
+    const compiledPatterns = enabledPatterns.map(pattern => ({
+      pattern,
+      regex: new RegExp(pattern.pattern, 'gi')
+    }));
+
     // Scan each line
     for (let lineNum = 0; lineNum < lines.length; lineNum++) {
       const line = lines[lineNum];
 
-      for (const pattern of enabledPatterns) {
-        const regex = new RegExp(pattern.pattern, 'gi');
+      for (const { pattern, regex } of compiledPatterns) {
+        regex.lastIndex = 0; // Reset regex state for 'g' flag
         let match;
 
         while ((match = regex.exec(line)) !== null) {
