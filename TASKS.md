@@ -117,7 +117,8 @@
 - [x] No empty-state copy in results/anomaly/version-compare - EmptyState components added
 - [ ] Accessibility: no keyboard nav for command palette
 - [ ] Error boundary page-level only, not per-component
-- [ ] Dark-mode flash on load (FOUC)
+- [ ] Dark-mode flash on load (FOUC) - theme init script runs before hydration
+- [ ] Accessibility: keyboard shortcuts modal exists but not fully wired up (needs action handlers)
 
 ### P3 Testing Gaps - IDENTIFIED
 - [ ] Empty test directories: storage, benchmark, cloud, websocket, graphql, reports, notifications, github, prompts, i18n
@@ -144,5 +145,5 @@
 - P1 performance: regex compilation optimized
 - P1 observability: request ID propagation added
 - P2 UX: EmptyState components added, WebSocket timer leak fixed
-- 18+ issues identified across P1-P3, 7 deferred to Workers
-- Deployed: https://2e6c72bc.atheon-benchmark-dashboard.pages.dev
+- 16+ issues identified across P1-P3, 7 deferred to Workers
+- Deployed: https://9b5f3255.atheon-benchmark-dashboard.pages.dev
