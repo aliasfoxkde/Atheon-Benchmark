@@ -115,10 +115,9 @@
 ### P2 UX Issues - IDENTIFIED
 - [x] i18n locale coverage incomplete - COMPLETE: all 28 keys translated for es, fr, de, ja, zh
 - [x] No empty-state copy in results/anomaly/version-compare - EmptyState components added
-- [ ] Accessibility: no keyboard nav for command palette
-- [ ] Error boundary page-level only, not per-component
+- [x] Accessibility: no keyboard nav for command palette - KeyboardShortcutsProvider with global ? shortcut
+- [ ] Error boundary page-level only, not per-component - ErrorBoundary exists, per-component use is optional
 - [ ] Dark-mode flash on load (FOUC) - theme init script runs before hydration
-- [ ] Accessibility: keyboard shortcuts modal exists but not fully wired up (needs action handlers)
 
 ### P3 Testing Gaps - IDENTIFIED
 - [ ] Empty test directories: storage, benchmark, cloud, websocket, graphql, reports, notifications, github, prompts, i18n
@@ -146,6 +145,6 @@
 - P1 observability: request ID propagation added
 - P2 UX: EmptyState components added, WebSocket timer leak fixed
 - P1: MCP tool tracing added (X-Trace-ID)
-- P2: i18n complete (28 keys × 6 locales), EmptyState components, WebSocket timer leak fixed
-- 12+ issues identified across P1-P3, 7 deferred to Workers
-- Deployed: https://c0051471.atheon-benchmark-dashboard.pages.dev
+- P2: i18n complete (28 keys × 6 locales), EmptyState components, WebSocket timer leak fixed, keyboard shortcuts wired
+- 9 remaining items (P2/P3), 7 deferred to Workers
+- Deployed: https://36604134.atheon-benchmark-dashboard.pages.dev
