@@ -103,7 +103,7 @@
 - [x] No request IDs for correlation - add X-Request-ID header
 - [ ] logSpan fire-and-forget - connect to OpenTelemetry
 - [ ] No tracing across MCP tool calls - add span per tool
-- [ ] Dashboard no client-side error reporting (Sentry) - add error boundary
+- [x] Dashboard no client-side error reporting (Sentry) - ErrorBoundary exists with Sentry integration points
 
 ### P2 Architecture Issues - IDENTIFIED
 - [ ] Stale re-exports in lib/index.ts (10+ modules not exported)
