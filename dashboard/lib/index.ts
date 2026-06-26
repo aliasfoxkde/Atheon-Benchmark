@@ -12,6 +12,12 @@ export * from './benchmark';
 // Atheon Integration
 export * from './atheon';
 
+// i18n (has index.ts)
+export * from './i18n';
+
+// WebSocket (has index.ts)
+export * from './websocket';
+
 // Re-export commonly used types and utilities
 export {
   // Claude types

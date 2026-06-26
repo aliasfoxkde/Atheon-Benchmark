@@ -94,7 +94,7 @@
 - [x] Rate limiter memory leak (unbounded Map) - FIXED with periodic cleanup
 
 ### P1 Performance Issues - IDENTIFIED
-- [ ] Regex compiled per-line per-pattern (O patterns * lines) - optimize to single pass
+- [x] Regex compiled per-line per-pattern (O patterns * lines) - optimize to single pass
 - [ ] loadPatternsFromBundle fetched on every cold start - add persistent cache
 - [ ] Quality evaluation O(patterns * corpus * lines) - invert to scan once
 - [ ] KV rate-limit read-modify-write on every request - batch operations
@@ -106,7 +106,7 @@
 - [x] Dashboard no client-side error reporting (Sentry) - ErrorBoundary exists with Sentry integration points
 
 ### P2 Architecture Issues - IDENTIFIED
-- [ ] Stale re-exports in lib/index.ts (10+ modules not exported)
+- [ ] Stale re-exports in lib/index.ts (10+ modules not exported) - needs index.ts per module
 - [ ] Hidden GraphQL resolver surface (requires server-side env)
 - [ ] Storage tier abstraction half-built (bindD1() required)
 - [ ] WebSocket auth gap (no token in connection)
@@ -138,8 +138,9 @@
 
 ### Gap Analysis Summary
 - 935 tests passing
-- 2 P0 security issues fixed this session
-- 2 P0 correctness issues fixed this session
-- 28 additional issues identified across P1-P3
-- 7 issues deferred to Cloudflare Workers (WebSocket, webhooks)
-- Deployed: https://9563c061.atheon-benchmark-dashboard.pages.dev
+- P0 security: OAuth CSRF + rate limiter leak fixed
+- P0 correctness: accuracy calc + memory leak fixed
+- P1 performance: regex compilation optimized
+- P1 observability: request ID propagation added
+- 22+ issues identified across P1-P3, 7 deferred to Workers
+- Deployed: https://37176446.atheon-benchmark-dashboard.pages.dev
