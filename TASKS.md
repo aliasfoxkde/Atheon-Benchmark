@@ -111,6 +111,7 @@
 - [ ] Storage tier abstraction half-built (bindD1() required)
 - [ ] WebSocket auth gap (no token in connection)
 - [x] WebSocket heartbeat timer leak on disconnect - fixed with start/stop heartbeat
+- [x] Circuit breaker has no recovery callback - added onStateChange and onRecovered
 
 ### P2 UX Issues - IDENTIFIED
 - [x] i18n locale coverage incomplete - COMPLETE: all 28 keys translated for es, fr, de, ja, zh
@@ -138,12 +139,9 @@
 - [ ] Benchmark runner silently falls back to 7 patterns if bundle missing
 
 ### Gap Analysis Summary
-- 941 tests passing (+6 scoring tests)
-- P0 security: OAuth CSRF + rate limiter leak fixed
-- P0 correctness: accuracy calc + memory leak fixed
-- P1 performance: regex compilation optimized
-- P1 observability: request ID propagation + MCP tracing
-- P2 UX: i18n complete, EmptyState, keyboard shortcuts wired, WebSocket fix
-- NEW: Benchmark scoring system (A+-F grades, comparison between runs)
-- 9+ remaining items tracked, 7 deferred to Workers
-- Deployed: https://3827c7a4.atheon-benchmark-dashboard.pages.dev
+- 941 tests passing
+- P0: OAuth CSRF, rate limiter leak, pattern accuracy fixed
+- P1: regex optimization, request ID propagation, MCP tracing, circuit breaker callbacks
+- P2: i18n complete, EmptyState, keyboard shortcuts, WebSocket fix, scoring system
+- 7+ remaining items tracked, 7 deferred to Workers
+- Deployed: https://8afc2a05.atheon-benchmark-dashboard.pages.dev
