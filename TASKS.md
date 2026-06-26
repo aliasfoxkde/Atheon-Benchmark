@@ -138,13 +138,12 @@
 - [ ] Benchmark runner silently falls back to 7 patterns if bundle missing
 
 ### Gap Analysis Summary
-- 935 tests passing
+- 941 tests passing (+6 scoring tests)
 - P0 security: OAuth CSRF + rate limiter leak fixed
 - P0 correctness: accuracy calc + memory leak fixed
 - P1 performance: regex compilation optimized
-- P1 observability: request ID propagation added
-- P2 UX: EmptyState components added, WebSocket timer leak fixed
-- P1: MCP tool tracing added (X-Trace-ID)
-- P2: i18n complete (28 keys × 6 locales), EmptyState components, WebSocket timer leak fixed, keyboard shortcuts wired
-- 9 remaining items (P2/P3), 7 deferred to Workers
-- Deployed: https://36604134.atheon-benchmark-dashboard.pages.dev
+- P1 observability: request ID propagation + MCP tracing
+- P2 UX: i18n complete, EmptyState, keyboard shortcuts wired, WebSocket fix
+- NEW: Benchmark scoring system (A+-F grades, comparison between runs)
+- 9+ remaining items tracked, 7 deferred to Workers
+- Deployed: https://3827c7a4.atheon-benchmark-dashboard.pages.dev
