@@ -105,8 +105,19 @@ function createDeprecationRedirect(newPath: string): Response {
   );
 }
 
+// Generate a unique request ID
+function generateRequestId(): string {
+  const timestamp = Date.now().toString(36);
+  const randomPart = Math.random().toString(36).substring(2, 10);
+  return `${timestamp}-${randomPart}`;
+}
+
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    // Generate or extract request ID for tracing
+    const existingId = request.headers.get('X-Request-ID');
+    const requestId = existingId || generateRequestId();
+
     try {
       const url = new URL(request.url);
       const path = url.pathname;
@@ -157,24 +168,31 @@ export default {
           return rateLimitError;
         }
 
-        return handleApiRequest(request, env, ctx, responseHeaders);
+        return handleApiRequest(request, env, ctx, responseHeaders, requestId);
       }
 
       // 404 for unknown routes
-      return new Response('Not Found', { status: 404, headers: responseHeaders });
+      return new Response('Not Found', {
+        status: 404,
+        headers: { ...responseHeaders, 'X-Request-ID': requestId }
+      });
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
-      logSpan('error', { error: err.message, path: new URL(request.url).pathname });
-      console.error('Error handling request:', error);
+      logSpan('error', {
+        error: err.message,
+        path: new URL(request.url).pathname,
+        request_id: requestId
+      });
+      console.error(`[${requestId}] Error handling request:`, error);
+      // Use fallback headers if responseHeaders not yet defined
+      const errorHeaders = {
+        'Content-Type': 'application/json',
+        'X-Request-ID': requestId,
+        ...(responseHeaders || {})
+      };
       return new Response(
-        JSON.stringify({ error: 'Internal Server Error' }),
-        {
-          status: 500,
-          headers: {
-            'Content-Type': 'application/json',
-            ...responseHeaders
-          }
-        }
+        JSON.stringify({ error: 'Internal Server Error', requestId }),
+        { status: 500, headers: errorHeaders }
       );
     }
   },
@@ -423,7 +441,8 @@ async function handleApiRequest(
   request: Request,
   env: Env,
   ctx: ExecutionContext,
-  corsHeaders: Record<string, string>
+  corsHeaders: Record<string, string>,
+  requestId: string
 ): Promise<Response> {
   const start = Date.now();
   const url = new URL(request.url);
@@ -434,10 +453,19 @@ async function handleApiRequest(
   // Extract organization context
   const organizationId = getOrganizationId(request, env);
 
-  // Add API version header to all v1 responses
-  const apiV1Headers = getApiV1Headers(corsHeaders);
+  // Add API version header and request ID to all v1 responses
+  const apiV1Headers = {
+    ...getApiV1Headers(corsHeaders),
+    'X-Request-ID': requestId
+  };
 
-  logSpan('api.request', { method, path, ip, organization_id: organizationId });
+  logSpan('api.request', {
+    method,
+    path,
+    ip,
+    organization_id: organizationId,
+    request_id: requestId
+  });
 
   // Parse and validate body for POST/PUT requests
   let body: unknown = null;
