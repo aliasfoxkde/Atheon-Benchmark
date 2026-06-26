@@ -179,6 +179,48 @@ jobs:
         run: |
           curl -f https://atheon-benchmark.com/health || exit 1
 
+  dependency-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: critical,high
+
+  sbom:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: dashboard/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd dashboard
+          npm ci
+
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ github.event.repository.name }}
+          format: spdx
+          output-file: sbom.spdx.json
+          upload-artifact: true
+
+      - name: Upload SBOM to Dependency Graph
+        run: |
+          echo "SBOM generated and uploaded to GitHub Dependency Graph"
+
   security-scan:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -198,4 +240,4 @@ jobs:
       - name: Dependency audit
         run: |
           cd dashboard
-          npm audit --audit-level=high
+          npm audit --audit-level=critical

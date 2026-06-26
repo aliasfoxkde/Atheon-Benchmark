@@ -1,0 +1,77 @@
+{
+  "atheon_version": "1.0.0",
+  "go_version": "go1.24.4",
+  "goos": "linux",
+  "goarch": "amd64",
+  "commit_hash": "unknown",
+  "build_time": "2026-06-25T21:03:35Z",
+  "system_info": {
+    "cpu_model": "x86_64 (16 cores)",
+    "cpu_cores": 16,
+    "ram_total": "Unknown",
+    "os": "linux/amd64",
+    "num_threads": 16
+  },
+  "config": {
+    "directory": "./benchmarks/testdata",
+    "warmup_runs": 3,
+    "iterations": 3,
+    "test_data_size": "medium",
+    "start_time": "2026-06-25T16:03:35-05:00"
+  },
+  "metrics": {
+    "ns_per_op": 34099004,
+    "bytes_per_sec": 139133,
+    "files_per_sec": 161.43856397599075,
+    "ops_per_sec": 26906427329.33179,
+    "alloced_bytes_per_op": 87381,
+    "allocations_per_op": 1851,
+    "peak_rss_bytes": 262144,
+    "cpu_percent": 91.7482373128594,
+    "num_gc": 12,
+    "findings_count": 150,
+    "files_scanned": 18,
+    "bytes_scanned": 15513,
+    "total_lines": 0
+  },
+  "tests": [
+    {
+      "iteration": 0,
+      "duration_ns": 33867832,
+      "findings": 50,
+      "bytes_scanned": 5171,
+      "files_scanned": 6,
+      "memory_used_bytes": 0,
+      "allocs": 5179
+    },
+    {
+      "iteration": 0,
+      "duration_ns": 34367471,
+      "findings": 50,
+      "bytes_scanned": 5171,
+      "files_scanned": 6,
+      "memory_used_bytes": 262144,
+      "allocs": 193
+    },
+    {
+      "iteration": 0,
+      "duration_ns": 34061709,
+      "findings": 50,
+      "bytes_scanned": 5171,
+      "files_scanned": 6,
+      "memory_used_bytes": 0,
+      "allocs": 183
+    }
+  ],
+  "summary": {
+    "mean_ns_per_op": 34099004,
+    "stddev_ns_per_op": 63452970349,
+    "min_ns_per_op": 33867832,
+    "max_ns_per_op": 34367471,
+    "mean_alloced_bytes_per_op": 87381.33333333333,
+    "mean_allocations_per_op": 1,
+    "mean_peak_rss_bytes": 87381.33333333333,
+    "total_findings": 150,
+    "success_rate": 100
+  }
+}

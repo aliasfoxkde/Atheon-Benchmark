@@ -1,0 +1,27 @@
+# Sample YAML configuration files for testing
+# These files contain various patterns that Atheon would detect
+
+database:
+  host: localhost
+  port: 5432
+  username: admin
+  password: "AKIAIOSFODNN7EXAMPLE"
+  api_key: "sk_live_1234567890abcdef"
+
+aws:
+  access_key: "AKIAIOSFODNN7EXAMPLE"
+  secret_key: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+  region: us-west-2
+
+api:
+  endpoint: https://api.example.com
+  token: "ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  stripe_key: "sk_live_51HdY8eZvKYlo2Cw3jHGmXj"
+
+logging:
+  level: info
+  format: json
+
+features:
+  enable_debug: true
+  allow_root: false
