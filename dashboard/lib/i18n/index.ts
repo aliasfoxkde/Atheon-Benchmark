@@ -97,14 +97,38 @@ const en: TranslationKeys = {
   'common.cancel': 'Cancel',
 };
 
-// Spanish translations (partial)
-const es: Partial<TranslationKeys> = {
+// Spanish translations
+const es: TranslationKeys = {
   // Navigation
   'nav.home': 'Inicio',
   'nav.benchmark': 'Benchmark',
   'nav.results': 'Resultados',
   'nav.status': 'Estado',
   'nav.docs': 'Documentación',
+
+  // Home page
+  'home.title': 'Atheon Benchmark',
+  'home.subtitle': 'Plataforma de Benchmark de IA Comunitaria',
+  'home.description': 'Ejecute benchmarks localmente en su sistema, suba resultados a GitHub y compare rendimiento entre diferentes configuraciones de hardware.',
+  'home.viewResults': 'Ver Resultados',
+  'home.downloadRunner': 'Descargar Runner',
+
+  // Benchmark page
+  'benchmark.title': 'Ejecutar Benchmark',
+  'benchmark.start': 'Iniciar Benchmark',
+  'benchmark.running': 'Ejecutando...',
+  'benchmark.complete': 'Completado',
+
+  // Results page
+  'results.title': 'Resultados del Benchmark',
+  'results.noResults': 'No hay resultados disponibles',
+  'results.download': 'Descargar resultados',
+
+  // Status page
+  'status.title': 'Estado de la API',
+  'status.allOperational': 'Todos los Sistemas Operativos',
+  'status.partialOutage': 'Interrupción Parcial',
+  'status.disruption': 'Interrupción del Servicio',
 
   // Common
   'common.loading': 'Cargando...',
@@ -115,14 +139,38 @@ const es: Partial<TranslationKeys> = {
   'common.cancel': 'Cancelar',
 };
 
-// French translations (partial)
-const fr: Partial<TranslationKeys> = {
+// French translations
+const fr: TranslationKeys = {
   // Navigation
   'nav.home': 'Accueil',
   'nav.benchmark': 'Benchmark',
   'nav.results': 'Résultats',
   'nav.status': 'Statut',
   'nav.docs': 'Documentation',
+
+  // Home page
+  'home.title': 'Atheon Benchmark',
+  'home.subtitle': 'Plateforme de Benchmark IA Communautaire',
+  'home.description': 'Exécutez des benchmarks localement sur votre système, téléchargez les résultats sur GitHub et comparez les performances entre différentes configurations matérielles.',
+  'home.viewResults': 'Voir les Résultats',
+  'home.downloadRunner': 'Télécharger le Runner',
+
+  // Benchmark page
+  'benchmark.title': 'Exécuter un Benchmark',
+  'benchmark.start': 'Démarrer le Benchmark',
+  'benchmark.running': 'En cours...',
+  'benchmark.complete': 'Terminé',
+
+  // Results page
+  'results.title': 'Résultats du Benchmark',
+  'results.noResults': 'Aucun résultat disponible',
+  'results.download': 'Télécharger les résultats',
+
+  // Status page
+  'status.title': 'État de l\'API',
+  'status.allOperational': 'Tous les Systèmes Opérationnels',
+  'status.partialOutage': 'Panne Partielle',
+  'status.disruption': 'Interruption de Service',
 
   // Common
   'common.loading': 'Chargement...',
@@ -133,14 +181,38 @@ const fr: Partial<TranslationKeys> = {
   'common.cancel': 'Annuler',
 };
 
-// German translations (partial)
-const de: Partial<TranslationKeys> = {
+// German translations
+const de: TranslationKeys = {
   // Navigation
   'nav.home': 'Startseite',
   'nav.benchmark': 'Benchmark',
   'nav.results': 'Ergebnisse',
   'nav.status': 'Status',
   'nav.docs': 'Dokumentation',
+
+  // Home page
+  'home.title': 'Atheon Benchmark',
+  'home.subtitle': 'Community-KI-Benchmark-Plattform',
+  'home.description': 'Führen Sie Benchmarks lokal auf Ihrem System aus, laden Sie Ergebnisse auf GitHub hoch und vergleichen Sie die Leistung über verschiedene Hardware-Konfigurationen hinweg.',
+  'home.viewResults': 'Ergebnisse anzeigen',
+  'home.downloadRunner': 'Runner herunterladen',
+
+  // Benchmark page
+  'benchmark.title': 'Benchmark ausführen',
+  'benchmark.start': 'Benchmark starten',
+  'benchmark.running': 'Läuft...',
+  'benchmark.complete': 'Abgeschlossen',
+
+  // Results page
+  'results.title': 'Benchmark-Ergebnisse',
+  'results.noResults': 'Keine Ergebnisse verfügbar',
+  'results.download': 'Ergebnisse herunterladen',
+
+  // Status page
+  'status.title': 'API-Status',
+  'status.allOperational': 'Alle Systeme operativ',
+  'status.partialOutage': 'Teilweise Störung',
+  'status.disruption': 'Serviceunterbrechung',
 
   // Common
   'common.loading': 'Laden...',
@@ -151,14 +223,38 @@ const de: Partial<TranslationKeys> = {
   'common.cancel': 'Abbrechen',
 };
 
-// Japanese translations (partial)
-const ja: Partial<TranslationKeys> = {
+// Japanese translations
+const ja: TranslationKeys = {
   // Navigation
   'nav.home': 'ホーム',
   'nav.benchmark': 'ベンチマーク',
   'nav.results': '結果',
   'nav.status': 'ステータス',
   'nav.docs': 'ドキュメント',
+
+  // Home page
+  'home.title': 'Atheonベンチマーク',
+  'home.subtitle': 'コミュニティAIベンチマークプラットフォーム',
+  'home.description': 'ローカルでベンチマークを実行し、結果をGitHubにアップロードして、異なるハードウェア構成でのパフォーマンスを比較できます。',
+  'home.viewResults': '結果を見る',
+  'home.downloadRunner': 'ランナーをダウンロード',
+
+  // Benchmark page
+  'benchmark.title': 'ベンチマークを実行',
+  'benchmark.start': 'ベンチマークを開始',
+  'benchmark.running': '実行中...',
+  'benchmark.complete': '完了',
+
+  // Results page
+  'results.title': 'ベンチマーク結果',
+  'results.noResults': '結果がありません',
+  'results.download': '結果をダウンロード',
+
+  // Status page
+  'status.title': 'APIステータス',
+  'status.allOperational': '全システム稼働中',
+  'status.partialOutage': '一部障害',
+  'status.disruption': 'サービス中断',
 
   // Common
   'common.loading': '読み込み中...',
@@ -169,14 +265,38 @@ const ja: Partial<TranslationKeys> = {
   'common.cancel': 'キャンセル',
 };
 
-// Chinese translations (partial)
-const zh: Partial<TranslationKeys> = {
+// Chinese translations
+const zh: TranslationKeys = {
   // Navigation
   'nav.home': '首页',
   'nav.benchmark': '基准测试',
   'nav.results': '结果',
   'nav.status': '状态',
   'nav.docs': '文档',
+
+  // Home page
+  'home.title': 'Atheon基准测试',
+  'home.subtitle': '社区AI基准测试平台',
+  'home.description': '在本地系统上运行基准测试，将结果上传到GitHub，并比较不同硬件配置的性能。',
+  'home.viewResults': '查看结果',
+  'home.downloadRunner': '下载运行器',
+
+  // Benchmark page
+  'benchmark.title': '运行基准测试',
+  'benchmark.start': '开始基准测试',
+  'benchmark.running': '运行中...',
+  'benchmark.complete': '完成',
+
+  // Results page
+  'results.title': '基准测试结果',
+  'results.noResults': '暂无结果',
+  'results.download': '下载结果',
+
+  // Status page
+  'status.title': 'API状态',
+  'status.allOperational': '所有系统运行正常',
+  'status.partialOutage': '部分中断',
+  'status.disruption': '服务中断',
 
   // Common
   'common.loading': '加载中...',
@@ -187,7 +307,7 @@ const zh: Partial<TranslationKeys> = {
   'common.cancel': '取消',
 };
 
-const translations: Record<Locale, Partial<TranslationKeys>> = {
+const translations: Record<Locale, TranslationKeys> = {
   en,
   es,
   fr,
