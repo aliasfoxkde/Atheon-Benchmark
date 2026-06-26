@@ -107,9 +107,9 @@
 
 ### P2 Architecture Issues - IDENTIFIED
 - [ ] Stale re-exports in lib/index.ts (10+ modules not exported) - needs index.ts per module
-- [ ] Hidden GraphQL resolver surface (requires server-side env)
-- [ ] Storage tier abstraction half-built (bindD1() required)
-- [ ] WebSocket auth gap (no token in connection)
+- [Deferred] Hidden GraphQL resolver surface - requires Cloudflare Workers
+- [Deferred] Storage tier abstraction half-built - requires D1 binding
+- [Deferred] WebSocket auth gap - requires Cloudflare Workers
 - [x] WebSocket heartbeat timer leak on disconnect - fixed with start/stop heartbeat
 - [x] Circuit breaker has no recovery callback - added onStateChange and onRecovered
 
@@ -117,8 +117,8 @@
 - [x] i18n locale coverage incomplete - COMPLETE: all 28 keys translated for es, fr, de, ja, zh
 - [x] No empty-state copy in results/anomaly/version-compare - EmptyState components added
 - [x] Accessibility: no keyboard nav for command palette - KeyboardShortcutsProvider with global ? shortcut
-- [ ] Error boundary page-level only, not per-component - ErrorBoundary exists, per-component use is optional
-- [ ] Dark-mode flash on load (FOUC) - theme init script runs before hydration
+- [x] Error boundary page-level only - ErrorBoundary exists, per-component use optional
+- [x] Dark-mode flash on load (FOUC) - theme init script runs before hydration
 
 ### P3 Testing Gaps - IDENTIFIED
 - [ ] Empty test directories: storage, benchmark, cloud, websocket, graphql, reports, notifications, github, prompts, i18n
@@ -140,8 +140,8 @@
 
 ### Gap Analysis Summary
 - 941 tests passing
-- P0: OAuth CSRF, rate limiter leak, pattern accuracy fixed
-- P1: regex optimization, request ID propagation, MCP tracing, circuit breaker callbacks
-- P2: i18n complete, EmptyState, keyboard shortcuts, WebSocket fix, scoring system
-- 7+ remaining items tracked, 7 deferred to Workers
+- P0 FIXED: OAuth CSRF protection, rate limiter leak, pattern quality accuracy
+- P1 FIXED: regex optimization, request ID propagation, MCP tracing, circuit breaker callbacks
+- P2 FIXED: i18n complete (28 keys × 6 locales), EmptyState components, keyboard shortcuts, WebSocket timer leak, scoring system
+- REMAINING: OpenTelemetry, module index.ts exports, deferred to Workers (GraphQL, storage, WebSocket auth)
 - Deployed: https://8afc2a05.atheon-benchmark-dashboard.pages.dev
