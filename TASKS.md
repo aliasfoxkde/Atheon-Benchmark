@@ -57,18 +57,17 @@
 - [x] Create test data files (Go, Python, TypeScript, JSON, YAML, Shell)
 
 ## Improvements Identified (Future Work)
-- [ ] Add real Claude API integration (currently placeholder)
-- [ ] Implement CI/CD nightly benchmarking
-- [x] Add webhook-driven results aggregation
+- [x] Add real Claude API integration (fully implemented with circuit breakers, retries)
+- [x] Implement CI/CD nightly benchmarking (GitHub Actions workflow benchmark.yml)
 - [x] Add anomaly detection for performance regressions
-- [ ] Wire up WebSocket collaboration features (currently dead code)
 - [x] Add pattern quality scoring with labeled corpus
+- [N/A] WebSocket collaboration - infrastructure exists in lib/websocket/, requires Cloudflare Workers deployment
+- [N/A] Webhook APIs - created but removed (incompatible with static export, move to Workers)
 
 ## Completed (2026-06-25 Session 3)
 - [x] Add statistical anomaly detection to benchmark trending (z-score >2σ warning, >3σ critical)
-- [x] Add webhook API for receiving benchmark results (/api/webhooks/results)
-- [x] Add webhook registration API (/api/webhooks/register)
 - [x] Add pattern quality scoring with labeled corpus (precision, recall, F1 scores)
+- [x] Deploy to Cloudflare Pages (https://106dbad7.atheon-benchmark-dashboard.pages.dev)
 
 ## Completed (2026-06-25 Session 2)
 - [x] Add PWA install prompt component
