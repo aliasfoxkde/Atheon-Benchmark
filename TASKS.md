@@ -100,7 +100,7 @@
 - [ ] KV rate-limit read-modify-write on every request - batch operations
 
 ### P1 Observability Issues - IDENTIFIED
-- [ ] No request IDs for correlation - add X-Request-ID header
+- [x] No request IDs for correlation - add X-Request-ID header
 - [ ] logSpan fire-and-forget - connect to OpenTelemetry
 - [ ] No tracing across MCP tool calls - add span per tool
 - [ ] Dashboard no client-side error reporting (Sentry) - add error boundary
