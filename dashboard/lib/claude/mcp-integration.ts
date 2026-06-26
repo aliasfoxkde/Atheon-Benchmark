@@ -275,6 +275,9 @@ export class MCPClaudeClient extends VanillaClaudeClient {
    * Execute tool via MCP server
    */
   private async executeMCPTool(toolName: string, toolInput: Record<string, any>): Promise<any> {
+    const startTime = Date.now();
+    const traceId = `mcp-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 8)}`;
+
     // Find the server that hosts this tool
     const server = this.mcpConfig.mcpServers.find(s =>
       s.tools.some(t => t.name === toolName)
@@ -292,12 +295,16 @@ export class MCPClaudeClient extends VanillaClaudeClient {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-Trace-ID': traceId,
         },
         body: JSON.stringify(toolInput),
         signal: controller.signal,
       });
 
       clearTimeout(timeoutId);
+
+      const duration = Date.now() - startTime;
+      console.log(`[MCP Trace] ${traceId} ${toolName} completed in ${duration}ms`);
 
       if (!response.ok) {
         throw new Error(`Tool execution failed: ${response.statusText}`);
@@ -307,6 +314,8 @@ export class MCPClaudeClient extends VanillaClaudeClient {
 
     } catch (error) {
       clearTimeout(timeoutId);
+      const duration = Date.now() - startTime;
+      console.error(`[MCP Trace] ${traceId} ${toolName} failed after ${duration}ms:`, error);
 
       if (error instanceof Error) {
         if (error.name === 'AbortError') {
