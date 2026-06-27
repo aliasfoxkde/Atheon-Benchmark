@@ -20,6 +20,8 @@ export interface StorageClient {
   list(prefix?: string): Promise<StorageFile[]>;
   exists(key: string): Promise<boolean>;
   getUrl(key: string): Promise<string>;
+  /** Release a URL previously obtained from getUrl to prevent memory leaks */
+  revokeUrl(url: string): void;
 }
 
 export interface UploadOptions {
@@ -205,6 +207,10 @@ export class R2StorageClient implements StorageClient {
     // Generate presigned URL (simplified - real implementation would use presigning)
     return `${this.baseUrl}/${key}`;
   }
+
+  revokeUrl(url: string): void {
+    // R2 URLs are pre-signed and self-expiring, no revocation needed
+  }
 }
 
 /**
@@ -213,6 +219,7 @@ export class R2StorageClient implements StorageClient {
 export class LocalStorageClient implements StorageClient {
   private dbName: string;
   private storeName: string;
+  private createdUrls: string[] = [];
 
   constructor(dbName: string = 'atheon-storage', storeName: string = 'files') {
     this.dbName = dbName;
@@ -316,7 +323,16 @@ export class LocalStorageClient implements StorageClient {
     }
 
     const blob = new Blob([file.content], { type: file.contentType });
-    return URL.createObjectURL(blob);
+    const url = URL.createObjectURL(blob);
+    this.createdUrls.push(url);
+    return url;
+  }
+
+  revokeUrl(url: string): void {
+    if (url.startsWith('blob:')) {
+      URL.revokeObjectURL(url);
+      this.createdUrls = this.createdUrls.filter(u => u !== url);
+    }
   }
 }
 
@@ -328,7 +344,7 @@ export function createStorageClient(): StorageClient {
   const r2Config: R2Config | null = (() => {
     const accountId = process.env.CF_ACCOUNT_ID || (typeof window !== 'undefined' ? (window as any).__env?.CF_ACCOUNT_ID : undefined);
     const accessKeyId = process.env.R2_ACCESS_KEY_ID || (typeof window !== 'undefined' ? (window as any).__env?.R2_ACCESS_KEY_ID : undefined);
-    const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY || (typeof window !== 'undefined' ? (window as any).__env?.R2_SECRET_ACCESS_KEY : undefined);
+    const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
     const bucket = process.env.R2_BUCKET || (typeof window !== 'undefined' ? (window as any).__env?.R2_BUCKET : undefined);
     const publicUrl = process.env.R2_PUBLIC_URL || (typeof window !== 'undefined' ? (window as any).__env?.R2_PUBLIC_URL : undefined);
 

@@ -5,8 +5,9 @@
 
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { X, ChevronLeft, ChevronRight, Home, BarChart3, Activity, CheckCircle } from 'lucide-react';
+import { useFocusTrap } from '@/hooks/use-focus-trap';
 
 interface TourStep {
   id: string;
@@ -61,6 +62,16 @@ export function OnboardingTour({ isOpen = true, onClose }: OnboardingTourProps) 
   const [completed, setCompleted] = useState(false);
   const [dismissed, setDismissed] = useState(false);
 
+  const skipOnboarding = useCallback(() => {
+    setDismissed(true);
+    onClose?.();
+  }, [onClose]);
+
+  const focusTrapRef = useFocusTrap({
+    isActive: isOpen && !dismissed,
+    onEscape: skipOnboarding,
+  });
+
   useEffect(() => {
     // Check if onboarding was already completed
     const wasCompleted = localStorage.getItem(ONBOARDING_STORAGE_KEY);
@@ -72,11 +83,6 @@ export function OnboardingTour({ isOpen = true, onClose }: OnboardingTourProps) 
   const completeOnboarding = () => {
     localStorage.setItem(ONBOARDING_STORAGE_KEY, 'true');
     setCompleted(true);
-    setDismissed(true);
-    onClose?.();
-  };
-
-  const skipOnboarding = () => {
     setDismissed(true);
     onClose?.();
   };
@@ -105,7 +111,7 @@ export function OnboardingTour({ isOpen = true, onClose }: OnboardingTourProps) 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden">
+      <div ref={focusTrapRef} className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden">
         {/* Header */}
         <div className="relative px-6 py-5 bg-gradient-to-r from-blue-600 to-purple-600">
           <button
@@ -179,6 +185,7 @@ export function OnboardingTour({ isOpen = true, onClose }: OnboardingTourProps) 
                 <button
                   onClick={goToPrevious}
                   className="px-3 py-1.5 text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 flex items-center gap-1 transition-colors"
+                  aria-label="Previous step"
                 >
                   <ChevronLeft className="w-4 h-4" />
                   Back
@@ -187,6 +194,7 @@ export function OnboardingTour({ isOpen = true, onClose }: OnboardingTourProps) 
               <button
                 onClick={goToNext}
                 className="px-4 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-1"
+                aria-label={isLastStep ? 'Finish onboarding' : 'Next step'}
               >
                 {isLastStep ? 'Finish' : 'Next'}
                 {!isLastStep && <ChevronRight className="w-4 h-4" />}

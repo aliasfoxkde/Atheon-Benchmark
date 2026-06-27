@@ -40,6 +40,15 @@ export interface BenchmarkResult {
   metrics: BenchmarkMetrics;
 }
 
+export interface BenchmarkProgressData {
+  benchmark_id: string;
+  status: 'running' | 'completed' | 'failed';
+  progress: number;
+  total_tests: number;
+  completed_tests: number;
+  errors?: string[];
+}
+
 export interface BenchmarkMetrics {
   ns_per_op: number;
   bytes_per_sec: number;
@@ -117,7 +126,7 @@ export class BenchmarkClient {
 
   async streamProgress(
     benchmarkId: string,
-    onProgress: (data: any) => void,
+    onProgress: (data: BenchmarkProgressData) => void,
     onComplete?: () => void
   ): Promise<void> {
     const eventSource = new EventSource(

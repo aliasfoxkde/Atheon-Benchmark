@@ -29,29 +29,6 @@
     }
   ],
   "categories": ["productivity", "developer", "utilities"],
-  "screenshots": [
-    {
-      "src": "/screenshots/home.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Atheon Benchmark Home"
-    },
-    {
-      "src": "/screenshots/benchmark.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Benchmark Execution"
-    },
-    {
-      "src": "/screenshots/results.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Results Dashboard"
-    }
-  ],
   "shortcuts": [
     {
       "name": "Run Benchmark",
@@ -96,15 +73,10 @@
       ]
     }
   ],
-  "features": ["fullscreen", "standalone", "minimal-ui"],
   "prefer_related_applications": false,
   "display_override": [
     {
       "display": "standalone",
-      "orientation": "portrait"
-    },
-    {
-      "display": "minimal-ui",
       "orientation": "portrait"
     }
   ],

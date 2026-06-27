@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Download, X } from 'lucide-react';
 
 interface BeforeInstallPromptEvent extends Event {
@@ -16,24 +16,29 @@ export function PWAInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showPrompt, setShowPrompt] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
+  const isInstalledRef = useRef(false);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-      const isInWebAppiOS = (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
-      setIsInstalled(isStandalone || isInWebAppiOS || false);
-    }
+    if (typeof window === 'undefined') return;
+
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+    const isInWebAppiOS = (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
+    const installed = isStandalone || isInWebAppiOS || false;
+    setIsInstalled(installed);
+    isInstalledRef.current = installed;
 
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
+      // Use ref to check current value inside timeout
       setTimeout(() => {
-        if (!isInstalled) setShowPrompt(true);
+        if (!isInstalledRef.current) setShowPrompt(true);
       }, 5000);
     };
 
     const handleAppInstalled = () => {
       setIsInstalled(true);
+      isInstalledRef.current = true;
       setShowPrompt(false);
       setDeferredPrompt(null);
     };
@@ -45,7 +50,7 @@ export function PWAInstallPrompt() {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
     };
-  }, [isInstalled]);
+  }, []);
 
   const handleInstall = async () => {
     if (!deferredPrompt) return;
@@ -70,15 +75,15 @@ export function PWAInstallPrompt() {
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-3">
             <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
-              <Download className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              <Download className="w-5 h-5 text-blue-600 dark:text-blue-400" aria-hidden="true" />
             </div>
             <div>
               <h3 className="font-semibold text-zinc-900 dark:text-zinc-100">Install App</h3>
               <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">Add to home screen for faster access</p>
             </div>
           </div>
-          <button onClick={handleDismiss} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300" aria-label="Dismiss">
-            <X className="w-5 h-5" />
+          <button onClick={handleDismiss} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300" aria-label="Dismiss install prompt">
+            <X className="w-5 h-5" aria-hidden="true" />
           </button>
         </div>
         <div className="flex gap-2 mt-4">

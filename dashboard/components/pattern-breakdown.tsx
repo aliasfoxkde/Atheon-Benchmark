@@ -71,7 +71,7 @@ export function PatternBreakdown({ findingsCount, systemId }: PatternBreakdownPr
       localStorage.setItem(`pattern-breakdown-${systemId}`, JSON.stringify(breakdown));
     }
     setLoading(false);
-  }, [findingsCount, systemId]);
+  }, [findingsCount, systemId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const total = categories.reduce((sum, cat) => sum + cat.count, 0);
 

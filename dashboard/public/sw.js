@@ -43,24 +43,27 @@ const CACHE_CONFIG = {
   }
 };
 
-// URLs to pre-cache
+// URLs to pre-cache - using actual static export paths
 const PRECACHE_URLS = [
   '/',
+  '/index.html',
   '/manifest.json',
   '/icons/icon.svg',
-  '/app/page.js',
-  '/app/layout.js',
-  '/app/benchmark/page.js',
-  '/app/results/page.js'
+  '/icons/icon-192x192.png',
+  '/icons/icon-512x512.png',
+  '/benchmark.html',
+  '/results.html',
+  '/status.html',
+  '/offline.html'
 ];
 
 // Cache names
 const CACHES = {
-  static: `${CACHE_PREFIX}static-${CACHE_VERSION}`,
-  api: `${CACHE_PREFIX}api-${CACHE_VERSION}`,
-  pages: `${CACHE_PREFIX}pages-${CACHE_VERSION}`,
-  results: `${CACHE_PREFIX}results-${CACHE_VERSION}`,
-  runtime: `${CACHE_PREFIX}runtime-${CACHE_VERSION}`
+  static: CACHE_PREFIX + 'static-' + CACHE_VERSION,
+  api: CACHE_PREFIX + 'api-' + CACHE_VERSION,
+  pages: CACHE_PREFIX + 'pages-' + CACHE_VERSION,
+  results: CACHE_PREFIX + 'results-' + CACHE_VERSION,
+  runtime: CACHE_PREFIX + 'runtime-' + CACHE_VERSION
 };
 
 /**
@@ -111,7 +114,7 @@ self.addEventListener('activate', event => {
  * Fetch event - implement caching strategies
  */
 self.addEventListener('fetch', event => {
-  const { request } = event;
+  const request = event.request;
   const url = new URL(request.url);
 
   // Handle different request types
@@ -151,7 +154,7 @@ self.addEventListener('fetch', event => {
 /**
  * Determine if request is for static asset
  */
-function isStaticAsset(url: string): boolean {
+function isStaticAsset(url) {
   return url.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$/) !== null;
 }
 
@@ -299,7 +302,7 @@ function createOfflineResponse(request) {
   const url = new URL(request.url);
 
   // For HTML pages, return offline page
-  if (request.headers.get('accept')?.includes('text/html')) {
+  if (request.headers.get('accept') && request.headers.get('accept').includes('text/html')) {
     return caches.match('/offline.html') || caches.match('/') || new Response('Offline', {
       status: 503,
       statusText: 'Service Unavailable',
@@ -393,7 +396,7 @@ async function syncOfflineBenchmarks() {
   } catch (error) {
     console.error('[SW] Sync error:', error);
   }
-};
+}
 
 /**
  * Periodic sync for fresh benchmark results
@@ -479,7 +482,7 @@ self.addEventListener('push', event => {
     const options = {
       body: event.data.text() || 'Atheon Benchmark Update',
       icon: '/icons/icon.svg',
-      badge: '/icons/badge.svg',
+      badge: '/icons/badge.png',
       vibrate: [200, 100, 200],
       tag: 'atheon-benchmark',
       data: {
@@ -502,7 +505,7 @@ self.addEventListener('push', event => {
  * Message handler for communication with clients
  */
 self.addEventListener('message', event => {
-  const { data, ports } = event;
+  const data = event.data;
 
   if (data && data.type === 'SKIP_WAITING') {
     self.skipWaiting();
@@ -578,7 +581,7 @@ async function triggerUpdateNotification() {
     const notification = await self.registration.showNotification('Atheon Benchmark Update Available', {
       body: 'A new version is available. Click to update.',
       icon: '/icons/icon.svg',
-      badge: '/icons/badge.svg',
+      badge: '/icons/badge.png',
       tag: 'sw-update',
       data: {
         type: 'sw-update',
@@ -609,8 +612,8 @@ self.addEventListener('notificationclick', event => {
     }
 
     // Trigger skip waiting to activate new SW
-    if (registration && registration.waiting) {
-      registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+    if (self.registration && self.registration.waiting) {
+      self.registration.waiting.postMessage({ type: 'SKIP_WAITING' });
     }
   }
   // If 'later', just close the notification
