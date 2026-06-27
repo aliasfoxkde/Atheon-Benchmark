@@ -1,0 +1,11 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+
+# Disallow API routes and internal paths
+Disallow: /api/
+Disallow: /benchmark/run
+Disallow: /results/compare
+
+# Sitemap location
+Sitemap: https://production.atheon-benchmark-dashboard.pages.dev/sitemap.xml
