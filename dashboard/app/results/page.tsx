@@ -40,6 +40,7 @@ function ResultsPageContent() {
   const [cacheStats, setCacheStats] = useState<{total_systems: number, is_cached: boolean, last_updated: number | null}>({total_systems: 0, is_cached: false, last_updated: null});
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showRefreshToast, setShowRefreshToast] = useState(false);
+  const [showExportError, setShowExportError] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -581,7 +582,8 @@ function ResultsPageContent() {
                 if (selectedResults.length > 0) {
                   exportAndDownloadResults(selectedResults, `benchmark-export-${new Date().toISOString().split('T')[0]}.csv`);
                 } else {
-                  alert('Please select at least one result to export');
+                  setShowExportError(true);
+                  setTimeout(() => setShowExportError(false), 3000);
                 }
               }}
               className="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-1"
@@ -823,6 +825,14 @@ function ResultsPageContent() {
       {showRefreshToast && (
         <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-lg shadow-lg text-sm font-medium animate-fade-in">
           🔄 Refreshing data...
+        </div>
+      )}
+
+
+      {/* Export Error Toast */}
+      {showExportError && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2 bg-red-600 text-white rounded-lg shadow-lg text-sm font-medium animate-fade-in">
+          ⚠️ Please select at least one result to export
         </div>
       )}
 
