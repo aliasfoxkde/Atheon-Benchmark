@@ -75,6 +75,11 @@ export class CachedGitHubResultsFetcher extends GitHubResultsFetcher {
       };
 
       this.cache.set(cacheKey, cacheEntry);
+      // Enforce max cache size
+      if (this.cache.size > MAX_CACHE_SIZE) {
+        const oldestKey = this.cache.keys().next().value;
+        if (oldestKey) this.cache.delete(oldestKey);
+      }
       this.saveCache();
 
       // Update metadata cache
