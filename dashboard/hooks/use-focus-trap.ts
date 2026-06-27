@@ -69,13 +69,17 @@ export function useFocusTrap({ isActive, onEscape }: UseFocusTrapOptions) {
 
     // Focus the first focusable element when trap activates
     const focusable = getFocusableElements();
+    let focusTimeout: ReturnType<typeof setTimeout> | null = null;
     if (focusable.length > 0) {
-      setTimeout(() => focusable[0].focus(), 0);
+      focusTimeout = setTimeout(() => focusable[0]?.focus(), 0);
     }
 
     document.addEventListener('keydown', handleKeyDown);
 
     return () => {
+      if (focusTimeout !== null) {
+        clearTimeout(focusTimeout);
+      }
       document.removeEventListener('keydown', handleKeyDown);
       // Restore focus when trap deactivates
       if (previousActiveElement.current instanceof HTMLElement) {

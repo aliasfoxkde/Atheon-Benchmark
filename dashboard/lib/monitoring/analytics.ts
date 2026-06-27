@@ -69,12 +69,25 @@ export function collectPerformanceMetrics(): PerformanceMetrics | null {
  */
 export class ErrorTracker {
   private errors: ErrorMetrics['errors'] = [];
+  private boundErrorHandler: (e: ErrorEvent) => void;
+  private boundRejectionHandler: (e: PromiseRejectionEvent) => void;
 
   constructor() {
+    this.boundErrorHandler = this.handleError.bind(this);
+    this.boundRejectionHandler = this.handlePromiseRejection.bind(this);
     if (typeof window !== 'undefined') {
-      window.addEventListener('error', this.handleError.bind(this));
-      window.addEventListener('unhandledrejection', this.handlePromiseRejection.bind(this));
+      window.addEventListener('error', this.boundErrorHandler);
+      window.addEventListener('unhandledrejection', this.boundRejectionHandler);
     }
+  }
+
+  /** Cleanup event listeners to prevent memory leaks */
+  public destroy(): void {
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('error', this.boundErrorHandler);
+      window.removeEventListener('unhandledrejection', this.boundRejectionHandler);
+    }
+    this.errors = [];
   }
 
   private handleError(event: ErrorEvent) {
@@ -203,6 +216,7 @@ export class AnalyticsCollector {
 
 // Global analytics instance
 let globalAnalytics: AnalyticsCollector | null = null;
+let globalIntervalId: ReturnType<typeof setInterval> | null = null;
 
 /**
  * Get or create global analytics instance
@@ -216,8 +230,9 @@ export function getAnalytics(): AnalyticsCollector {
 
 /**
  * Initialize analytics on page load
+ * @returns cleanup function to stop periodic collection
  */
-export function initAnalytics(): void {
+export function initAnalytics(): (() => void) | void {
   if (typeof window === 'undefined') return;
 
   const analytics = getAnalytics();
@@ -232,7 +247,7 @@ export function initAnalytics(): void {
   }
 
   // Collect metrics periodically
-  setInterval(() => {
+  globalIntervalId = setInterval(() => {
     analytics.collectMetrics();
   }, 30000); // Every 30 seconds
 
@@ -244,4 +259,12 @@ export function initAnalytics(): void {
       }, 1000);
     });
   }
+
+  // Return cleanup function
+  return () => {
+    if (globalIntervalId !== null) {
+      clearInterval(globalIntervalId);
+      globalIntervalId = null;
+    }
+  };
 }
