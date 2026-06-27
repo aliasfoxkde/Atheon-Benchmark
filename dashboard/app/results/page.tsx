@@ -114,7 +114,7 @@ function ResultsPageContent() {
     setSelectedSystems(new Set());
   };
 
-  const loadResults = async () => {
+  const loadResults = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -152,7 +152,7 @@ function ResultsPageContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Load results on mount
   useEffect(() => {
