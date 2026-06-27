@@ -1,3 +1,4 @@
+import { logger } from '../logging';
 /**
  * Atheon Quality Gates Integration
  * This module integrates Atheon pattern matching for quality gates and validation
@@ -98,7 +99,7 @@ export class AtheonQualityGates {
       });
       this.useBinary = true;
     } catch (error) {
-      console.warn('Atheon binary not available, using pattern simulation:', error);
+      logger.warn('Atheon binary not available, using pattern simulation:', error);
       this.binaryScanner = createAtheonScanner(); // Fallback
       this.useBinary = false;
     }
@@ -209,7 +210,7 @@ export class AtheonQualityGates {
         }));
 
       } catch (error) {
-        console.warn('Binary scan failed, falling back to pattern simulation:', error);
+        logger.warn('Binary scan failed, falling back to pattern simulation:', error);
         // Fall back to pattern simulation
         return this.performPatternScan(content, metadata);
       }

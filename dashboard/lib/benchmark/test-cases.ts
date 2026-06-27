@@ -1,3 +1,4 @@
+import { logger } from '../logging';
 /**
  * Deterministic Test Case Generator
  * This module provides deterministic test case generation with reproducible results

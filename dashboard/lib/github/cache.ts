@@ -1,3 +1,4 @@
+import { logger } from '../logging';
 /**
  * GitHub Results Cache
  * Caches GitHub API results locally for faster loading
@@ -51,11 +52,11 @@ export class CachedGitHubResultsFetcher extends GitHubResultsFetcher {
     const cached = this.cache.get(cacheKey);
 
     if (cached && this.isCacheValid(cached)) {
-      console.log('[GitHub Cache] Using cached results');
+      logger.debug('[GitHub Cache] Using cached results');
       return cached.data;
     }
 
-    console.log('[GitHub Cache] Cache miss, fetching from GitHub...');
+    logger.debug('[GitHub Cache] Cache miss, fetching from GitHub...');
     const startTime = Date.now();
 
     try {
@@ -91,7 +92,7 @@ export class CachedGitHubResultsFetcher extends GitHubResultsFetcher {
 
       // Return stale cache if available (even if expired)
       if (cached && cached.data.length > 0) {
-        console.log('[GitHub Cache] Returning stale cache due to fetch error');
+        logger.debug('[GitHub Cache] Returning stale cache due to fetch error');
         return cached.data;
       }
 
@@ -108,7 +109,7 @@ export class CachedGitHubResultsFetcher extends GitHubResultsFetcher {
       return this.metadataCache.systems;
     }
 
-    console.log('[GitHub Cache] Metadata cache miss, fetching...');
+    logger.debug('[GitHub Cache] Metadata cache miss, fetching...');
     const results = await this.fetchAllResults();
 
     const systems = new Map();
@@ -208,7 +209,7 @@ export class CachedGitHubResultsFetcher extends GitHubResultsFetcher {
             this.cache.set(key, value as CacheEntry);
           }
         });
-        console.log(`[GitHub Cache] Loaded ${this.cache.size} cache entries`);
+        logger.debug(`[GitHub Cache] Loaded ${this.cache.size} cache entries`);
       }
     } catch (error) {
       console.error('[GitHub Cache] Failed to load cache:', error);
@@ -224,7 +225,7 @@ export class CachedGitHubResultsFetcher extends GitHubResultsFetcher {
     try {
       const cacheObj = Object.fromEntries(this.cache);
       localStorage.setItem(this.storageKey, JSON.stringify(cacheObj));
-      console.log(`[GitHub Cache] Saved ${this.cache.size} cache entries`);
+      logger.debug(`[GitHub Cache] Saved ${this.cache.size} cache entries`);
     } catch (error) {
       console.error('[GitHub Cache] Failed to save cache:', error);
     }
@@ -242,7 +243,7 @@ export class CachedGitHubResultsFetcher extends GitHubResultsFetcher {
         const parsed = JSON.parse(cached);
         if (parsed.version === CACHE_VERSION) {
           this.metadataCache = parsed;
-          console.log('[GitHub Cache] Metadata cache loaded');
+          logger.debug('[GitHub Cache] Metadata cache loaded');
         }
       }
     } catch (error) {
@@ -264,7 +265,7 @@ export class CachedGitHubResultsFetcher extends GitHubResultsFetcher {
         timestamp: Date.now(),
       };
       localStorage.setItem(this.metadataKey, JSON.stringify(cacheData));
-      console.log('[GitHub Cache] Metadata cache saved');
+      logger.debug('[GitHub Cache] Metadata cache saved');
     } catch (error) {
       console.error('[GitHub Cache] Failed to save metadata cache:', error);
     }
@@ -282,7 +283,7 @@ export class CachedGitHubResultsFetcher extends GitHubResultsFetcher {
       localStorage.removeItem(this.metadataKey);
     }
 
-    console.log('[GitHub Cache] All caches cleared');
+    logger.debug('[GitHub Cache] All caches cleared');
   }
 
   /**

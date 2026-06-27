@@ -1,3 +1,4 @@
+import { logger } from '../logging';
 /**
  * Pattern Quality Scoring with Labeled Corpus
  * Evaluates pattern effectiveness using a known dataset with expected findings
@@ -121,9 +122,9 @@ const apiConfig = {
     language: 'typescript',
     description: 'Should detect console.log statements',
     content: `function processData(data: any) {
-  console.log('Processing started');
+  logger.debug('Processing started');
   const result = data.map(x => x * 2);
-  console.log('Result:', result);
+  logger.debug('Result:', result);
   return result;
 }`,
     expected_findings: [
@@ -282,7 +283,7 @@ export function scanTextWithPatterns(
         }
       }
     } catch (error) {
-      console.warn(`Invalid pattern regex for ${pattern.name}:`, error);
+      logger.warn(`Invalid pattern regex for ${pattern.name}:`, error);
     }
   }
 

@@ -1,3 +1,4 @@
+import { logger } from '../logging';
 /**
  * Atheon MCP Integration
  * Claude API integration with Atheon pattern matching via MCP server
@@ -183,12 +184,12 @@ export async function loadAtheonPatterns(): Promise<AtheonPattern[]> {
 
     if (bundlePatterns.length > 0) {
       cachedPatterns = bundlePatterns.map(convertBundlePattern);
-      console.log(`Loaded ${cachedPatterns.length} patterns from bundle`);
+      logger.debug(`Loaded ${cachedPatterns.length} patterns from bundle`);
       return cachedPatterns;
     }
 
     // Fallback to hardcoded patterns
-    console.log('Using fallback hardcoded patterns');
+    logger.debug('Using fallback hardcoded patterns');
     cachedPatterns = FALLBACK_ATHEON_PATTERNS;
     return cachedPatterns;
   })();

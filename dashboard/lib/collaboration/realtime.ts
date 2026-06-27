@@ -1,3 +1,4 @@
+import { logger } from '../logging';
 /**
  * Real-time Collaboration Infrastructure
  * WebSocket and SSE-based collaboration features for multi-user interaction
@@ -111,7 +112,7 @@ export class CollaborationClient {
         this.ws = new WebSocket(this.url);
 
         this.ws.onopen = () => {
-          console.log('[Collaboration] WebSocket connected');
+          logger.debug('[Collaboration] WebSocket connected');
           this.reconnectAttempts = 0;
 
           // Identify self
@@ -144,7 +145,7 @@ export class CollaborationClient {
         };
 
         this.ws.onclose = () => {
-          console.log('[Collaboration] WebSocket closed');
+          logger.debug('[Collaboration] WebSocket closed');
           this.attemptReconnect();
         };
       } catch (error) {
@@ -164,7 +165,7 @@ export class CollaborationClient {
         this.sse = new EventSource(`${this.url}/sse`);
 
         this.sse.onopen = () => {
-          console.log('[Collaboration] SSE connected');
+          logger.debug('[Collaboration] SSE connected');
           this.reconnectAttempts = 0;
           resolve();
         };
@@ -193,14 +194,14 @@ export class CollaborationClient {
    */
   private attemptReconnect(): void {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.log('[Collaboration] Max reconnect attempts reached');
+      logger.debug('[Collaboration] Max reconnect attempts reached');
       return;
     }
 
     this.reconnectAttempts++;
     const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
 
-    console.log(`[Collaboration] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`);
+    logger.debug(`[Collaboration] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`);
 
     setTimeout(() => {
       if (this.currentUser) {

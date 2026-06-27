@@ -1,3 +1,4 @@
+import { logger } from '../logging';
 /**
  * D1 Database Operations
  * Persistent storage implementation for benchmark results using Cloudflare D1
@@ -69,7 +70,7 @@ export class D1Database {
    */
   async saveBenchmark(benchmark: BenchmarkRecord): Promise<boolean> {
     if (!this.ready) {
-      console.warn('Database not ready, using in-memory storage');
+      logger.warn('Database not ready, using in-memory storage');
       return false;
     }
 
@@ -107,7 +108,7 @@ export class D1Database {
    */
   async saveResult(result: ResultRecord): Promise<boolean> {
     if (!this.ready) {
-      console.warn('Database not ready, using in-memory storage');
+      logger.warn('Database not ready, using in-memory storage');
       return false;
     }
 

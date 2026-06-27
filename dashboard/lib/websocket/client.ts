@@ -1,3 +1,4 @@
+import { logger } from '../logging';
 /**
  * WebSocket Server Implementation for Cloudflare Workers
  * Provides real-time bidirectional communication for benchmark streaming
@@ -124,7 +125,7 @@ export class WebSocketManager {
       payload: { clientId, welcome: 'Connected to Atheon Benchmark WebSocket' },
     });
 
-    console.log(`[WS] Client ${clientId} connected`);
+    logger.debug(`[WS] Client ${clientId} connected`);
     return client;
   }
 
@@ -199,7 +200,7 @@ export class WebSocketManager {
     this.clients.delete(clientId);
     this.clientCount--;
     this.stopHeartbeatIfIdle();
-    console.log(`[WS] Client ${clientId} disconnected`);
+    logger.debug(`[WS] Client ${clientId} disconnected`);
   }
 
   /**
@@ -228,7 +229,7 @@ export class WebSocketManager {
       metadata,
     };
     this.rooms.set(roomId, room);
-    console.log(`[WS] Room ${roomId} created`);
+    logger.debug(`[WS] Room ${roomId} created`);
     return room;
   }
 
@@ -255,7 +256,7 @@ export class WebSocketManager {
       payload: { message: 'User joined room', userId: client.id },
     }, client.id);
 
-    console.log(`[WS] Client ${client.id} joined room ${roomId}`);
+    logger.debug(`[WS] Client ${client.id} joined room ${roomId}`);
   }
 
   /**
@@ -266,7 +267,7 @@ export class WebSocketManager {
     if (!room) return;
 
     room.clients.delete(client);
-    console.log(`[WS] Client ${client.id} left room ${roomId}`);
+    logger.debug(`[WS] Client ${client.id} left room ${roomId}`);
 
     // Notify remaining clients
     this.broadcastToRoom(roomId, {
@@ -278,7 +279,7 @@ export class WebSocketManager {
     // Clean up empty rooms
     if (room.clients.size === 0) {
       this.rooms.delete(roomId);
-      console.log(`[WS] Room ${roomId} deleted (empty)`);
+      logger.debug(`[WS] Room ${roomId} deleted (empty)`);
     }
   }
 
@@ -396,7 +397,7 @@ export class BenchmarkWebSocketClient {
         this.ws = new WebSocket(this.url);
 
         this.ws.onopen = () => {
-          console.log('[WS Client] Connected');
+          logger.debug('[WS Client] Connected');
           this.reconnectAttempts = 0;
           resolve();
         };
@@ -416,7 +417,7 @@ export class BenchmarkWebSocketClient {
         };
 
         this.ws.onclose = () => {
-          console.log('[WS Client] Disconnected');
+          logger.debug('[WS Client] Disconnected');
           this.attemptReconnect();
         };
       } catch (error) {
@@ -430,14 +431,14 @@ export class BenchmarkWebSocketClient {
    */
   private attemptReconnect(): void {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.log('[WS Client] Max reconnect attempts reached');
+      logger.debug('[WS Client] Max reconnect attempts reached');
       return;
     }
 
     this.reconnectAttempts++;
     const delay = 1000 * Math.pow(2, this.reconnectAttempts);
 
-    console.log(`[WS Client] Reconnecting in ${delay}ms...`);
+    logger.debug(`[WS Client] Reconnecting in ${delay}ms...`);
 
     setTimeout(() => {
       this.connect().catch(console.error);

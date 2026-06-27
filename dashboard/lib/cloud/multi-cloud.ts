@@ -1,3 +1,4 @@
+import { logger } from '../logging';
 /**
  * Multi-Cloud Provider Abstraction
  * Unified interface for deploying to multiple cloud platforms
@@ -108,7 +109,7 @@ export class CloudflareClient implements CloudProviderClient {
     const deploymentId = `deploy-${Date.now()}`;
 
     // Simulated deployment (actual implementation would use Wrangler API)
-    console.log('[Cloudflare] Deploying to:', target.region);
+    logger.debug('[Cloudflare] Deploying to:', target.region);
 
     return {
       success: true,
@@ -160,22 +161,22 @@ class R2StorageClientAdapter implements StorageClient {
 
   async upload(key: string, data: ArrayBuffer | string): Promise<string> {
     // Implementation would use R2 API
-    console.log('[R2] Uploading:', key);
+    logger.debug('[R2] Uploading:', key);
     return `https://${this.bucket}.r2.dev/${key}`;
   }
 
   async download(key: string): Promise<ArrayBuffer | null> {
-    console.log('[R2] Downloading:', key);
+    logger.debug('[R2] Downloading:', key);
     return null;
   }
 
   async delete(key: string): Promise<boolean> {
-    console.log('[R2] Deleting:', key);
+    logger.debug('[R2] Deleting:', key);
     return true;
   }
 
   async list(prefix?: string): Promise<string[]> {
-    console.log('[R2] Listing:', prefix);
+    logger.debug('[R2] Listing:', prefix);
     return [];
   }
 
@@ -191,12 +192,12 @@ class D1DatabaseClient implements DatabaseClient {
   constructor(private config: ProviderCredentials, private database: string) {}
 
   async query(sql: string, params?: any[]): Promise<any[]> {
-    console.log('[D1] Query:', sql, params);
+    logger.debug('[D1] Query:', sql, params);
     return [];
   }
 
   async execute(sql: string, params?: any[]): Promise<void> {
-    console.log('[D1] Execute:', sql, params);
+    logger.debug('[D1] Execute:', sql, params);
   }
 }
 

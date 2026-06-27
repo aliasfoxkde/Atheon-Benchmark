@@ -1,3 +1,4 @@
+import { logger } from '../logging';
 /**
  * SSO/SAML Authentication Infrastructure
  * Support for enterprise SSO authentication providers
@@ -164,7 +165,7 @@ export class GoogleSSOProvider extends SSOProviderClient {
 
   async logout(accessToken: string): Promise<void> {
     // Google doesn't support token revocation via user logout
-    console.log('[Google SSO] Logout called');
+    logger.debug('[Google SSO] Logout called');
   }
 }
 
@@ -258,7 +259,7 @@ export class GitHubSSOProvider extends SSOProviderClient {
 
   async logout(accessToken: string): Promise<void> {
     // GitHub doesn't support programmatic logout
-    console.log('[GitHub SSO] Logout called');
+    logger.debug('[GitHub SSO] Logout called');
   }
 }
 
@@ -356,7 +357,7 @@ export class MicrosoftSSOProvider extends SSOProviderClient {
 
   async logout(accessToken: string): Promise<void> {
     // Microsoft recommends redirecting to logout URL
-    console.log('[Microsoft SSO] Logout called');
+    logger.debug('[Microsoft SSO] Logout called');
   }
 }
 

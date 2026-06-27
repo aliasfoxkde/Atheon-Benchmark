@@ -1,3 +1,4 @@
+import { logger } from '../logging';
 /**
  * Vanilla Claude API Implementation
  * Direct API calls to Claude without any MCP or tool integration
@@ -218,7 +219,7 @@ export class VanillaClaudeClient {
         if (response.status === 429) {
           const retryAfter = response.headers.get('Retry-After');
           const delay = retryAfter ? parseInt(retryAfter) * 1000 : Math.min(BASE_DELAY_MS * Math.pow(2, attempt), MAX_DELAY_MS);
-          console.warn(`Rate limited, retrying in ${delay}ms (attempt ${attempt + 1}/${MAX_RETRIES + 1})`);
+          logger.warn(`Rate limited, retrying in ${delay}ms (attempt ${attempt + 1}/${MAX_RETRIES + 1})`);
           await this.delay(delay);
           continue;
         }
@@ -226,7 +227,7 @@ export class VanillaClaudeClient {
         // Retry on server errors
         if (RETRYABLE_STATUS_CODES.includes(response.status)) {
           const delay = Math.min(BASE_DELAY_MS * Math.pow(2, attempt), MAX_DELAY_MS);
-          console.warn(`Server error ${response.status}, retrying in ${delay}ms (attempt ${attempt + 1}/${MAX_RETRIES + 1})`);
+          logger.warn(`Server error ${response.status}, retrying in ${delay}ms (attempt ${attempt + 1}/${MAX_RETRIES + 1})`);
           await this.delay(delay);
           continue;
         }
@@ -246,7 +247,7 @@ export class VanillaClaudeClient {
           // Retry on network errors
           if (attempt < MAX_RETRIES) {
             const delay = Math.min(BASE_DELAY_MS * Math.pow(2, attempt), MAX_DELAY_MS);
-            console.warn(`Network error: ${error.message}, retrying in ${delay}ms (attempt ${attempt + 1}/${MAX_RETRIES + 1})`);
+            logger.warn(`Network error: ${error.message}, retrying in ${delay}ms (attempt ${attempt + 1}/${MAX_RETRIES + 1})`);
             await this.delay(delay);
             lastError = error;
             continue;

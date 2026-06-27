@@ -1,3 +1,4 @@
+import { logger } from '../logging';
 /**
  * Benchmark Execution Engine
  * Main orchestrator for running benchmarks with different configurations
@@ -260,7 +261,7 @@ export class BenchmarkExecutor {
         await this.delay(this.scenario.execution.cooldown_ms);
       } catch (error) {
         // Warmup failures are not critical
-        console.warn('Warmup run failed:', error);
+        logger.warn('Warmup run failed:', error);
       }
     }
   }

@@ -1,3 +1,4 @@
+import { logger } from '../logging';
 /**
  * Build-time GitHub Results Fetcher
  * Fetches benchmark results during build time for static export
@@ -12,13 +13,13 @@ import path from 'path';
  * Fetch results at build time and save to static JSON
  */
 export async function fetchBuildTimeResults(): Promise<BenchmarkReport[]> {
-  console.log('[Build-time] Fetching GitHub results...');
+  logger.debug('[Build-time] Fetching GitHub results...');
 
   try {
     const fetcher = new GitHubResultsFetcher(DEFAULT_GITHUB_CONFIG);
     const results = await fetcher.fetchAllResults();
 
-    console.log(`[Build-time] Fetched ${results.length} benchmark reports`);
+    logger.debug(`[Build-time] Fetched ${results.length} benchmark reports`);
 
     // Save to public directory for static serving
     const publicDir = path.join(process.cwd(), 'public');
@@ -31,7 +32,7 @@ export async function fetchBuildTimeResults(): Promise<BenchmarkReport[]> {
 
     // Write results to file
     fs.writeFileSync(resultsFile, JSON.stringify(results, null, 2));
-    console.log(`[Build-time] Saved results to ${resultsFile}`);
+    logger.debug(`[Build-time] Saved results to ${resultsFile}`);
 
     return results;
   } catch (error) {
@@ -53,7 +54,7 @@ export async function getStaticResults(): Promise<BenchmarkReport[]> {
     }
 
     const results = await response.json();
-    console.log('[Static] Loaded benchmark results from static file');
+    logger.debug('[Static] Loaded benchmark results from static file');
     return results;
   } catch (error) {
     console.error('[Static] Failed to load results:', error);

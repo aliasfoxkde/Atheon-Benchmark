@@ -1,3 +1,4 @@
+import { logger } from '../logging';
 /**
  * Claude API Client Configuration and Types
  * This module provides the base configuration and types for Claude API integration
@@ -166,7 +167,7 @@ export class CircuitBreaker {
 
     if (state === CircuitBreakerState.HALF_OPEN) {
       this.consecutiveSuccesses = 0;
-      console.log(`[CircuitBreaker] Transitioning to HALF_OPEN - testing recovery`);
+      logger.debug(`[CircuitBreaker] Transitioning to HALF_OPEN - testing recovery`);
     }
 
     // Notify listeners of state change
@@ -190,7 +191,7 @@ export class CircuitBreaker {
         this.consecutiveSuccesses = 0;
         // Notify that circuit has recovered
         if (this.config.onRecovered) {
-          console.log(`[CircuitBreaker] Circuit recovered after ${this.consecutiveSuccesses} successful calls`);
+          logger.debug(`[CircuitBreaker] Circuit recovered after ${this.consecutiveSuccesses} successful calls`);
           this.config.onRecovered();
         }
       }

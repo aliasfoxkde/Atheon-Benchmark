@@ -1,3 +1,4 @@
+import { logger } from '../logging';
 /**
  * Email Notification Service
  * Handles email notifications for benchmark events
@@ -110,7 +111,7 @@ export class EmailService {
    * @deprecated Use server-side proxy instead
    */
   sendDeprecated(options: EmailOptions): Promise<{ success: boolean; message?: string }> {
-    console.warn('EmailService.send() should be called via /api/email/send proxy in production');
+    logger.warn('EmailService.send() should be called via /api/email/send proxy in production');
     return this.send(options);
   }
 }

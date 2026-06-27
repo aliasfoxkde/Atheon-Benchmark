@@ -1,3 +1,4 @@
+import { logger } from '../logging';
 /**
  * Atheon Binary Integration
  * Integration with actual Atheon Go binary for pattern matching
@@ -36,7 +37,7 @@ export async function loadPatternsFromBundle(bundlePath: string): Promise<Bundle
     await readFile(bundlePath);
   } catch {
     // Bundle doesn't exist - return empty array
-    console.warn(`Bundle file not found at ${bundlePath}`);
+    logger.warn(`Bundle file not found at ${bundlePath}`);
     return [];
   }
 
@@ -60,7 +61,7 @@ export async function loadPatternsFromBundle(bundlePath: string): Promise<Bundle
 
     return patterns.filter(p => p.enabled);
   } catch (error) {
-    console.warn(`Failed to load patterns from bundle: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    logger.warn(`Failed to load patterns from bundle: ${error instanceof Error ? error.message : 'Unknown error'}`);
     return [];
   }
 }

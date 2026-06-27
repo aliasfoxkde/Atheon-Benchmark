@@ -1,3 +1,4 @@
+import { logger } from '../logging';
 /**
  * Monitoring and Analytics Utilities
  * Provides performance monitoring, error tracking, and analytics
@@ -45,7 +46,7 @@ export function collectPerformanceMetrics(): PerformanceMetrics | null {
           lcp = lcpEntries[lcpEntries.length - 1].startTime;
         }
       } catch (e) {
-        console.warn('LCP not supported');
+        logger.warn('LCP not supported');
       }
     }
 
@@ -239,7 +240,7 @@ export function initAnalytics(): void {
   if (process.env.NODE_ENV === 'development' && typeof window.addEventListener === 'function') {
     window.addEventListener('load', () => {
       setTimeout(() => {
-        console.log('[Analytics]', analytics.exportData());
+        logger.debug('[Analytics]', analytics.exportData());
       }, 1000);
     });
   }

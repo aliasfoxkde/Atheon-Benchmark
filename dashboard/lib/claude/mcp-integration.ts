@@ -1,3 +1,4 @@
+import { logger } from '../logging';
 /**
  * MCP Claude Integration
  * Claude API integration with generic MCP (Model Context Protocol) server support
@@ -304,7 +305,7 @@ export class MCPClaudeClient extends VanillaClaudeClient {
       clearTimeout(timeoutId);
 
       const duration = Date.now() - startTime;
-      console.log(`[MCP Trace] ${traceId} ${toolName} completed in ${duration}ms`);
+      logger.debug(`[MCP Trace] ${traceId} ${toolName} completed in ${duration}ms`);
 
       if (!response.ok) {
         throw new Error(`Tool execution failed: ${response.statusText}`);
