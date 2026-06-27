@@ -130,7 +130,7 @@ export class AtheonBinaryScanner {
       const scanTime = Date.now() - startTime;
 
       // Clean up temp file
-      await unlink(tempPath).catch(() => {});
+      await unlink(tempPath).catch((err) => logger.warn('Failed to clean up temp file:', tempPath, err));
 
       return {
         findings: result.findings,
@@ -142,7 +142,7 @@ export class AtheonBinaryScanner {
 
     } catch (error) {
       // Clean up on error
-      await unlink(tempPath).catch(() => {});
+      await unlink(tempPath).catch((err) => logger.warn('Failed to clean up temp file:', tempPath, err));
 
       throw new Error(`Atheon scan failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }

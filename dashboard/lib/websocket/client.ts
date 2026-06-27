@@ -441,7 +441,7 @@ export class BenchmarkWebSocketClient {
     logger.debug(`[WS Client] Reconnecting in ${delay}ms...`);
 
     setTimeout(() => {
-      this.connect().catch(console.error);
+      this.connect().catch((err) => logger.error('WebSocket reconnect failed:', err));
     }, delay);
   }
 

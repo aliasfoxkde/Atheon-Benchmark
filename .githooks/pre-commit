@@ -1,0 +1,76 @@
+#!/bin/sh
+# Commit-msg hook for Atheon-Benchmark
+# Validates commit message format (Conventional Commits)
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+COMMIT_MSG_FILE=$1
+COMMIT_MSG=$(cat "$COMMIT_MSG_FILE")
+
+# Skip if empty commit message
+if [ -z "$COMMIT_MSG" ]; then
+    echo "${RED}ERROR: Empty commit message${NC}"
+    exit 1
+fi
+
+# Remove comments lines (lines starting with #)
+COMMIT_MSG=$(echo "$COMMIT_MSG" | sed '/^#/d')
+
+# Skip merge commits
+if echo "$COMMIT_MSG" | grep -qE '^Merge '; then
+    exit 0
+fi
+
+# Conventional commit pattern
+# Format: <type>(<scope>): <description>
+# Types: feat, fix, docs, style, refactor, perf, test, chore, revert
+# Examples:
+#   feat(dashboard): add dark mode toggle
+#   fix(server): resolve rate limiting bypass
+#   docs: update README
+
+PATTERN='^[a-z]+(\([a-z0-9/_-]+\))?!?: [a-z].+'
+MERGE_PATTERN='^Merge (branch|pull request)'
+
+if echo "$COMMIT_MSG" | grep -qE "$MERGE_PATTERN"; then
+    exit 0
+fi
+
+if ! echo "$COMMIT_MSG" | grep -qE "$PATTERN"; then
+    echo "${RED}ERROR: Invalid commit message format${NC}"
+    echo ""
+    echo "Your commit message does not follow Conventional Commits format."
+    echo ""
+    echo "Expected format:"
+    echo "  <type>(<scope>): <description>"
+    echo ""
+    echo "Types: feat, fix, docs, style, refactor, perf, test, chore, revert"
+    echo "Examples:"
+    echo "  feat(dashboard): add dark mode toggle"
+    echo "  fix(server): resolve SQL injection"
+    echo "  docs: update README"
+    echo ""
+    echo "Your message:"
+    echo "  $COMMIT_MSG"
+    echo ""
+    echo "See: https://www.conventionalcommits.org/"
+    exit 1
+fi
+
+# Check for trailing whitespace
+if echo "$COMMIT_MSG" | grep -qE '[[:space:]]+$'; then
+    echo "${YELLOW}WARNING: Commit message has trailing whitespace${NC}"
+fi
+
+# Check message length (first line should be <= 72 chars)
+FIRST_LINE=$(echo "$COMMIT_MSG" | head -1)
+if [ ${#FIRST_LINE} -gt 72 ]; then
+    echo "${YELLOW}WARNING: Commit message first line exceeds 72 characters${NC}"
+    echo "Current length: ${#FIRST_LINE}"
+fi
+
+echo "${GREEN}Commit message format is valid${NC}"
+exit 0

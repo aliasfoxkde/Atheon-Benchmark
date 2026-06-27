@@ -210,7 +210,7 @@ jobs:
           npm ci
 
       - name: Generate SBOM
-        uses: anchore/sbom-action@v0
+        uses: anchore/sbom-action@v0.17.0
         with:
           image: ${{ github.event.repository.name }}
           format: spdx
@@ -230,7 +230,7 @@ jobs:
       - name: Run Atheon security scan
         run: |
           echo "Running Atheon security scan..."
-          atheon . --categories=secrets --exit-code || true
+          atheon . --categories=secrets --exit-code || echo "Atheon scan completed with warnings"
 
       - name: Check for secrets
         run: |

@@ -1,0 +1,26 @@
+# Code Owners - Atheon-Benchmark
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for all files
+* @aliasfoxkde
+
+# Dashboard (Next.js frontend)
+# @aliasfoxkde
+
+# Server (Cloudflare Workers backend)
+# @aliasfoxkde
+
+# CI/CD and DevOps
+# @aliasfoxkde
+
+# Documentation
+# @aliasfoxkde
+
+# Go SDK and Runner
+# @aliasfoxkde
+
+# Python SDK
+# @aliasfoxkde
+
+# Schemas and Database
+# @aliasfoxkde

@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -14,6 +13,7 @@ import {
   type ChartOptions,
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
+import { useTheme } from '../theme-provider';
 
 ChartJS.register(
   CategoryScale,
@@ -37,33 +37,7 @@ interface TrendLineChartProps {
 }
 
 export function TrendLineChart({ data, labels, title }: TrendLineChartProps) {
-  const [isDark, setIsDark] = useState(false);
-  const mediaQuery: MediaQueryList | undefined = typeof window !== 'undefined'
-    ? window.matchMedia('(prefers-color-scheme: dark)')
-    : undefined;
-
-  useEffect(() => {
-    const checkTheme = () => {
-      const dark = document.documentElement.classList.contains('dark') ||
-        (mediaQuery?.matches ?? false);
-      setIsDark(dark);
-    };
-
-    checkTheme();
-
-    const observer = new MutationObserver(checkTheme);
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class']
-    });
-
-    mediaQuery?.addEventListener('change', checkTheme);
-
-    return () => {
-      observer.disconnect();
-      mediaQuery?.removeEventListener('change', checkTheme);
-    };
-  }, [mediaQuery]);
+  const { resolvedTheme: isDark } = useTheme();
 
   const textColor = isDark ? 'rgb(212, 212, 212)' : 'rgb(115, 115, 115)';
   const gridColor = isDark ? 'rgba(212, 212, 212, 0.1)' : 'rgba(115, 115, 115, 0.1)';

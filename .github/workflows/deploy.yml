@@ -61,7 +61,7 @@ jobs:
           projectName: atheon-benchmark-dashboard
           directory: dashboard/out
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
-          wranglerVersion: '3.100'
+          wranglerVersion: '4'
 
   test-deployment:
     runs-on: ubuntu-latest

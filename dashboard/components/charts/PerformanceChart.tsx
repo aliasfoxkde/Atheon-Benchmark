@@ -5,8 +5,9 @@
 
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import type { Chart, ChartConfiguration } from 'chart.js';
+import { useTheme } from '../theme-provider';
 
 interface PerformanceChartProps {
   data: {
@@ -25,33 +26,7 @@ interface PerformanceChartProps {
 export function PerformanceChart({ data, type = 'bar', title }: PerformanceChartProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const chartRef = useRef<Chart | null>(null);
-  const [isDark, setIsDark] = useState(false);
-  const mediaQuery: MediaQueryList | undefined = typeof window !== 'undefined'
-    ? window.matchMedia('(prefers-color-scheme: dark)')
-    : undefined;
-
-  useEffect(() => {
-    const checkTheme = () => {
-      const dark = document.documentElement.classList.contains('dark') ||
-        (mediaQuery?.matches ?? false);
-      setIsDark(dark);
-    };
-
-    checkTheme();
-
-    const observer = new MutationObserver(checkTheme);
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class']
-    });
-
-    mediaQuery?.addEventListener('change', checkTheme);
-
-    return () => {
-      observer.disconnect();
-      mediaQuery?.removeEventListener('change', checkTheme);
-    };
-  }, [mediaQuery]);
+  const { resolvedTheme: isDark } = useTheme();
 
   useEffect(() => {
     if (typeof window === 'undefined') return;

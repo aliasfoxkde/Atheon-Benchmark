@@ -1,0 +1,9 @@
+# Default labels for new issues
+blank_issues_enabled: true
+contact_links:
+  - name: Documentation
+    url: https://github.com/aliasfoxkde/Atheon-Benchmark#readme
+    about: Please refer to the README for general usage documentation
+  - name: Security Vulnerabilities
+    url: https://github.com/aliasfoxkde/Atheon-Benchmark/security/advisories
+    about: See our security policy for vulnerability reporting
