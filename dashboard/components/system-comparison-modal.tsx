@@ -2,6 +2,7 @@
 
 import { X, Trophy, TrendingUp, Clock, Cpu, Server, Calendar } from 'lucide-react';
 import type { BenchmarkReport } from '@/lib/github/cache';
+import { useFocusTrap } from '@/hooks/use-focus-trap';
 
 interface SystemComparisonModalProps {
   systems: BenchmarkReport[];
@@ -16,6 +17,8 @@ interface MetricRow {
 }
 
 export function SystemComparisonModal({ systems, isOpen, onClose }: SystemComparisonModalProps) {
+  const focusTrapRef = useFocusTrap({ isActive: isOpen, onEscape: onClose });
+
   if (!isOpen || systems.length < 2) return null;
 
   const metrics: MetricRow[] = [
@@ -107,6 +110,7 @@ export function SystemComparisonModal({ systems, isOpen, onClose }: SystemCompar
       onClick={onClose}
     >
       <div
+        ref={focusTrapRef}
         className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
@@ -126,7 +130,7 @@ export function SystemComparisonModal({ systems, isOpen, onClose }: SystemCompar
           <button
             onClick={onClose}
             className="p-2 text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
-            aria-label="Close"
+            aria-label="Close system comparison"
           >
             <X className="w-5 h-5" />
           </button>

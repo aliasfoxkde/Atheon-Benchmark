@@ -328,7 +328,7 @@ export function createStorageClient(): StorageClient {
   const r2Config: R2Config | null = (() => {
     const accountId = process.env.CF_ACCOUNT_ID || (typeof window !== 'undefined' ? (window as any).__env?.CF_ACCOUNT_ID : undefined);
     const accessKeyId = process.env.R2_ACCESS_KEY_ID || (typeof window !== 'undefined' ? (window as any).__env?.R2_ACCESS_KEY_ID : undefined);
-    const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY || (typeof window !== 'undefined' ? (window as any).__env?.R2_SECRET_ACCESS_KEY : undefined);
+    const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
     const bucket = process.env.R2_BUCKET || (typeof window !== 'undefined' ? (window as any).__env?.R2_BUCKET : undefined);
     const publicUrl = process.env.R2_PUBLIC_URL || (typeof window !== 'undefined' ? (window as any).__env?.R2_PUBLIC_URL : undefined);
 

@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { X, Keyboard } from 'lucide-react';
 import type { KeyboardShortcut } from '@/hooks/use-keyboard-shortcuts';
+import { useFocusTrap } from '@/hooks/use-focus-trap';
 
 interface KeyboardShortcutsModalProps {
   isOpen: boolean;
@@ -26,7 +27,9 @@ export function KeyboardShortcutsModal({
   onClose,
   shortcuts = DEFAULT_SHORTCUTS,
 }: KeyboardShortcutsModalProps) {
-  // Close on escape
+  const focusTrapRef = useFocusTrap({ isActive: isOpen, onEscape: onClose });
+
+  // Close on escape (hook also handles this, but we need it here too for the event listener)
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
@@ -48,6 +51,7 @@ export function KeyboardShortcutsModal({
       onClick={onClose}
     >
       <div
+        ref={focusTrapRef}
         className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
@@ -64,7 +68,7 @@ export function KeyboardShortcutsModal({
           <button
             onClick={onClose}
             className="p-2 text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
-            aria-label="Close"
+            aria-label="Close keyboard shortcuts help"
           >
             <X className="w-5 h-5" />
           </button>

@@ -47,6 +47,7 @@ export function NoBenchmarksEmptyState({ onCreate }: { onCreate?: () => void }) 
       action={onCreate && (
         <button
           onClick={onCreate}
+          aria-label="Run benchmark"
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
         >
           Run Benchmark

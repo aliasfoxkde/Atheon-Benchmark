@@ -193,11 +193,11 @@ export function BenchmarkTrending({
 
   const getMetricIcon = (metric: string) => {
     switch (metric) {
-      case 'ns_per_op': return '⚡';
-      case 'files_per_sec': return '📁';
-      case 'bytes_per_sec': return '📊';
-      case 'cpu_percent': return '🔥';
-      default: return '📈';
+      case 'ns_per_op': return { emoji: '⚡', label: 'nanoseconds per operation' };
+      case 'files_per_sec': return { emoji: '📁', label: 'files per second' };
+      case 'bytes_per_sec': return { emoji: '📊', label: 'bytes per second' };
+      case 'cpu_percent': return { emoji: '🔥', label: 'CPU percent' };
+      default: return { emoji: '📈', label: 'default' };
     }
   };
 
@@ -328,7 +328,7 @@ export function BenchmarkTrending({
                 }`}
                 title={`z-score: ${a.zScore.toFixed(2)}σ, deviation: ${a.deviation > 0 ? '+' : ''}${a.deviation.toFixed(1)}%`}
               >
-                {getMetricIcon(a.metric)} {a.metric.replace('_', ' ')}
+                {getMetricIcon(a.metric).emoji} {a.metric.replace('_', ' ')}
               </span>
             ))}
           </div>

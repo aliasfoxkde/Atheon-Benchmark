@@ -87,7 +87,7 @@ export function BenchmarkExport({ data, filename = 'benchmark-results' }: Benchm
   return (
     <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4">
       <div className="flex items-center gap-2 mb-4">
-        <Download className="w-4 h-4 text-zinc-500" />
+        <Download className="w-4 h-4 text-zinc-500" aria-hidden="true" />
         <h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
           Export Results
         </h3>
@@ -96,28 +96,31 @@ export function BenchmarkExport({ data, filename = 'benchmark-results' }: Benchm
       <div className="grid grid-cols-3 gap-2">
         <button
           onClick={exportJSON}
+          aria-label="Export results as JSON file"
           className="flex flex-col items-center gap-1 p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
         >
-          <FileJson className="w-5 h-5 text-blue-500" />
+          <FileJson className="w-5 h-5 text-blue-500" aria-hidden="true" />
           <span className="text-xs text-zinc-600 dark:text-zinc-400">JSON</span>
         </button>
 
         <button
           onClick={exportCSV}
+          aria-label="Export results as CSV file"
           className="flex flex-col items-center gap-1 p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
         >
-          <FileSpreadsheet className="w-5 h-5 text-green-500" />
+          <FileSpreadsheet className="w-5 h-5 text-green-500" aria-hidden="true" />
           <span className="text-xs text-zinc-600 dark:text-zinc-400">CSV</span>
         </button>
 
         <button
           onClick={copyToClipboard}
+          aria-label={copied ? 'Copied to clipboard' : 'Copy results to clipboard'}
           className="flex flex-col items-center gap-1 p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
         >
           {copied ? (
-            <Check className="w-5 h-5 text-green-500" />
+            <Check className="w-5 h-5 text-green-500" aria-hidden="true" />
           ) : (
-            <Copy className="w-5 h-5 text-zinc-500" />
+            <Copy className="w-5 h-5 text-zinc-500" aria-hidden="true" />
           )}
           <span className="text-xs text-zinc-600 dark:text-zinc-400">
             {copied ? 'Copied!' : 'Copy'}

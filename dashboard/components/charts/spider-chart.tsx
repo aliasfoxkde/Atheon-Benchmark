@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import {
   Chart as ChartJS,
   RadialLinearScale,
@@ -39,7 +40,7 @@ export function SpiderChart({ systems, labels, title }: SpiderChartProps) {
   const gridColor = isDark ? 'rgba(212, 212, 212, 0.15)' : 'rgba(115, 115, 115, 0.15)';
   const tooltipBg = isDark ? 'rgba(38, 38, 38, 0.95)' : 'rgba(0, 0, 0, 0.8)';
 
-  const data = {
+  const data = useMemo(() => ({
     labels,
     datasets: systems.map((system) => ({
       label: system.name,
@@ -52,9 +53,9 @@ export function SpiderChart({ systems, labels, title }: SpiderChartProps) {
       pointHoverBackgroundColor: isDark ? '#27272a' : '#fff',
       pointHoverBorderColor: system.color,
     })),
-  };
+  }), [labels, systems, isDark]);
 
-  const options: ChartOptions<'radar'> = {
+  const options: ChartOptions<'radar'> = useMemo(() => ({
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -105,19 +106,19 @@ export function SpiderChart({ systems, labels, title }: SpiderChartProps) {
         suggestedMax: 100,
       },
     },
-  };
+  }), [textColor, gridColor, tooltipBg, isDark]);
 
   return (
     <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 shadow-xl">
       {title && (
         <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 mb-4 flex items-center gap-2">
-          <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
           </svg>
           {title}
         </h3>
       )}
-      <div className="w-full h-96">
+      <div className="w-full h-96" role="img" aria-label={title || 'Radar chart showing system performance comparison'}>
         <Radar data={data} options={options} />
       </div>
     </div>
