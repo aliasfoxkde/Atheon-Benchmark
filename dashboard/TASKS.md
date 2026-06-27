@@ -109,9 +109,18 @@
 - [ ] H11: Low test coverage on critical paths - Ongoing improvement (894 tests passing)
 - [x] H12: Outdated README documentation - README is current, versions verified
 
-**Medium (16)**: Performance, testing, and documentation improvements - Deferred to future sprints
+**Medium (16)**: Performance, testing, and documentation improvements
+- [x] M1: Documentation - Added JSDoc to all 12 module index files
+- [x] M2: Console statements in production - Replaced with centralized logger
+- [x] M3: Magic numbers - Constants now have explanatory comments
+- [ ] M4: Singleton anti-patterns - Would require architectural refactor
+- [ ] M5: Inconsistent error handling - Would require API standardization
+- [ ] M6: Chart.js CVE concerns - Transitive via wrangler, needs upstream
+- [ ] M7-Low: Additional improvements - See future sprints
 
-**Low (16)**: Minor code quality and UX enhancements - Deferred to future sprints
+**Low (16)**: Minor code quality and UX enhancements
+- [x] L1: Missing API documentation - JSDoc added to modules
+- [ ] L2-Low: Additional minor enhancements - See future sprints
 
 ## Additional Improvements (Session 2026-06-26)
 - [x] Add centralized logging utility (lib/logging.ts)
