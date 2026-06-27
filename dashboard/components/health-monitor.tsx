@@ -140,6 +140,7 @@ export function HealthMonitor() {
           }
         }}
         className="fixed bottom-4 right-4 p-2 bg-white dark:bg-black border border-zinc-200 dark:border-zinc-800 rounded-full shadow-lg hover:shadow-xl transition-shadow"
+        aria-label="Show health monitor"
         title="Show health monitor"
       >
         <Activity className={`w-5 h-5 ${
@@ -160,6 +161,7 @@ export function HealthMonitor() {
           <button
             onClick={() => setIsVisible(false)}
             className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+            aria-label="Close health monitor"
           >
             ✕
           </button>
