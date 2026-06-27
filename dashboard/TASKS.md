@@ -37,11 +37,14 @@
 - [x] Add tests for system-comparison-modal
 - [x] Add tests for pwa-install-prompt
 - [x] Add tests for onboarding-tour
+- [x] Add tests for benchmark-export
+- [x] Add tests for keyboard-shortcuts-modal
+- [x] Add tests for pattern-breakdown
 
 ### Verification
 - **Build**: 7 pages passing
-- **Tests**: 1047 passing (106 new tests added across 10 components)
-- **Deploy**: https://e11ff716.atheon-benchmark-dashboard.pages.dev
+- **Tests**: 1075 passing (134 new tests added across 13 components)
+- **Deploy**: https://b26cbb2b.atheon-benchmark-dashboard.pages.dev
 
 ## Previous Work (2026-06-26)
 
@@ -80,7 +83,7 @@ These items require architecture changes or upstream fixes:
 - Chart.js CVE (transitive via wrangler)
 - Code splitting (would break build)
 
-## Known Unused Code
+## Known Unused Code (Future Expansion)
 
 The following modules are unused but kept for future expansion:
 - lib/api/ - GraphQL resolvers (planned)
