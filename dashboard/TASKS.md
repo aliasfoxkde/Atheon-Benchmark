@@ -96,14 +96,14 @@
 - [ ] C5: CSP too permissive (unsafe-inline, unsafe-eval) - Security config
 
 **High (12)**:
-- [ ] H1: TypeScript errors in lib/utils.ts (any[] without generic constraints)
+- [x] H1: TypeScript errors in lib/utils.ts - Fixed debounce generic to use unknown[]
 - [ ] H2: Missing error boundaries in app/layout.tsx
 - [x] H3: Memory leak in AnalyticsCollector (setInterval never cleared) - Documented
-- [x] H4: Unbounded cache growth in github/cache.ts - Added MAX_CACHE_SIZE
-- [ ] H5: Missing loading states in results page
-- [ ] H6: Circular dependencies in lib/index.ts
-- [ ] H7: Console statements in production (60+ throughout)
-- [ ] H8: alert() in production code (results/page.tsx:584)
+- [x] H4: Unbounded cache growth in github/cache.ts - Added MAX_CACHE_SIZE and eviction
+- [x] H5: Missing loading states in results page - Already has proper loading states
+- [x] H6: Circular dependencies in lib/index.ts - Converted BUILD_DATE to getBuildDate function
+- [ ] H7: Console statements in production (60+ throughout) - Added logging utility
+- [x] H8: alert() in production code (results/page.tsx:584) - Replaced with toast notification
 - [ ] H9: No code splitting for chart components
 - [ ] H10: Accessibility issues (aria-labels, focus indicators)
 - [ ] H11: Low test coverage on critical paths
@@ -112,3 +112,10 @@
 **Medium (16)**: Performance, testing, and documentation improvements
 
 **Low (16)**: Minor code quality and UX enhancements
+
+## Additional Improvements (Session 2026-06-26)
+- [x] Add centralized logging utility (lib/logging.ts)
+- [x] Replace alert() with toast notification in results page
+- [x] Add cache eviction logic when exceeding MAX_CACHE_SIZE
+- [x] Fix debounce function TypeScript generics for browser compatibility
+- [x] Convert BUILD_DATE to getBuildDate() function to avoid import-time computation
