@@ -1,4 +1,7 @@
-// Collaboration Module - Real-time collaboration utilities
+/**
+ * Collaboration Module - Real-time collaboration utilities
+ * @description WebSocket-based collaboration for benchmark sharing
+ */
 export type {
   CollaborationEvent,
   CollaborationUser,

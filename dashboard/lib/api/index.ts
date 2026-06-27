@@ -1,4 +1,7 @@
-// API Module - GraphQL resolvers and REST API utilities
+/**
+ * API Module - GraphQL and REST API utilities
+ * @description Provides GraphQL resolvers and API utilities for benchmark operations
+ */
 export {
   typeDefs,
   resolvers,

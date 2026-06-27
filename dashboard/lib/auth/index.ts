@@ -1,4 +1,7 @@
-// Auth Module - SSO and authentication utilities
+/**
+ * Auth Module - SSO and authentication utilities
+ * @description Enterprise SSO providers (Google, GitHub, Microsoft, SAML)
+ */
 export {
   GoogleSSOProvider,
   GitHubSSOProvider,
