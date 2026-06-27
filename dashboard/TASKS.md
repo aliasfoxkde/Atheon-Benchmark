@@ -23,13 +23,25 @@
 ### Code Quality Fixes
 - [x] Fix chart dark mode - use useTheme hook (4 charts)
 - [x] Fix duplicate chart components consolidation
-- [x] Fix silent error swallowing in 3 files (binary-scanner, websocket, vanilla)
-- [x] Add tests for 5 un-tested components
+- [x] Fix silent error swallowing in 3 files
+- [x] Clean up unused lib/github exports
+
+### Test Coverage Improvements
+- [x] Add tests for empty-state
+- [x] Add tests for error-boundary
+- [x] Add tests for keyboard-shortcuts-provider
+- [x] Add tests for mobile-nav
+- [x] Add tests for version-comparison
+- [x] Add tests for theme-provider
+- [x] Add tests for benchmark-trending
+- [x] Add tests for system-comparison-modal
+- [x] Add tests for pwa-install-prompt
+- [x] Add tests for onboarding-tour
 
 ### Verification
 - **Build**: 7 pages passing
-- **Tests**: 941 passing
-- **Deploy**: https://fe4e263e.atheon-benchmark-dashboard.pages.dev
+- **Tests**: 1047 passing (106 new tests added across 10 components)
+- **Deploy**: https://e11ff716.atheon-benchmark-dashboard.pages.dev
 
 ## Previous Work (2026-06-26)
 
@@ -56,28 +68,6 @@
 - [x] Fix TrendLineChart dark mode
 - [x] Fix PerformanceChart dark mode
 
-### Mobile Experience
-- [x] Add mobile bottom navigation bar
-
-### Keyboard Shortcuts
-- [x] Add keyboard shortcuts hook
-- [x] Add shortcuts help modal
-- [x] Implement shortcuts
-
-### Real-time Data
-- [x] Add auto-refresh polling
-- [x] Add "new results available" toast
-
-### System Comparison
-- [x] Side-by-side comparison modal
-- [x] Visual diff highlighting
-- [x] Rank display with trophy
-
-### Shareable URLs
-- [x] Generate URLs with encoded state
-- [x] Copy-to-clipboard button
-- [x] 'c' keyboard shortcut
-
 ### Module Exports
 - [x] Complete lib/*/index.ts files (12 modules)
 
@@ -89,4 +79,23 @@ These items require architecture changes or upstream fixes:
 - Multi-cloud stub (needs real SDK)
 - Chart.js CVE (transitive via wrangler)
 - Code splitting (would break build)
-- Additional test coverage (ongoing)
+
+## Known Unused Code
+
+The following modules are unused but kept for future expansion:
+- lib/api/ - GraphQL resolvers (planned)
+- lib/atheon/ - Atheon integration (planned)
+- lib/auth/ - Auth providers (planned)
+- lib/benchmark/ - Benchmark runner (planned)
+- lib/claude/ - Claude clients (planned)
+- lib/cloud/ - Multi-cloud (stub)
+- lib/collaboration/ - Real-time collab (planned)
+- lib/experiments/ - A/B testing (planned)
+- lib/i18n/ - Internationalization (planned)
+- lib/monitoring/ - Analytics (planned)
+- lib/notifications/ - Email service (planned)
+- lib/prompts/ - Prompt management (planned)
+- lib/reports/ - PDF generation (planned)
+- lib/security/ - Security utils (planned)
+- lib/storage/ - D1/R2 clients (planned)
+- lib/websocket/ - WebSocket (planned)
